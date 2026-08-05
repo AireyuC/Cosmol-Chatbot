@@ -1,111 +1,53 @@
-# AGENTS.md — Cosmol Chatbot
+# Documentación Arquitectónica - Chatbot COSMOL
 
-> **Documento base de contexto.** El agente DEBE leer este archivo al iniciar cada sesión y seguirlo durante todo el desarrollo del proyecto. Es la fuente de verdad del contexto, los objetivos y las reglas de comportamiento.
+## 1. RESUMEN Y OBJETIVOS
+- **Objetivo Principal:** Desarrollar un chatbot automatizado por WhatsApp para atención a los asociados de COSMOL, permitiendo consultas, pagos y registro de reclamos con fricción cero (estilo CRE).
+- **Alcance del Sistema:** Sistema puramente **Backend** (API e integraciones). No habrá aplicación o portal web Frontend administrativo por el momento. Toda la interacción del cliente será a través de las plantillas y flujos de WhatsApp.
 
----
+## 2. ARQUITECTURA Y TECNOLOGÍAS
+- **Canal de Comunicación:** Meta WhatsApp Cloud API.
+  - *Fase de Pruebas:* Se utilizará el numero de prueba que meta nos da para trabajar en sandbox, con esta cuenta podremos hacer pruebas de las funcionalidades. 
+  - *Producción:* Se buscará la verificación empresarial para activar *WhatsApp Flows* de forma oficial.
+- **Orquestador (Middleware):** n8n (Self-Hosted en Node.js).
+- **Backend API:** PHP Puro (Vanilla PHP v7.3).
+- **Infraestructura de Despliegue (Docker):** Version (la mas estable para los demas stacks) Se oficializa el uso de **Docker** para contenerizar tanto n8n como la API PHP, garantizando un entorno escalable e idéntico para producción.
+  - **n8n Local y Puertos:** En desarrollo, n8n se ejecutará de manera local dentro de un contenedor, proporcionándole/exponiendo un puerto específico (ej. `5678`) para acceder a su interfaz gráfica.
+  - **Pruebas (ngrok):** Para recibir los Webhooks de Meta durante el desarrollo, se utilizará **ngrok** de manera temporal. Esto creará un túnel público HTTPS que apuntará al puerto local de n8n.
+  - **Producción:** En el despliegue final, ya no se usará ngrok. El servidor de producción deberá contar con una IP pública o dominio y un certificado SSL (idealmente a través de un proxy inverso como Nginx o Apache) para recibir las peticiones de Meta directamente al contenedor de n8n.
+  - **API PHP:** Se levantará en su propio contenedor, garantizando un entorno escalable e idéntico para producción.
+- **Base de Datos:**
+  - **Producción:** IBM Informix 4GL (mediante el driver `pdo_informix` compilado dentro del contenedor de Docker).
+  - **Desarrollo Local:** XAMPP VERSION 3.2.2 (MySQL) simulando un espejo del sistema SAI.
 
-## 1. Propósito del proyecto
+## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
+1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
+2. **Consultas de Cuenta:** Visualización rápida de historial de facturas, montos pendientes y estados de cuenta.
+3. **Pagos Integrados:** Redirección simple a la pasarela de Multipago (`https://multipago.com/service/cosmol_payment/first`).
+4. **Registro de Reclamos (Agua turbia, fugas, etc.):**
+   - Uso de formularios (Flows) u opciones interactivas para capturar detalles del problema en un solo paso.
+   - **Manejo de Ubicación:** Se **ignora** la captura de ubicación por GPS desde WhatsApp por el momento. La ubicación para la atención del reclamo se extraerá directamente de los **datos almacenados en la base de datos** (sistema SAI).
+5. **Reconexiones Automáticas:** Evaluación de la antigüedad de la deuda (rechazo si la mora supera los 2 meses) y orden directa al sistema.
 
-Chatbot de WhatsApp para una empresa que administra y provee los servicios de **agua potable y alcantarillado sanitario**.
+## 4. ESTRUCTURA DE MICROSERVICIOS Y FLUJO
+1. **Webhook:** n8n recibe los mensajes de Meta WhatsApp.
+2. **Decisión Lógica:** n8n evalúa el texto o la plantilla recibida.
+3. **Consulta al Backend:** n8n hace una petición HTTP GET/POST a la API PHP (`/api/socio.php`, `/api/reclamos.php`).
+4. **Consulta a BD:** La API PHP se conecta a Informix o MySQL local y devuelve la respuesta.
+5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 
-**Objetivo central:** atención al cliente y resolución de consultas de forma automatizada a través de WhatsApp.
+## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
+- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, instalación de XAMPP local y creación de Endpoints PHP simulados (Mocks).
+- **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
+- **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
+- **Sprint 4 (Migración e Informix):** Configuración final de los conectores `pdo_informix` para apuntar el código PHP local hacia el servidor de producción.
 
----
-
-## 2. Objetivos inmutables (para no desviarse)
-
-El agente debe trabajar únicamente en función de estos objetivos:
-
-1. Responder los mensajes de los clientes que llegan vía WhatsApp.
-2. Ofrecer un **menú de opciones** mediante plantillas interactivas creadas en Meta Developers.
-3. Responder consultas del cliente:
-   - **Cuantas facturas debe pagar** (pendientes).
-   - **El precio de cada factura**.
-   - **Ubicación de la empresa**.
-4. **Regla inviolable:** toda consulta que involucre datos de un cliente exige que el chatbot **pida el código de socio** vinculado a la empresa y **verifique su existencia en la base de datos** antes de responder. **Nunca** se responden datos de un cliente sin verificar previamente su código de socio.
-
----
-
-## 3. Stack Tecnológico (fijo)
-
-- **Backend:** PHP puro.
-- **Frontend / Dashboard:** HTML, CSS, Bootstrap.
-- **Exposición de webhooks en desarrollo:** Ngrok.
-- **Orquestación de flujos:** n8n.
-- **Integración WhatsApp:** cuenta **Meta for Developers** conectada a la **API de WhatsApp** (webhooks, plantillas interactivas y mensajes).
-
-### 3.1 Conexión de datos
-
-- **Fase 1 — Desarrollo / Pruebas:** los datos de clientes y facturas se consultan en una **base de datos local de XAMPP (MySQL)** con datos de prueba.
-- **Fase 2 — Producción (posterior a las pruebas):** la conexión migrará a la **base de datos oficial de la empresa en Informix 4GL**.
-- **Diseño modular obligatorio:** la capa de datos debe estar **abstraída** (patrón repositorio / interfaces) de modo que se pueda cambiar de XAMPP/MySQL a Informix 4GL **sin alterar la lógica de negocio** del chatbot.
-- **PENDIENTE:** definir los parámetros de conexión de la BD oficial (host, puerto, credenciales y driver ODBC de Informix) cuando se aproxime la migración a producción.
-
-### 3.2 Versiones
-
-- Se utilizarán las **versiones más recientes y estables de PHP y MySQL que incluye la instalación de XAMPP** del equipo de desarrollo (la última versión estable disponible en XAMPP actual).
-
----
-
-## 4. Arquitectura / Estructura Modular
-
-El proyecto debe ser **escalable** y seguir buenas prácticas. Patrón: **MVC organizado por módulos**.
-
-```
+##
+- **ESTRUCTURA DEL PROYECTO:**
 /app
-  /public
   /application
     /Modules
-      /WhatsApp      -> controladores, servicios y webhook de WhatsApp
-      /Clientes      -> servicios de consulta y verificación de socio
-      /Facturacion   -> facturas pendientes y precios
-      /n8n           -> integración con flujos de n8n
+      /Clientes      -> servicios de consulta, verificación de socio y endpoints de API
+      /Facturacion   -> consulta de facturas pendientes, precios y endpoints de API
       /Data          -> capa de datos multi-BD (adaptadores MySQL / Informix)
-      /Core          -> router, bootstrap, autoload (PSR-4), helpers
-      /Config
-```
-
-**Buenas prácticas:**
-- Autoloading con **PSR-4**.
-- **Router propio** (PHP puro sin framework).
-- Capa de **servicios** por módulo.
-- **Configuración centralizada** y **secrets fuera del código** (nunca exponer tokens, claves o credenciales en el repositorio).
-
-> Nota: el esqueleto de carpetas NO debe crearse hasta que el responsable lo indique explícitamente.
-
----
-
-## 5. Flujo funcional del bot
-
-- **Flujo de mensajes:** Webhook de WhatsApp (Meta) → n8n → PHP (validación y verificación) → respuesta al cliente.
-- **Menú:** ofrece opciones mediante plantillas interactivas de Meta.
-- **Consulta de facturas (paso a paso):**
-  1. El cliente consulta (ej. cuántas facturas debe pagar, precios).
-  2. El bot solicita el **código de socio**.
-  3. PHP verifica el código en la base de datos (Fase 1: MySQL/XAMPP).
-  4. Si el código es válido, responde con la información vinculada a esa cuenta.
-  5. Si el código no existe, informa que no se encontró y no revela datos.
-- **Ubicación de la empresa:** consulta pública, no requiere código de socio.
-
----
-
-## 6. Comportamiento y reglas del agente
-
-1. **Leer SIEMPRE** este `AGENTS.md` al iniciar cada sesión antes de hacer cualquier tarea.
-2. **Mantener la arquitectura modular**; no mezclar la lógica de un módulo en otro.
-3. **No desviarse del objetivo:** centrarse en consultas de facturas, verificación de socio y menú de WhatsApp.
-4. **Seguridad:** manejar de forma segura los secrets; jamás exponer tokens de Meta, credenciales ni claves en código o commits.
-5. **Consistencia:** aplicar buenas prácticas, seguir el patrón MVC por módulos y mantener el código escalable.
-6. **Actualizar este archivo** cuando cambie el contexto o el estado del proyecto, para que el agente siempre tenga la información al día.
-7. **No crear la estructura de carpetas** ni archivos fuera de lo solicitado sin indicación expresa del responsable.
-
----
-
-## 7. PENDIENTES / por definir
-
-- Parámetros de conexión de la base de datos oficial **Informix 4GL** (host, puerto, credenciales, driver ODBC).
-- Especificación de la **API/sistema externo** de clientes y facturas (si aplica).
-- Autenticación y verificación de **webhooks de Meta**.
-- **Lista final de plantillas interactivas** creadas en Meta Developers.
-- Datos de prueba para la base local de **XAMPP (MySQL)**.
-- Definición de la **ubicación de la empresa** para la consulta pública.
+      /Core          -> router API, autoload (PSR-4), helpers, respuestas JSON
+      /Config        -> conexión a BD y variables de entorno

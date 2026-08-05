@@ -5,107 +5,91 @@
 ---
 
 ## 1. Propósito del proyecto
-
-Chatbot de WhatsApp para una empresa que administra y provee los servicios de **agua potable y alcantarillado sanitario**.
+Chatbot de WhatsApp para una empresa que administra y provee los servicios de agua potable y alcantarillado sanitario.
 
 **Objetivo central:** atención al cliente y resolución de consultas de forma automatizada a través de WhatsApp.
 
 ---
 
 ## 2. Objetivos inmutables (para no desviarse)
-
 El agente debe trabajar únicamente en función de estos objetivos:
 
-1. Responder los mensajes de los clientes que llegan vía WhatsApp.
-2. Ofrecer un **menú de opciones** mediante plantillas interactivas creadas en Meta Developers.
-3. Responder consultas del cliente:
-   - **Cuantas facturas debe pagar** (pendientes).
-   - **El precio de cada factura**.
-   - **Ubicación de la empresa**.
-4. **Regla inviolable:** toda consulta que involucre datos de un cliente exige que el chatbot **pida el código de socio** vinculado a la empresa y **verifique su existencia en la base de datos** antes de responder. **Nunca** se responden datos de un cliente sin verificar previamente su código de socio.
+Responder consultas del cliente mediante consumo de API:
+- Cuantas facturas debe pagar (pendientes).
+- El precio de cada factura.
+- Ubicación de la empresa.
+
+**Regla inviolable:** toda consulta que involucre datos de un cliente exige que el chatbot (vía la API) pida y verifique el código de socio en la base de datos antes de devolver cualquier información. Nunca se responden datos de un cliente sin verificar previamente su código de socio.
 
 ---
 
-## 3. Stack Tecnológico (fijo)
+## 3. Stack Tecnológico y División del Equipo
+El equipo consta de 3 desarrolladores. El trabajo está dividido, por lo que este agente se enfocará única y exclusivamente en el Backend. Las configuraciones de Meta y webhooks son gestionadas por otro miembro del equipo a través de n8n.
 
-- **Backend:** PHP puro.
-- **Frontend / Dashboard:** HTML, CSS, Bootstrap.
-- **Exposición de webhooks en desarrollo:** Ngrok.
-- **Orquestación de flujos:** n8n.
-- **Integración WhatsApp:** cuenta **Meta for Developers** conectada a la **API de WhatsApp** (webhooks, plantillas interactivas y mensajes).
+- **Backend / API:** PHP vanilla (Estrictamente versión 7.3).
+- **Entorno de Desarrollo:** XAMPP versión 3.2.2 (compatible con PHP 7.3).
+- **Testeo de API:** Postman.
+- **Orquestación de flujos (externo al agente):** n8n.
+- **Frontend / Dashboard:** Descartado (no se desarrollará interfaz gráfica).
 
 ### 3.1 Conexión de datos
-
-- **Fase 1 — Desarrollo / Pruebas:** los datos de clientes y facturas se consultan en una **base de datos local de XAMPP (MySQL)** con datos de prueba.
-- **Fase 2 — Producción (posterior a las pruebas):** la conexión migrará a la **base de datos oficial de la empresa en Informix 4GL**.
-- **Diseño modular obligatorio:** la capa de datos debe estar **abstraída** (patrón repositorio / interfaces) de modo que se pueda cambiar de XAMPP/MySQL a Informix 4GL **sin alterar la lógica de negocio** del chatbot.
-- **PENDIENTE:** definir los parámetros de conexión de la BD oficial (host, puerto, credenciales y driver ODBC de Informix) cuando se aproxime la migración a producción.
-
-### 3.2 Versiones
-
-- Se utilizarán las **versiones más recientes y estables de PHP y MySQL que incluye la instalación de XAMPP** del equipo de desarrollo (la última versión estable disponible en XAMPP actual).
+- **Fase 1 — Desarrollo / Pruebas:** los datos de clientes y facturas se consultan en una base de datos local de XAMPP (MySQL). Se crearán modelos de prueba para las entidades principales (Socio y Facturas vinculadas).
+- **Fase 2 — Producción:** la conexión migrará a la base de datos oficial de la empresa en Informix 4GL.
+- **Diseño modular obligatorio:** la capa de datos debe estar abstraída (patrón repositorio / interfaces) de modo que se pueda cambiar de MySQL a Informix 4GL sin alterar la lógica de negocio de los endpoints.
 
 ---
 
-## 4. Arquitectura / Estructura Modular
+## 4. Arquitectura / Estructura Modular (API REST)
+El proyecto será una API REST escalable en PHP puro. Patrón: MVC organizado por módulos (enfocado en Controladores de API y Servicios).
 
-El proyecto debe ser **escalable** y seguir buenas prácticas. Patrón: **MVC organizado por módulos**.
-
-```
+```plaintext
 /app
-  /public
   /application
     /Modules
-      /WhatsApp      -> controladores, servicios y webhook de WhatsApp
-      /Clientes      -> servicios de consulta y verificación de socio
-      /Facturacion   -> facturas pendientes y precios
-      /n8n           -> integración con flujos de n8n
+      /Clientes      -> servicios de consulta, verificación de socio y endpoints de API
+      /Facturacion   -> consulta de facturas pendientes, precios y endpoints de API
       /Data          -> capa de datos multi-BD (adaptadores MySQL / Informix)
-      /Core          -> router, bootstrap, autoload (PSR-4), helpers
-      /Config
+      /Core          -> router API, autoload (PSR-4), helpers, respuestas JSON
+      /Config        -> conexión a BD y variables de entorno
 ```
 
-**Buenas prácticas:**
-- Autoloading con **PSR-4**.
-- **Router propio** (PHP puro sin framework).
-- Capa de **servicios** por módulo.
-- **Configuración centralizada** y **secrets fuera del código** (nunca exponer tokens, claves o credenciales en el repositorio).
+Buenas prácticas:
+- Autoloading con PSR-4.
+- Router propio (PHP puro sin framework) diseñado para recibir y responder únicamente JSON.
+- Capa de servicios por módulo.
+- Configuración centralizada y secrets fuera del código.
 
 > Nota: el esqueleto de carpetas NO debe crearse hasta que el responsable lo indique explícitamente.
 
 ---
 
-## 5. Flujo funcional del bot
+## 5. Flujo funcional de la API (Orquestación con n8n)
+- **Rol de n8n:** n8n recibe el Webhook de WhatsApp, maneja el árbol de conversación con el usuario y hace peticiones HTTP a nuestra API en PHP.
+- **Rol de PHP (Nuestro enfoque):** Procesar las peticiones HTTP de n8n, interactuar con la base de datos y devolver respuestas en formato JSON.
 
-- **Flujo de mensajes:** Webhook de WhatsApp (Meta) → n8n → PHP (validación y verificación) → respuesta al cliente.
-- **Menú:** ofrece opciones mediante plantillas interactivas de Meta.
-- **Consulta de facturas (paso a paso):**
-  1. El cliente consulta (ej. cuántas facturas debe pagar, precios).
-  2. El bot solicita el **código de socio**.
-  3. PHP verifica el código en la base de datos (Fase 1: MySQL/XAMPP).
-  4. Si el código es válido, responde con la información vinculada a esa cuenta.
-  5. Si el código no existe, informa que no se encontró y no revela datos.
-- **Ubicación de la empresa:** consulta pública, no requiere código de socio.
+**Flujo de consulta de facturas:**
+1. n8n hace una petición POST/GET a nuestro endpoint enviando el `codigo_socio`.
+2. PHP verifica el código en la base de datos (Fase 1: MySQL/XAMPP).
+3. Si es válido, PHP devuelve un JSON con las facturas pendientes y precios.
+4. Si no existe, PHP devuelve un JSON con el error correspondiente (ej. 404 Not Found), y n8n se encarga de informar al cliente.
+
+**Ubicación de la empresa:** endpoint público que devuelve la información sin requerir validación.
 
 ---
 
 ## 6. Comportamiento y reglas del agente
-
-1. **Leer SIEMPRE** este `AGENTS.md` al iniciar cada sesión antes de hacer cualquier tarea.
+1. **Leer SIEMPRE** este AGENTS.md al iniciar cada sesión antes de hacer cualquier tarea.
 2. **Mantener la arquitectura modular**; no mezclar la lógica de un módulo en otro.
-3. **No desviarse del objetivo:** centrarse en consultas de facturas, verificación de socio y menú de WhatsApp.
-4. **Seguridad:** manejar de forma segura los secrets; jamás exponer tokens de Meta, credenciales ni claves en código o commits.
-5. **Consistencia:** aplicar buenas prácticas, seguir el patrón MVC por módulos y mantener el código escalable.
-6. **Actualizar este archivo** cuando cambie el contexto o el estado del proyecto, para que el agente siempre tenga la información al día.
+3. **No desviarse del objetivo:** centrarse estrictamente en el desarrollo Backend (API REST en PHP 7.3) para responder a n8n. No generar código de webhooks directos para Meta.
+4. **Seguridad:** jamás exponer credenciales ni claves en código o commits.
+5. **Consistencia:** aplicar buenas prácticas, estructurar respuestas estandarizadas en JSON y mantener el código escalable.
+6. **Actualizar este archivo** cuando cambie el contexto o el estado del proyecto.
 7. **No crear la estructura de carpetas** ni archivos fuera de lo solicitado sin indicación expresa del responsable.
 
 ---
 
 ## 7. PENDIENTES / por definir
-
-- Parámetros de conexión de la base de datos oficial **Informix 4GL** (host, puerto, credenciales, driver ODBC).
-- Especificación de la **API/sistema externo** de clientes y facturas (si aplica).
-- Autenticación y verificación de **webhooks de Meta**.
-- **Lista final de plantillas interactivas** creadas en Meta Developers.
-- Datos de prueba para la base local de **XAMPP (MySQL)**.
-- Definición de la **ubicación de la empresa** para la consulta pública.
+- Definir la estructura exacta de los modelos de prueba (Socio y Factura) para MySQL.
+- Parámetros de conexión de la base de datos oficial Informix 4GL (host, puerto, credenciales, driver ODBC).
+- Definición de la ubicación de la empresa y otras variables de entorno (plantillas) para los endpoints.
+- Estructura y formato de las respuestas JSON que n8n espera recibir de nuestra API.

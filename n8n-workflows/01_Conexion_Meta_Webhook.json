@@ -1,0 +1,84 @@
+{
+  "name": "01_Conexion_Meta_Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "1. Escuchar Webhook (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "cosmol-webhook-id-123",
+      "notesInFlow": true,
+      "notes": "Esta es la 'Oreja'. Solo sirve para que Meta valide que tu servidor existe devolviendo el challenge."
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "name": "2. Devolver Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        260,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/AQUI_TU_PHONE_NUMBER_ID/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"NUMERO_DE_DESTINO\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"¡Hola desde n8n!\"\n  }\n}",
+        "options": {}
+      },
+      "name": "3. Enviar Mensaje a Meta (Ejemplo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        260,
+        420
+      ],
+      "notesInFlow": true,
+      "notes": "Aquí pones la URL de Meta, ID, y el Token (en credentials)."
+    }
+  ],
+  "connections": {
+    "1. Escuchar Webhook (GET)": {
+      "main": [
+        [
+          {
+            "node": "2. Devolver Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,4 +1,5 @@
 # Documentación Arquitectónica - Chatbot COSMOL
+Documento base de contexto. El agente DEBE leer este archivo al iniciar cada sesión y seguirlo durante todo el desarrollo del proyecto. Es la fuente de verdad del contexto, los objetivos y las reglas de comportamiento.
 
 ## 1. RESUMEN Y OBJETIVOS
 - **Objetivo Principal:** Desarrollar un chatbot automatizado por WhatsApp para atención a los asociados de COSMOL, permitiendo consultas, pagos y registro de reclamos con fricción cero (estilo CRE).
@@ -40,14 +41,3 @@
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
 - **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
 - **Sprint 4 (Migración e Informix):** Configuración final de los conectores `pdo_informix` para apuntar el código PHP local hacia el servidor de producción.
-
-##
-- **ESTRUCTURA DEL PROYECTO:**
-/app
-  /application
-    /Modules
-      /Clientes      -> servicios de consulta, verificación de socio y endpoints de API
-      /Facturacion   -> consulta de facturas pendientes, precios y endpoints de API
-      /Data          -> capa de datos multi-BD (adaptadores MySQL / Informix)
-      /Core          -> router API, autoload (PSR-4), helpers, respuestas JSON
-      /Config        -> conexión a BD y variables de entorno

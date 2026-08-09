@@ -1,6 +1,5 @@
 # Plan de Implementación del Backend API (COSMOL)
 
-SOLO PARA BACKEND CHICHICO - FABIAN nada que ver aireyu
 
 Este documento detalla la ruta paso a paso para crear los archivos PHP necesarios para el backend del Chatbot COSMOL, respetando la arquitectura modular y el patrón repositorio.
 

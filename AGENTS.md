@@ -1,5 +1,5 @@
 # Documentación Arquitectónica - Chatbot COSMOL
-Documento base de contexto. El agente DEBE leer este archivo al iniciar cada sesión y seguirlo durante todo el desarrollo del proyecto. Es la fuente de verdad del contexto, los objetivos y las reglas de comportamiento.
+Documento base de contexto. El agente DEBE leer este archivo al iniciar cada sesión y seguirlo durante todo el desarrollo del proyecto. Es la fuente de verdad del contexto, los objetivos y las reglas de comportamiento, el agente DEBE preguntar antes de ejecutar cualquier accion que no este contemplada en este documento y tambien antes de borrar o modificar cualquier archivo del proyecto.
 
 ## 1. RESUMEN Y OBJETIVOS
 - **Objetivo Principal:** Desarrollar un chatbot automatizado por WhatsApp para atención a los asociados de COSMOL, permitiendo consultas, pagos y registro de reclamos con fricción cero (estilo CRE).

@@ -1,0 +1,52 @@
+services:
+  # Orquestador (n8n)
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1
+    container_name: cosmol_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - backend
+
+  # API (PHP 7.3 + Apache)
+  backend:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: cosmol_php_backend
+    restart: unless-stopped
+    ports:
+      - "8000:80" # Tu compañero y tú podrán ver la API en http://localhost:8000
+    env_file:
+      - .env
+    volumes:
+      - .:/app # Sincroniza el código en tiempo real sin tener que reconstruir la imagen
+    depends_on:
+      - db
+
+  # Base de Datos (MySQL 5.7)
+  db:
+    image: mysql:5.7
+    container_name: cosmol_mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      # Los valores reales ahora se jalan desde el archivo .env por seguridad
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  n8n_data:
+    name: cosmol_n8n_data
+  mysql_data:
+    name: cosmol_mysql_data

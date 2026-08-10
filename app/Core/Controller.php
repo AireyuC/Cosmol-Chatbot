@@ -1,24 +1,29 @@
-<?php
-
-declare(strict_types=1);
+<?php 
 
 namespace App\Core;
 
-class Controller
-{
-    /**
-     * Devuelve una respuesta JSON estandarizada y termina la ejecución.
-     *
-     * @param array $data Los datos a devolver.
-     * @param int $status El código de estado HTTP (por defecto 200).
-     * @return void
-     */
+class Controller{
     protected function json(array $data, int $status = 200): void
     {
         http_response_code($status);
-        header('Content-Type: application/json; charset=utf-8');
+        header('content-type: application/json; charset=utf-8');
         echo json_encode($data);
         exit;
     }
+
+    protected function getBody(): ?array
+    {
+        $input = file_get_contents('php://input');
+
+        return json_decode($input, true);
+    }
+
+    protected function handleError(string $message, int $status = 400): void
+    {
+        $this->json([
+            'success' => false, 
+            'error' => $message
+        ], $status);
+
+    }
 }
-  

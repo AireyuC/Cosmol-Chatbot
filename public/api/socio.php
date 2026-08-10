@@ -40,6 +40,19 @@ class SocioEndpoint extends Controller
             $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
         }
 
+        // --- INICIO DEL MOCK TEMPORAL (Borrar cuando la BD esté lista) ---
+        // Simula que la base de datos ya está conectada y encontró al usuario
+        $this->json([
+            'status' => 'success',
+            'mensaje' => "¡Hola! Hemos verificado tu código $cod_socio en la base de datos simulada. No tienes deudas pendientes.",
+            'datos_socio' => [
+                'nombre' => 'Asociado de Prueba',
+                'deuda_total' => 0
+            ]
+        ], 200);
+        return;
+        // --- FIN DEL MOCK TEMPORAL ---
+
         try {
             // Instanciar la base de datos (Singleton)
             $db = Database::getInstance();

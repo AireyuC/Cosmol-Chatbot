@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS socio(
     nombre VARCHAR(80) NOT NULL,
     apellido VARCHAR(80) NOT NULL,
     telefono VARCHAR(20) NOT NULL,
-    estado_conexion BIT(1) NOT NULL DEFAULT 0,
+    direccion VARCHAR(255) DEFAULT 'Sin dirección',
+    estado_conexion BIT(1) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS reclamo(

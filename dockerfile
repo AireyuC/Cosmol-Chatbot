@@ -1,6 +1,7 @@
 FROM php:7.3-apache
 
 WORKDIR /app
+
 # Habilitar mod_rewrite de Apache (esencial para APIs y enrutamiento)
 RUN a2enmod rewrite
 

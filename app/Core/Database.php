@@ -7,11 +7,8 @@ use PDO;
 use PDOException;
 use Exception;
 
-class Database {
-    /**
-     * @var PDO|null
-     */
-    private static $instance = null;
+class Database{
+    private static ?PDO $instance = null;
 
     private function __construct() {}
 
@@ -25,30 +22,43 @@ class Database {
     public static function getInstance(): PDO
     {
         if (self::$instance === null) {
-            // Asegurar que las constantes de configuración estén cargadas
-            if (!defined('DB_HOST')) {
-                require_once __DIR__ . '/../Config/database.php';
-            }
 
             try {
-                $dsn = sprintf(
-                    "%s:host=%s;port=%s;dbname=%s;charset=%s",
-                    DB_DRIVER,
-                    DB_HOST,
-                    DB_PORT,
-                    DB_NAME,
-                    DB_CHARSET
-                );
+                $driver = defined('DB_DRIVER') ? DB_DRIVER : 'mysql';
+                $host = defined('DB_HOST') ? DB_HOST : 'localhost';
+                $port = defined('DB_PORT') ? DB_PORT : '3306';
+                $dbName = defined('DB_NAME') ? DB_NAME : '';
+                $user = defined('DB_USER') ? DB_USER : '';
+                $password = defined('DB_PASSWORD') ? DB_PASSWORD : '';
+                $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
 
+                if ($driver === 'informix') {
+                    // DSN Básico para Informix (después podrás agregar server, protocol, etc.)
+                    $dsn = "informix:host={$host};service={$port};database={$dbName};";
+                } else {
+                    // DSN para MySQL
+                    $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset={$charset}";
+                }
+
+                // 1. Definir opciones de seguridad y buenas prácticas para PDO
                 $options = [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
+                    PDO::ATTR_EMULATE_PREPARES => false,
                 ];
 
-                self::$instance = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
+                // 2. Crear la instancia real de la conexión usando el DSN
+                self::$instance = new PDO($dsn, $user, $password, $options);
+
             } catch (PDOException $e) {
-                throw new Exception("Error en la conexión a la base de datos: " . $e->getMessage(), (int)$e->getCode());
+                // 3. Capturar errores de forma segura
+                $isDebug = defined('APP_DEBUG') && APP_DEBUG === true;
+                
+                $errorMessage = $isDebug 
+                    ? "Error de conexión: " . $e->getMessage() 
+                    : "Error interno al conectar a la base de datos.";
+                
+                throw new Exception($errorMessage);
             }
         }
 

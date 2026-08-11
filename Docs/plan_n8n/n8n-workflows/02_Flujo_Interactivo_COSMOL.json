@@ -1,0 +1,385 @@
+{
+  "name": "02_Flujo_Interactivo_COSMOL",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "1. Recibir Webhook Meta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        200
+      ],
+      "id": "bb6e927b-2321-4f10-911d-23a504b77f98",
+      "webhookId": "cosmol-webhook-id-post"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1342d549-56a4-463b-b34f-48ccbf44f08c",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "2. Es un mensaje válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        200,
+        200
+      ],
+      "id": "e81d7d0a-9d7a-4a2e-8393-2a49b6b7a5a8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9945c7e1-8840-4289-8d1e-2e0618459424",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages[0].type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "3. Es Texto o Boton?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        420,
+        200
+      ],
+      "id": "18f99ad5-2f88-4c6f-a88a-d99f848fc5b5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:80/api/socio.php",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "cod_socio",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "4. Validar Socio (PHP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        700,
+        60
+      ],
+      "id": "42116035-7cba-4e4c-81ba-4f27598c0d12"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "meta_payload",
+              "value": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"list\",\n    \"header\": {\n      \"type\": \"text\",\n      \"text\": \"Menú Principal\"\n    },\n    \"body\": {\n      \"text\": \"Su Código Fijo {{ $json.datos_socio.nombre ?? '267657' }} ha sido validado.\\n\\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú.\"\n    },\n    \"footer\": {\n      \"text\": \"COSMOL - Tu cooperativa\"\n    },\n    \"action\": {\n      \"button\": \"Mostrar Menú\",\n      \"sections\": [\n        {\n          \"title\": \"Facturas y Pagos\",\n          \"rows\": [\n            {\n              \"id\": \"MENU_PAGAR_{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text.body }}\",\n              \"title\": \"Pagar Deuda\",\n              \"description\": \"Consultar y pagar tus facturas\"\n            }\n          ]\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "5. Formatear Menú (Lista)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        920,
+        60
+      ],
+      "id": "84828135-2c8c-4fdf-9730-80a5deafbbde"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.meta_payload }}",
+        "options": {}
+      },
+      "name": "6. Enviar Menú a Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1140,
+        60
+      ],
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "1Jzh8GZc1R1EReZF",
+          "name": "Multiple Headers Auth account"
+        }
+      },
+      "id": "764ea079-c81d-4054-946f-c1f0b09dc462"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f51270c1-ecfc-451e-ad52-95cd28b49b43",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id }}",
+              "rightValue": "MENU_PAGAR_",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "7. Quiere Pagar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        700,
+        340
+      ],
+      "id": "5f643e86-1d13-41bb-b08e-1f25da3cd835"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:80/api/factura.php",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "cod_socio",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id.split('_')[2] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "8. Consultar Facturas (PHP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        920,
+        340
+      ],
+      "id": "119e2fb7-9b48-4394-bb9e-1bb3f317b203"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "meta_payload",
+              "value": "={{ {\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": $json.mensaje_texto + \"\\n\\n💳 *Link de pago seguro:*\\nhttps://multipago.com/service/cosmol_payment/first\\n\\n¡Gracias por preferir nuestros canales digitales!\"\n  }\n} }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "9. Formatear Respuesta Pago",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        340
+      ],
+      "id": "673f3248-ff81-424b-bb16-c220f8373307"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.meta_payload }}",
+        "options": {}
+      },
+      "name": "10. Enviar Respuesta a Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1360,
+        340
+      ],
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "1Jzh8GZc1R1EReZF",
+          "name": "Multiple Headers Auth account"
+        }
+      },
+      "id": "e96ff7ff-517a-42c2-b5e1-512ebff09d94"
+    }
+  ],
+  "connections": {
+    "1. Recibir Webhook Meta": {
+      "main": [
+        [
+          {
+            "node": "2. Es un mensaje válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Es un mensaje válido?": {
+      "main": [
+        [
+          {
+            "node": "3. Es Texto o Boton?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Es Texto o Boton?": {
+      "main": [
+        [
+          {
+            "node": "4. Validar Socio (PHP)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "7. Quiere Pagar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Validar Socio (PHP)": {
+      "main": [
+        [
+          {
+            "node": "5. Formatear Menú (Lista)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Formatear Menú (Lista)": {
+      "main": [
+        [
+          {
+            "node": "6. Enviar Menú a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Quiere Pagar?": {
+      "main": [
+        [
+          {
+            "node": "8. Consultar Facturas (PHP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Consultar Facturas (PHP)": {
+      "main": [
+        [
+          {
+            "node": "9. Formatear Respuesta Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Formatear Respuesta Pago": {
+      "main": [
+        [
+          {
+            "node": "10. Enviar Respuesta a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

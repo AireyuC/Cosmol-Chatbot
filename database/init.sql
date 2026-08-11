@@ -22,3 +22,16 @@ CREATE TABLE IF NOT EXISTS reclamo(
     codigo_socio INT NOT NULL,
     CONSTRAINT fk_reclamo_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
+
+INSERT INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
+VALUES ("54321","9768156","Eduardo","Cuellar","77712345","Av.SiempreViva 742",1);
+
+INSERT INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
+VALUES ("12345","1234567","Juan","Perez","77712345","Av.SiempreViva 742",1);
+
+INSERT INTO reclamo (tipo_reclamo, descripcion, direccion, codigo_socio)
+VALUES ("Fuga de Agua","El tubo principal de la calle está roto y sale mucha agua", "Calle 742", "54321");
+
+INSERT INTO reclamo (tipo_reclamo, descripcion, direccion, codigo_socio)
+VALUES ("Fuga de Agua","El tubo principal de la calle está roto y sale mucha agua", "Calle 742", "12345");
+

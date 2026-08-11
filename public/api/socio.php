@@ -13,7 +13,6 @@ use App\Modules\Socio\SocioService;
 
 /**
  * Endpoint de la API para Socios
- * Maneja las peticiones entrantes desde n8n.
  */
 class SocioEndpoint extends Controller
 {

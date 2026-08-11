@@ -2,19 +2,9 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Core/Database.php';
-
-// Dependencias de Socios (Requeridas por el servicio de Reclamos)
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/SocioRepository.php';
-
-// Dependencias de Reclamos
-require_once __DIR__ . '/../../app/Data/Interfaces/ReclamoRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/ReclamoRepository.php';
-require_once __DIR__ . '/../../app/Modules/Reclamo/ReclamoService.php';
+// Punto de entrada HTTP del módulo de Reclamos.
+// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
@@ -36,7 +26,7 @@ class ReclamoEndpoint extends Controller
         }
 
         // Usamos la función getBody() heredada del Controller base
-        $input = $this->getBody();
+        $input = $this->getBody() ?? [];
 
         $codigo_socio = $input['codigo_socio'] ?? null;
         $tipo_reclamo = $input['tipo_reclamo'] ?? null;
@@ -65,7 +55,7 @@ class ReclamoEndpoint extends Controller
             );
 
             // 4. Formatear la respuesta a n8n
-            $httpStatus = $resultado['exito'] ? 200 : 400;
+            $httpStatus = $resultado['success'] ? 200 : 400;
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {

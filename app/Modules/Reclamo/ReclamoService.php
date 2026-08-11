@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Reclamo;
 
 use App\Data\Interfaces\ReclamoRepositoryInterface;
@@ -31,15 +33,16 @@ class ReclamoService {
      * @param string $codigoSocio
      * @param string $tipoReclamo
      * @param string $descripcion
-     * @return array Respuesta con formato {exito, ticket_id, mensaje}
+     * @return array Respuesta con formato {success, message, data}
      */
     public function registrarReclamo(string $codigoSocio, string $tipoReclamo, string $descripcion): array {
         
         // 1. Validar si el tipo de reclamo existe en nuestra lista
         if (!in_array(strtoupper($tipoReclamo), self::TIPOS_VALIDOS)) {
             return [
-                'exito' => false,
-                'mensaje' => "El tipo de reclamo '{$tipoReclamo}' no es válido."
+                'success' => false,
+                'message' => "El tipo de reclamo '{$tipoReclamo}' no es válido.",
+                'data' => null
             ];
         }
 
@@ -48,17 +51,14 @@ class ReclamoService {
 
         if (!$socio) {
             return [
-                'exito' => false,
-                'mensaje' => "No se encontró ningún socio con el código fijo proporcionado."
+                'success' => false,
+                'message' => "No se encontró ningún socio con el código fijo proporcionado.",
+                'data' => null
             ];
         }
 
-        // 3. Extraemos la dirección que el socio ya tiene registrada.
-        // Asumiendo que la tabla socio tiene una columna 'direccion' o usaremos un valor por defecto si no la tiene en Fase 2
-        // Revisando tu tabla 'socio' recién creada en SQL, noté que no pusiste 'direccion', 
-        // así que por ahora asumiremos que se tomaría de alguna columna de ubicación, 
-        // o lo dejaremos como un aviso para tu compañero. Por ahora pondremos algo genérico para que no falle.
-        $direccionSocio = $socio['direccion'] ?? 'Dirección registrada en sistema (SAI)';
+        // 3. La dirección se extrae de la BD (sin GPS). La devuelve SocioRepository::findByCodigo().
+        $direccionSocio = $socio['direccion'] ?? 'Sin dirección registrada';
 
         // 4. Armamos el array de datos para enviarlo al repositorio de reclamos
         $datosReclamo = [
@@ -73,16 +73,18 @@ class ReclamoService {
             $ticketId = $this->reclamoRepo->createReclamo($datosReclamo);
 
             return [
-                'exito' => true,
-                'ticket_id' => $ticketId,
-                'mensaje' => "Reclamo registrado correctamente con el ticket #{$ticketId}."
+                'success' => true,
+                'message' => "Reclamo registrado correctamente con el ticket #{$ticketId}.",
+                'data' => ['ticket_id' => $ticketId]
             ];
 
         } catch (Exception $e) {
             // Si algo falla a nivel de base de datos (ej. se cayó el servidor)
+            error_log("Error en ReclamoService::registrarReclamo: " . $e->getMessage());
             return [
-                'exito' => false,
-                'mensaje' => "Error interno al registrar el reclamo: " . $e->getMessage()
+                'success' => false,
+                'message' => "Error interno al registrar el reclamo.",
+                'data' => null
             ];
         }
     }

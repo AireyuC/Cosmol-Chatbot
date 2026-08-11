@@ -2,13 +2,9 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Core/Database.php';
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/SocioRepository.php';
-require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
+// Punto de entrada HTTP del módulo de Socios.
+// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
@@ -24,20 +20,20 @@ class SocioEndpoint extends Controller
     public function handleRequest()
     {
         // Obtener el código de socio, ya sea de GET (query param) o POST (JSON payload)
-        $cod_socio = null;
+        $codigo_socio = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true);
-            $cod_socio = $input['cod_socio'] ?? null;
+            $codigo_socio = $input['codigo_socio'] ?? null;
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $cod_socio = $_GET['cod_socio'] ?? null;
+            $codigo_socio = $_GET['codigo_socio'] ?? null;
         } else {
             // Método no permitido
-            $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
+            $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
         }
 
-        if ($cod_socio === null) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
+        if ($codigo_socio === null) {
+            $this->json(['success' => false, 'message' => 'El parámetro codigo_socio es requerido', 'data' => null], 400);
         }
 
         try {
@@ -49,16 +45,16 @@ class SocioEndpoint extends Controller
             $service = new SocioService($repository);
 
             // Ejecutar la lógica de negocio
-            $resultado = $service->validarSocio((string)$cod_socio);
+            $resultado = $service->validarSocio((string) $codigo_socio);
 
             // Devolver la respuesta usando el método del Controller base
-            $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);
+            $httpStatus = $resultado['success'] ? 200 : 404;
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
             // Manejo de errores a nivel superior (ej. falla en conexión BD)
             error_log("Error crítico en SocioEndpoint: " . $e->getMessage());
-            $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
+            $this->json(['success' => false, 'message' => 'Ocurrió un error interno en el servidor', 'data' => null], 500);
         }
     }
 }

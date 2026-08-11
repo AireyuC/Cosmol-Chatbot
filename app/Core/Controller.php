@@ -1,4 +1,6 @@
-<?php 
+<?php
+
+declare(strict_types=1);
 
 namespace App\Core;
 
@@ -21,8 +23,9 @@ class Controller{
     protected function handleError(string $message, int $status = 400): void
     {
         $this->json([
-            'success' => false, 
-            'error' => $message
+            'success' => false,
+            'message' => $message,
+            'data' => null
         ], $status);
 
     }

@@ -1,24 +1,57 @@
-# Índice Maestro — Plan Backend COSMOL
+# Índice Maestro y Documentación Consolidada — Plan Backend COSMOL
 
-Este documento es el punto de navegación central. Cada fase tiene su propio archivo con la explicación detallada de cada archivo PHP que se va a construir.
+Este documento centraliza la documentación y estado de todas las fases del desarrollo del backend, sustituyendo los archivos individuales de los sprints anteriores (Fases 1 a 4) para simplificar la lectura.
 
 ---
 
-## Resumen de Fases
+## Estado Actual de las Fases
 
-| Fase | Nombre | Archivos | Estado |
-|------|--------|----------|--------|
-| [Fase 1](fase1_config_base.md) | Configuración Base y BD | `database.php`, `Database.php`, `Controller.php` | 🔴 Por hacer |
-| [Fase 2](fase2_modulo_socios.md) | Módulo de Socios | `SocioRepositoryInterface.php`, `SocioRepository.php` (MySQL), `SocioService.php`, `socio.php` | 🔴 Por hacer |
-| [Fase 3](fase3_modulo_reclamos.md) | Módulo de Reclamos | `ReclamoRepositoryInterface.php`, `ReclamoRepository.php` (MySQL), `ReclamoService.php`, `reclamos.php` | 🔴 Por hacer |
-| [Fase 4](fase4_autoloading.md) | Autoloading y Utilidades | `Autoloader.php`, `bootstrap.php` | 🔴 Por hacer |
-| [Fase 5](fase5_migracion_informix.md) | Migración a Informix | `SocioRepository.php` (Informix), `ReclamoRepository.php` (Informix) | ⏳ Futuro (Sprint 4) |
+| Fase | Nombre | Estado |
+|------|--------|--------|
+| **Fase 1** | Configuración Base y BD | ✅ Completada |
+| **Fase 2** | Módulo de Socios | ✅ Completada |
+| **Fase 3** | Módulo de Reclamos | ✅ Completada |
+| **Fase 4** | Autoloading y Utilidades | ✅ Completada |
+| [**Fase 5**](fase5_migracion_informix.md) | Migración a Informix | ⏳ Futuro (Sprint 4) |
+
+> [!NOTE]
+> **Pendiente documentado:** la funcionalidad "Consultas de Cuenta" (`getDeuda()`, `getHistorialFacturas()`) del módulo de Socios queda como deuda técnica, marcada con `@todo` en `SocioRepositoryInterface.php`.
+
+---
+
+## Fases Completadas (Documentación)
+
+### Fase 1 — Configuración Base y Conexión a Base de Datos
+Establece la infraestructura invisible del backend: la configuración del entorno, la conexión a la base de datos y el controlador base.
+- `.env`: Archivo de configuración puro con variables de entorno y credenciales.
+- `app/Config/database.php`: Archivo de configuración que recibe los valores del `.env` y los almacena en constantes.
+- `app/Core/Database.php`: Singleton que gestiona físicamente la conexión a la base de datos usando PDO. Reutiliza la conexión.
+- `app/Core/Controller.php`: Clase base para endpoints con métodos comunes como `json()`, `getBody()`, y `handleError()`.
+
+### Fase 2 — Módulo de Socios (Autenticación y Consultas)
+Implementa el principio de "Fricción Cero" (validación solo con el Código de Asociado) utilizando el Patrón Repositorio.
+- `app/Data/Interfaces/SocioRepositoryInterface.php`: Contrato que define métodos obligatorios (`findByCodigo`).
+- `app/Data/Repositories/MySQL/SocioRepository.php`: Implementación concreta del repositorio para MySQL.
+- `app/Modules/Socio/SocioService.php`: Capa de lógica de negocio que abstrae la fuente de datos.
+- `public/api/socio.php`: Punto de entrada HTTP para la API de socios.
+
+### Fase 3 — Módulo de Reclamos
+Permite registrar reclamos (agua turbia, fuga, etc.) asociando la ubicación directamente desde la base de datos (sin pedir GPS al usuario).
+- `app/Data/Interfaces/ReclamoRepositoryInterface.php`: Contrato para reclamos (`createReclamo`, `findByCodigoSocio`).
+- `app/Data/Repositories/MySQL/ReclamoRepository.php`: Implementación concreta para insertar reclamos en MySQL.
+- `app/Modules/Reclamo/ReclamoService.php`: Capa de lógica que valida datos y cruza información usando ambos repositorios (Reclamos y Socios).
+- `public/api/reclamos.php`: Punto de entrada HTTP para la creación de reclamos.
+
+### Fase 4 — Autoloading y Utilidades
+Infraestructura de conveniencia que hace la vida del desarrollador más fácil y evita errores.
+- `app/Core/Autoloader.php`: Implementa el estándar PSR-4 de forma manual (`spl_autoload_register`) para la carga automática de clases sin Composer.
+- `app/bootstrap.php`: Iniciador global que carga el autoloader, la configuración de base de datos, maneja errores y establece headers globales (CORS).
 
 ---
 
 ## Árbol de archivos del proyecto completo
 
-```
+```text
 cosmol-chatbot/
 │
 ├── app/
@@ -38,11 +71,11 @@ cosmol-chatbot/
 │   │   └── Repositories/
 │   │       ├── MySQL/
 │   │       │   ├── SocioRepository.php         ← Fase 2: Implementación MySQL
-│   │       │   └── ReclamoRepository.php        ← Fase 3: Implementación MySQL
+│   │       │   └── ReclamoRepository.php       ← Fase 3: Implementación MySQL
 │   │       │
 │   │       └── Informix/
 │   │           ├── SocioRepository.php         ← Fase 5: Implementación Informix
-│   │           └── ReclamoRepository.php        ← Fase 5: Implementación Informix
+│   │           └── ReclamoRepository.php       ← Fase 5: Implementación Informix
 │   │
 │   ├── Modules/
 │   │   ├── Socio/
@@ -61,55 +94,7 @@ cosmol-chatbot/
 
 ---
 
-## Orden de construcción recomendado
-
-> [!IMPORTANT]
-> Construir en este orden evita dependencias rotas. Cada capa depende de la anterior.
-
-```
-1. database.php          → define las credenciales
-2. Database.php          → usa las credenciales para conectar
-3. Controller.php        → métodos base para todos los endpoints
-4. Autoloader.php        → habilita el descubrimiento de clases
-5. bootstrap.php         → une todo lo anterior en un único include
-6. SocioRepositoryInterface.php  → define el contrato
-7. SocioRepository.php (MySQL)   → implementa el contrato
-8. SocioService.php              → usa el repositorio con lógica
-9. socio.php (endpoint)          → expone el servicio vía HTTP
-10. ReclamoRepositoryInterface.php → nuevo contrato
-11. ReclamoRepository.php (MySQL)  → nueva implementación
-12. ReclamoService.php             → lógica de reclamos
-13. reclamos.php (endpoint)        → expone vía HTTP
-```
-
----
-
-## Preguntas abiertas del plan original
-
-El documento `plan_5_08.md` menciona 3 preguntas pendientes de decisión:
-
-### Pregunta 1: ¿Autoloader manual o Composer?
-> ¿`spl_autoload_register` en PHP puro o Composer con `composer.json`?
-
-**Respuesta:** Empezar con el autoloader manual (Fase 4) ya que no hay paquetes externos por instalar. Se puede migrar a Composer sin romper nada cuando sea necesario.
-
-### Pregunta 2: ¿Endpoints separados o un único `index.php`?
-> ¿`socio.php` + `reclamos.php` por separado o un router central?
-
-**Respuesta:** Se mantienen archivos separados (`socio.php`, `reclamos.php`). Esto simplifica el debug y es más explícito para n8n.
-
-### Pregunta 3: ¿`docker-compose.yml` ahora o después?
-> ¿Preparar Docker en este momento o enfocarse 100% en el código PHP?
-
-**Respuesta:** Enfocarse en el código PHP primero (Fases 1–4). El `docker-compose.yml` puede prepararse en paralelo o al final cuando los endpoints estén validados con XAMPP.
-
----
-
-## Cómo avanzar
-
-Cada vez que estés listo para implementar una fase:
-
-1. Lee el documento de la fase correspondiente.
-2. Confirma que entiendes qué hace cada archivo.
-3. Pídele al agente que genere el código de ese archivo específico.
-4. Verifica con XAMPP antes de pasar a la siguiente fase.
+## Decisiones de Arquitectura Tomadas (Preguntas Abiertas Resueltas)
+- **Autoloader manual vs Composer**: Se usa un autoloader manual (`spl_autoload_register`) ya que no hay dependencias de terceros.
+- **Endpoints separados vs Router**: Se mantienen archivos separados (`socio.php`, `reclamos.php`) para simplificar el debug.
+- **Entorno Docker**: Se utiliza un `docker-compose.yml` local para levantar la API, MySQL y n8n, dejando XAMPP de lado.

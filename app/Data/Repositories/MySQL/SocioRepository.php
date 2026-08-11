@@ -41,7 +41,7 @@ class SocioRepository implements SocioRepositoryInterface
         try {
             // Consulta SQL preparada para evitar inyección SQL.
             // Se extraen específicamente los campos solicitados: cod_socio, nombre, ci, telefono
-            $query = "SELECT cod_socio, nombre, ci, telefono FROM socios WHERE cod_socio = :cod_socio LIMIT 1";
+            $query = "SELECT codigo_socio AS cod_socio, nombre, ci, telefono FROM socio WHERE codigo_socio = :cod_socio LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':cod_socio', $cod_socio, PDO::PARAM_STR);
             $stmt->execute();

@@ -9,7 +9,7 @@ Antes de ejecutar cualquier prueba en Postman, es indispensable asegurar que el 
 ### 1.1 Levantar el Entorno (Docker)
 El proyecto utiliza Docker para emular el entorno de producción (PHP, Apache y MySQL).
 1. Abre tu terminal.
-2. Navega a la raíz del proyecto (`c:\Poyectos\Cosmol-Chatbot`).
+2. Navega a la raíz del proyecto (`c:\Proyectos\Cosmol-Chatbot`).
 3. Ejecuta el comando para levantar los contenedores en segundo plano:
    ```bash
    docker-compose up -d

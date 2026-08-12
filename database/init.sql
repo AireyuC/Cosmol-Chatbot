@@ -1,6 +1,8 @@
 -- Script de inicialización para Docker MySQL
 -- Este script se ejecutará automáticamente la primera vez que se levante el contenedor de base de datos.
--- Las tablas se crean dentro de la base definida en MYSQL_DATABASE (docker-compose / .env).
+
+CREATE DATABASE IF NOT EXISTS cosmol_sai;
+USE cosmol_sai;
 
 CREATE TABLE IF NOT EXISTS socio(
     codigo_socio INT PRIMARY KEY,
@@ -23,15 +25,34 @@ CREATE TABLE IF NOT EXISTS reclamo(
     CONSTRAINT fk_reclamo_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
 
-INSERT INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
-VALUES ("54321","9768156","Eduardo","Cuellar","77712345","Av.SiempreViva 742",1);
+-- (Nota: Si tu compañero tiene las tablas de la Fase 2 como "socios", puede agregarlas a este mismo archivo)
 
-INSERT INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
-VALUES ("12345","1234567","Juan","Perez","77712345","Av.SiempreViva 742",1);
+CREATE TABLE IF NOT EXISTS factura(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_socio INT NOT NULL,
+    periodo VARCHAR(20) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(20) DEFAULT 'PENDIENTE',
+    fecha_emision DATE,
+    fecha_vencimiento DATE,
+    CONSTRAINT fk_factura_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
+);
 
-INSERT INTO reclamo (tipo_reclamo, descripcion, direccion, codigo_socio)
-VALUES ("Fuga de Agua","El tubo principal de la calle está roto y sale mucha agua", "Calle 742", "54321");
+-- ========================================================
+-- MOCK DATA (Datos de Prueba)
+-- ========================================================
+-- Insertamos un socio de prueba (Código: 267657)
+INSERT IGNORE INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion) 
+VALUES (267657, '1234567', 'Juan', 'Pérez', '59170000000', 'Av. Prueba 123', 1);
 
-INSERT INTO reclamo (tipo_reclamo, descripcion, direccion, codigo_socio)
-VALUES ("Fuga de Agua","El tubo principal de la calle está roto y sale mucha agua", "Calle 742", "12345");
+-- Insertamos facturas para este socio
+-- Una pagada (Histórico)
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Mayo-2026', 95.50, 'PAGADA', '2026-05-01', '2026-05-15');
 
+-- Dos pendientes (Deuda actual)
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Junio-2026', 107.60, 'PENDIENTE', '2026-06-01', '2026-06-15');
+
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Julio-2026', 114.30, 'PENDIENTE', '2026-07-01', '2026-07-15');

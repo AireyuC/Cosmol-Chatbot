@@ -64,4 +64,39 @@ class SocioService
             'data' => null
         ];
     }
+
+    /**
+     * Consulta las deudas/facturas pendientes de un socio.
+     *
+     * @param string $codigo_socio El código fijo del socio.
+     * @return array Arreglo estandarizado con las deudas o un mensaje de error.
+     */
+    public function consultarDeuda(string $codigo_socio): array
+    {
+        $codigo_socio = trim($codigo_socio);
+
+        if (empty($codigo_socio)) {
+            return [
+                'success' => false,
+                'message' => 'El código de socio es requerido.',
+                'data' => null
+            ];
+        }
+
+        $deudaData = $this->socioRepository->getDeuda($codigo_socio);
+
+        if ($deudaData === null) {
+            return [
+                'success' => false,
+                'message' => 'No se pudo obtener información de deudas para este socio.',
+                'data' => null
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Deudas consultadas exitosamente.',
+            'data' => $deudaData
+        ];
+    }
 }

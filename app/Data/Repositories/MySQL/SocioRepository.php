@@ -55,4 +55,15 @@ class SocioRepository implements SocioRepositoryInterface
             return null;
         }
     }
+
+    /**
+     * Stub: La BD MySQL local no tiene deudas reales.
+     * Esta funcionalidad está implementada en el repositorio Cosmol (API externa).
+     * @param string $codigo_socio
+     * @return array|null
+     */
+    public function getDeuda(string $codigo_socio): ?array
+    {
+        return null;
+    }
 }

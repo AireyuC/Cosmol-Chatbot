@@ -13,3 +13,8 @@ define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 // Entorno de la Aplicación
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 define('APP_DEBUG', filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BOOLEAN));
+
+// API externa COSMOL (Informix real)
+// Si COSMOL_API_URL está vacío, el sistema usa MySQL local de desarrollo.
+define('COSMOL_API_URL', getenv('COSMOL_API_URL') ?: '');
+define('COSMOL_API_TOKEN', getenv('COSMOL_API_TOKEN') ?: '');

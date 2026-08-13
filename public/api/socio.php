@@ -5,14 +5,14 @@ declare(strict_types=1);
 // Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
 require_once __DIR__ . '/../../app/Config/database.php';
 require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Core/Database.php';
 require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/SocioRepository.php';
+require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
+require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
 require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
 
 use App\Core\Controller;
-use App\Core\Database;
-use App\Data\Repositories\MySQL\SocioRepository;
+use App\Integrations\CosmolApi\ClienteApiCosmol;
+use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
 
 /**
@@ -27,10 +27,13 @@ class SocioEndpoint extends Controller
         $cod_socio = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Soportar tanto JSON como Form Data
             $input = json_decode(file_get_contents('php://input'), true);
-            $cod_socio = $input['cod_socio'] ?? null;
+            $cod_socio = $_POST['cod_socio'] ?? ($input['cod_socio'] ?? null);
+            $action = $_POST['action'] ?? ($input['action'] ?? 'validar');
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $cod_socio = $_GET['cod_socio'] ?? null;
+            $action = $_GET['action'] ?? 'validar';
         } else {
             // Método no permitido
             $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
@@ -40,29 +43,23 @@ class SocioEndpoint extends Controller
             $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
         }
 
-        // --- INICIO DEL MOCK TEMPORAL (Borrar cuando la BD esté lista) ---
-        // Simula que la base de datos ya está conectada y encontró al usuario
-        $this->json([
-            'status' => 'success',
-            'mensaje' => "¡Hola! Hemos verificado tu código $cod_socio en la base de datos simulada. No tienes deudas pendientes.",
-            'datos_socio' => [
-                'nombre' => 'Asociado de Prueba',
-                'deuda_total' => 0
-            ]
-        ], 200);
-        return;
-        // --- FIN DEL MOCK TEMPORAL ---
+        // Elimino la lectura redundante de action que estaba aquí
 
         try {
-            // Instanciar la base de datos (Singleton)
-            $db = Database::getInstance();
+            // Instanciar el cliente HTTP de la API externa
+            $clienteApi = new ClienteApiCosmol();
 
-            // Inyección de dependencias manual (Wiring)
-            $repository = new SocioRepository($db);
+            // Inyección de dependencias
+            $repository = new RepositorioSocioApi($clienteApi);
             $service = new SocioService($repository);
 
-            // Ejecutar la lógica de negocio
-            $resultado = $service->validarSocio((string)$cod_socio);
+            // Ejecutar la lógica de negocio según la acción
+            if ($action === 'deudas') {
+                $resultado = $service->obtenerDeudas((string)$cod_socio);
+            } else {
+                // Por defecto: validar
+                $resultado = $service->validarSocio((string)$cod_socio);
+            }
 
             // Devolver la respuesta usando el método del Controller base
             $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);

@@ -5,17 +5,16 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "whatsapp",
-        "responseMode": "onReceived",
         "options": {}
       },
       "name": "1. Recibir Webhook Meta",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
       "position": [
-        0,
-        200
+        -448,
+        -32
       ],
-      "id": "bb6e927b-2321-4f10-911d-23a504b77f98",
+      "id": "3a3f2b43-fc80-40d2-ac95-1022d8a00473",
       "webhookId": "cosmol-webhook-id-post"
     },
     {
@@ -47,10 +46,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        200,
-        200
+        -240,
+        -32
       ],
-      "id": "e81d7d0a-9d7a-4a2e-8393-2a49b6b7a5a8"
+      "id": "78ef46b2-b58d-4e00-b588-9090ab91e44e"
     },
     {
       "parameters": {
@@ -80,10 +79,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        420,
-        200
+        -32,
+        -32
       ],
-      "id": "18f99ad5-2f88-4c6f-a88a-d99f848fc5b5"
+      "id": "ae091a86-5858-4fbb-81e5-9f001adcda1b"
     },
     {
       "parameters": {
@@ -104,10 +103,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        700,
-        60
+        256,
+        -176
       ],
-      "id": "42116035-7cba-4e4c-81ba-4f27598c0d12"
+      "id": "bf2fa806-5a7a-44a7-9c79-0997e47ddec8"
     },
     {
       "parameters": {
@@ -126,10 +125,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        920,
-        60
+        480,
+        -176
       ],
-      "id": "84828135-2c8c-4fdf-9730-80a5deafbbde"
+      "id": "3fca2f40-b490-490d-b2d8-7842ab76084c"
     },
     {
       "parameters": {
@@ -155,16 +154,16 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1140,
-        60
+        704,
+        -176
       ],
+      "id": "72c632ef-4a42-427e-96f2-be886f01e80d",
       "credentials": {
         "httpMultipleHeadersAuth": {
-          "id": "1Jzh8GZc1R1EReZF",
+          "id": "7gdJ773rWTCIY1il",
           "name": "Multiple Headers Auth account"
         }
-      },
-      "id": "764ea079-c81d-4054-946f-c1f0b09dc462"
+      }
     },
     {
       "parameters": {
@@ -194,10 +193,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        700,
-        340
+        256,
+        112
       ],
-      "id": "5f643e86-1d13-41bb-b08e-1f25da3cd835"
+      "id": "79551b73-9c01-4bb2-87d9-aad84c9c5f42"
     },
     {
       "parameters": {
@@ -218,10 +217,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        920,
-        340
+        480,
+        112
       ],
-      "id": "119e2fb7-9b48-4394-bb9e-1bb3f317b203"
+      "id": "23a8fbba-35c9-4410-9dd8-2583fed8e2f8"
     },
     {
       "parameters": {
@@ -230,8 +229,7 @@
           "string": [
             {
               "name": "meta_payload",
-              "value": "={{ {\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": $json.mensaje_texto + \"\\n\\n💳 *Link de pago seguro:*\\nhttps://multipago.com/service/cosmol_payment/first\\n\\n¡Gracias por preferir nuestros canales digitales!\"\n  }\n} }}",
-              "type": "object"
+              "value": "={{ JSON.stringify({   \"messaging_product\": \"whatsapp\",   \"recipient_type\": \"individual\",   \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,   \"type\": \"text\",   \"text\": {     \"body\": $json.mensaje_texto + \"\\n\\n💳 *Link de pago seguro:*\\nhttps://multipago.com/service/cosmol_payment/first\\n\\n¡Gracias por preferir nuestros canales digitales!\"   } }) }}"
             }
           ]
         },
@@ -241,10 +239,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1140,
-        340
+        704,
+        112
       ],
-      "id": "673f3248-ff81-424b-bb16-c220f8373307"
+      "id": "88a318a8-e922-4a4c-b24c-603ea85d1b28"
     },
     {
       "parameters": {
@@ -270,18 +268,19 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1360,
-        340
+        928,
+        112
       ],
+      "id": "beabd3c8-699e-40b6-b7bd-c3c477c1c614",
       "credentials": {
         "httpMultipleHeadersAuth": {
-          "id": "1Jzh8GZc1R1EReZF",
+          "id": "7gdJ773rWTCIY1il",
           "name": "Multiple Headers Auth account"
         }
-      },
-      "id": "e96ff7ff-517a-42c2-b5e1-512ebff09d94"
+      }
     }
   ],
+  "pinData": {},
   "connections": {
     "1. Recibir Webhook Meta": {
       "main": [
@@ -379,7 +378,14 @@
       ]
     }
   },
+  "active": true,
   "settings": {
     "executionOrder": "v1"
-  }
+  },
+  "versionId": "ac9dad2e-4ede-43cf-be9e-9ad4839a4dcb",
+  "meta": {
+    "instanceId": "254bc5b812e8eeca0359f1ff540f1a24499433048230bf3ae8c7cd1f643f3429"
+  },
+  "id": "Z0cmnpHEwUYnO6t2",
+  "tags": []
 }

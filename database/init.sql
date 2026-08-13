@@ -22,3 +22,21 @@ CREATE TABLE IF NOT EXISTS reclamo(
     codigo_socio INT NOT NULL,
     CONSTRAINT fk_reclamo_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
+
+
+insert into socio 
+(codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
+values
+('267657', '1234567', 'Juan', 'Perez', '59170000000', 'Av. Prueba 123', 1); 
+
+insert into reclamo
+(codigo_socio, tipo_reclamo, descripcion, direccion, estado)
+values
+('267657', 'Agua turbia', 'El agua sale turbia', 'Av. Prueba 123', 'PENDIENTE');
+
+insert into factura 
+(codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento)
+values
+('267657', 'Enero-2025', 100, 'PENDIENTE', '2025-01-01', '2025-01-31');
+
+

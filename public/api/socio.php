@@ -39,9 +39,10 @@ class SocioEndpoint extends Controller
         // --- INICIO DEL MOCK TEMPORAL (Borrar cuando la BD esté lista) ---
         // Simula que la base de datos ya está conectada y encontró al usuario
         $this->json([
-            'status' => 'success',
-            'mensaje' => "¡Hola! Hemos verificado tu código $cod_socio en la base de datos simulada. No tienes deudas pendientes.",
-            'datos_socio' => [
+            'success' => true,
+            'message' => "¡Hola! Hemos verificado tu código $codigo_socio en la base de datos simulada.",
+            'data' => [
+                'codigo_socio' => $codigo_socio,
                 'nombre' => 'Asociado de Prueba',
                 'deuda_total' => 0
             ]

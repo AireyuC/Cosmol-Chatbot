@@ -17,14 +17,21 @@ use App\Modules\Socio\SocioService;
 
 /**
  * Endpoint de la API para Socios
- * Maneja las peticiones entrantes desde n8n.
+ *
+ * Selección de repositorio según entorno:
+ *  - Si COSMOL_API_URL está configurado en el .env → usa CosmolSocioRepository (API real).
+ *  - Si no → usa MySQLSocioRepository (BD local de desarrollo).
+ *
+ * Acciones disponibles (parámetro GET 'action'):
+ *  - 'validar'  → busca si el socio existe (por defecto)
+ *  - 'deudas'   → devuelve las deudas/facturas pendientes del socio
  */
 class SocioEndpoint extends Controller
 {
     public function handleRequest()
     {
-        // Obtener el código de socio, ya sea de GET (query param) o POST (JSON payload)
-        $cod_socio = null;
+        $codigo_socio = null;
+        $action       = 'validar'; // acción por defecto
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Soportar tanto JSON como Form Data
@@ -35,8 +42,8 @@ class SocioEndpoint extends Controller
             $cod_socio = $_GET['cod_socio'] ?? null;
             $action = $_GET['action'] ?? 'validar';
         } else {
-            // Método no permitido
-            $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
+            $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
+            return;
         }
 
         if ($cod_socio === null) {
@@ -66,7 +73,6 @@ class SocioEndpoint extends Controller
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
-            // Manejo de errores a nivel superior (ej. falla en conexión BD)
             error_log("Error crítico en SocioEndpoint: " . $e->getMessage());
             $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
         }

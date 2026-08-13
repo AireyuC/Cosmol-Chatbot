@@ -66,7 +66,36 @@ class SocioService
                     'direccion' => $socioData['DIRECCION'] ?? ''
                 ]
             ];
-        } else {
+        }
+
+        return [
+            'success' => false,
+            'message' => 'No se encontró un asociado con el código proporcionado.',
+            'data' => null
+        ];
+    }
+
+    /**
+     * Consulta las deudas/facturas pendientes de un socio.
+     *
+     * @param string $codigo_socio El código fijo del socio.
+     * @return array Arreglo estandarizado con las deudas o un mensaje de error.
+     */
+    public function consultarDeuda(string $codigo_socio): array
+    {
+        $codigo_socio = trim($codigo_socio);
+
+        if (empty($codigo_socio)) {
+            return [
+                'success' => false,
+                'message' => 'El código de socio es requerido.',
+                'data' => null
+            ];
+        }
+
+        $deudaData = $this->socioRepository->getDeuda($codigo_socio);
+
+        if ($deudaData === null) {
             return [
                 'status' => 'not_found',
                 'mensaje' => 'No se encontró un asociado con el código proporcionado.',
@@ -144,5 +173,11 @@ class SocioService
                 'mensaje_texto' => 'Ocurrió un error al obtener las deudas o no se encontró el socio.'
             ];
         }
+
+        return [
+            'success' => true,
+            'message' => 'Deudas consultadas exitosamente.',
+            'data' => $deudaData
+        ];
     }
 }

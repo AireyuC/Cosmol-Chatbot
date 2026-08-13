@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-// Punto de entrada HTTP del módulo de Socios.
-// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
-require_once __DIR__ . '/../../app/bootstrap.php';
+// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
+require_once __DIR__ . '/../../app/Config/database.php';
+require_once __DIR__ . '/../../app/Core/Controller.php';
+require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
+require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
+require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
+require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
 
 use App\Core\Controller;
-use App\Core\Database;
-use App\Data\Repositories\MySQL\SocioRepository as MySQLSocioRepository;
-use App\Data\Repositories\Cosmol\SocioRepository as CosmolSocioRepository;
+use App\Integrations\CosmolApi\ClienteApiCosmol;
+use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
 
 /**
@@ -31,53 +34,43 @@ class SocioEndpoint extends Controller
         $action       = 'validar'; // acción por defecto
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input        = json_decode(file_get_contents('php://input'), true);
-            $codigo_socio = $input['codigo_socio'] ?? null;
-            $action       = $input['action'] ?? 'validar';
-
+            // Soportar tanto JSON como Form Data
+            $input = json_decode(file_get_contents('php://input'), true);
+            $cod_socio = $_POST['cod_socio'] ?? ($input['cod_socio'] ?? null);
+            $action = $_POST['action'] ?? ($input['action'] ?? 'validar');
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $codigo_socio = $_GET['codigo_socio'] ?? null;
-            $action       = $_GET['action'] ?? 'validar';
-
+            $cod_socio = $_GET['cod_socio'] ?? null;
+            $action = $_GET['action'] ?? 'validar';
         } else {
             $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
             return;
         }
 
-        if ($codigo_socio === null) {
-            $this->json(['success' => false, 'message' => 'El parámetro codigo_socio es requerido', 'data' => null], 400);
-            return;
+        if ($cod_socio === null) {
+            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
         }
 
-        try {
-            // --- Selección de Repositorio según entorno ---
-            // Si COSMOL_API_URL está definida en el .env, usamos la API real de COSMOL.
-            // Si no, fallback al repositorio MySQL local de desarrollo.
-            if (defined('COSMOL_API_URL') && !empty(COSMOL_API_URL)) {
-                $repository = new CosmolSocioRepository();
-            } else {
-                $db         = Database::getInstance();
-                $repository = new MySQLSocioRepository($db);
-            }
+        // Elimino la lectura redundante de action que estaba aquí
 
+        try {
+            // Instanciar el cliente HTTP de la API externa
+            $clienteApi = new ClienteApiCosmol();
+
+            // Inyección de dependencias
+            $repository = new RepositorioSocioApi($clienteApi);
             $service = new SocioService($repository);
 
-            // --- Despacho de acciones ---
-            switch ($action) {
-
-                case 'deudas':
-                    $resultado  = $service->consultarDeuda((string) $codigo_socio);
-                    $httpStatus = $resultado['success'] ? 200 : 404;
-                    $this->json($resultado, $httpStatus);
-                    break;
-
-                case 'validar':
-                default:
-                    $resultado  = $service->validarSocio((string) $codigo_socio);
-                    $httpStatus = $resultado['success'] ? 200 : 404;
-                    $this->json($resultado, $httpStatus);
-                    break;
+            // Ejecutar la lógica de negocio según la acción
+            if ($action === 'deudas') {
+                $resultado = $service->obtenerDeudas((string)$cod_socio);
+            } else {
+                // Por defecto: validar
+                $resultado = $service->validarSocio((string)$cod_socio);
             }
+
+            // Devolver la respuesta usando el método del Controller base
+            $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);
+            $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
             error_log("Error crítico en SocioEndpoint: " . $e->getMessage());

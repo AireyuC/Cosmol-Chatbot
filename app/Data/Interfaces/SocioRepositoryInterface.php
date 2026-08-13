@@ -18,16 +18,13 @@ interface SocioRepositoryInterface
      * @param string $codigo_socio El código fijo del socio a buscar.
      * @return array|null Retorna un array asociativo con los datos del socio si lo encuentra, o null si no.
      */
-    public function findByCodigo(string $codigo_socio): ?array;
+    public function findByCodigo(string $cod_socio): ?array;
 
     /**
-     * Consulta las deudas/facturas pendientes de un socio.
+     * Busca las deudas pendientes de un socio por su código fijo.
      *
-     * @param string $codigo_socio El código fijo del socio.
-     * @return array|null Array con las deudas pendientes o null si no se puede obtener.
+     * @param string $cod_socio El código fijo del socio.
+     * @return array|null Retorna un array con el listado de deudas, o null si no hay datos.
      */
-    public function getDeuda(string $codigo_socio): ?array;
-
-    // @todo Pendiente (funcionalidad "Consultas de Cuenta"):
-    // getHistorialFacturas(string $codigo): array
+    public function findDeudasByCodigo(string $cod_socio): ?array;
 }

@@ -1,99 +1,71 @@
-# Estructura del Proyecto - Chatbot COSMOL (Backend)
+# Estructura y Arquitectura del Proyecto - Chatbot COSMOL (Backend)
 
-Este documento describe la organización de carpetas del backend en PHP y el rol de cada una. El objetivo es que cualquier integrante del equipo pueda ubicar rápidamente dónde debe agregar o modificar código.
+Este documento describe la arquitectura y la organización de carpetas del backend en PHP. El objetivo es que cualquier integrante del equipo entienda el rol de cada capa y sepa dónde agregar o modificar código siguiendo los estándares definidos.
 
-## Por qué no usamos MVC clásico
+## Arquitectura: Capas (Service-Repository Pattern)
 
-Al no existir Frontend, el patrón **MVC tradicional** (Model-View-Controller) no aplica tal cual: no hay Vistas en formato HTML. Sin embargo, el concepto de "Vista" no desaparece del todo, sino que se transforma en la **serialización de la respuesta JSON**.
+Al ser una API consumida exclusivamente por n8n (no hay Frontend HTML), el patrón **MVC clásico no aplica directamente**. En su lugar, el proyecto adopta una arquitectura basada en capas orientada al dominio (Controller → Service → Repository):
 
-Por eso este proyecto adopta una variante orientada a APIs REST: **Controller → Service → Repository** (arquitectura en capas / Service Layer pattern). Es funcionalmente un MVC adaptado, donde:
+- **Controller (Endpoints)**: Archivos independientes en `public/api/` que reciben la petición HTTP de n8n, leen los parámetros y delegan la ejecución al Servicio.
+- **Service (Capa de Negocio)**: Clases en `app/Modules/` que contienen las reglas del negocio (ej. validar si un reclamo procede, aplicar lógica de "fricción cero").
+- **Repository (Capa de Datos)**: Clases en `app/Data/Repositories/` que se encargan de armar y ejecutar las sentencias SQL. 
+- **Interfaces**: Contratos en `app/Data/Interfaces/` que garantizan que los repositorios sean intercambiables.
 
-- **Model** se divide en **Repository** (acceso a datos) y **Entity** (estructura del dato: Socio, Factura, Reclamo).
-- **View** se reduce a una clase **Response** que arma el JSON estandarizado.
-- **Controller** conserva su rol: recibe la petición HTTP, valida entrada y delega al Service.
+> [!IMPORTANT]
+> **El valor de esta arquitectura:** El Servicio (`SocioService`) nunca sabe si está hablando con MySQL (entorno de desarrollo) o con IBM Informix (producción). Solo habla con una Interfaz. Esto permite la futura migración de base de datos sin tocar ni una línea de la lógica de negocio principal.
 
-Este enfoque es el que mejor encaja con el requisito de poder migrar de MySQL (Fase 1) a Informix 4GL (Fase 2) sin alterar la lógica de negocio, ya que el Service depende de una **interfaz** de repositorio y no de una implementación concreta.
+## Estructura de carpetas actual
 
-## Estructura de carpetas
-
-```
-/cosmol-chatbot
-├── public/
-│   └── index.php              ← único punto de entrada (front controller)
-│
+```text
+cosmol-chatbot/
 ├── app/
-│   ├── Core/
-│   │   ├── Router.php         ← enrutador propio (PHP puro)
-│   │   ├── Request.php        ← wrapper de $_GET/$_POST/php://input
-│   │   ├── Response.php       ← respuestas JSON estandarizadas
-│   │   └── Autoloader.php     ← solo si no se usa Composer
-│   │
 │   ├── Config/
-│   │   ├── database.php       ← config de conexión (MySQL / Informix)
-│   │   └── env.php
-│   │
+│   │   └── database.php              ← Constantes de entorno y BD
+│   ├── Core/
+│   │   ├── Autoloader.php            ← Autocarga de clases (PSR-4 manual)
+│   │   ├── Controller.php            ← Métodos base (json, getBody, handleError)
+│   │   └── Database.php              ← Singleton de conexión PDO
+│   ├── Data/
+│   │   ├── Interfaces/
+│   │   │   ├── SocioRepositoryInterface.php
+│   │   │   └── ReclamoRepositoryInterface.php
+│   │   └── Repositories/
+│   │       ├── MySQL/
+│   │       │   ├── SocioRepository.php
+│   │       │   └── ReclamoRepository.php
+│   │       └── Informix/             ← Fase 5 (Futura)
 │   ├── Modules/
-│   │   ├── Clientes/
-│   │   │   ├── Controllers/
-│   │   │   │   └── ClienteController.php
-│   │   │   ├── Services/
-│   │   │   │   └── ClienteService.php
-│   │   │   ├── Repositories/
-│   │   │   │   ├── ClienteRepositoryInterface.php
-│   │   │   │   └── ClienteRepositoryMySQL.php
-│   │   │   └── Entities/
-│   │   │       └── Socio.php
-│   │   │
-│   │   ├── Facturacion/
-│   │   │   ├── Controllers/
-│   │   │   ├── Services/
-│   │   │   ├── Repositories/
-│   │   │   └── Entities/
-│   │   │
-│   │   └── Reclamos/
-│   │       ├── Controllers/
-│   │       ├── Services/
-│   │       ├── Repositories/
-│   │       └── Entities/
-│   │
-│   └── Data/
-│       └── Connection/
-│           ├── MySQLConnection.php
-│           └── InformixConnection.php   ← se agrega en Fase 2 (driver pdo_informix)
+│   │   ├── Socio/
+│   │   │   └── SocioService.php
+│   │   └── Reclamo/
+│   │       └── ReclamoService.php
+│   └── bootstrap.php                 ← Inicializador global del sistema
 │
-├── .htaccess                  ← redirige todo a public/index.php
-├── .env
-└── composer.json
+├── public/
+│   └── api/
+│       ├── socio.php                 ← Endpoint independiente
+│       └── reclamos.php              ← Endpoint independiente
+│
+├── database/
+│   └── init.sql                      ← Esquema SQL canónico para Docker
+├── docker-compose.yml                ← Orquestación (n8n, backend, mysql)
+└── .env                              ← Variables de entorno (credenciales)
 ```
 
-## Rol de cada carpeta
+## Rol de cada directorio
 
-| Carpeta | Rol |
+| Carpeta / Archivo | Rol |
 |---|---|
-| `public/index.php` | Punto único de entrada. Todo request pasa por aquí y el Router decide a qué Controller ir. Evita exponer archivos PHP sueltos como endpoints (ej. `socio.php`, `reclamos.php` directamente accesibles). |
-| `Core/Router.php` | Define rutas tipo `POST /api/clientes/verificar` → `ClienteController@verificar`. |
-| `Core/Request.php` | Estandariza la lectura de datos de entrada (query params, body JSON) sin depender directamente de superglobales en cada Controller. |
-| `Core/Response.php` | Centraliza el formato de salida JSON (éxito, error, códigos HTTP) para que todos los endpoints respondan de manera consistente hacia n8n. |
-| `Modules/*/Controllers/` | Solo reciben el request, validan datos de entrada y llaman al Service correspondiente. No acceden directamente a la base de datos. |
-| `Modules/*/Services/` | Aquí vive la lógica de negocio (ej. "verificar código de socio antes de devolver facturas", "rechazar reconexión si la mora supera 2 meses"). |
-| `Modules/*/Repositories/` (con interfaz) | Pieza clave para la migración MySQL → Informix. El Service depende de la **interfaz**, no de la implementación concreta. En Fase 2 solo se crea `ClienteRepositoryInformix.php` implementando la misma interfaz y se cambia la configuración, sin tocar Services ni Controllers. |
-| `Modules/*/Entities/` | Clases simples que representan Socio, Factura y Reclamo (solo datos, sin lógica de conexión a BD). |
-| `Data/Connection/` | Adaptadores de conexión física a cada motor de base de datos (MySQL en desarrollo, Informix vía `pdo_informix` en producción). |
+| `public/api/` | **Endpoints independientes.** A diferencia de un *front controller* (un solo `index.php` con router), aquí se usan archivos separados (ej. `socio.php`). Esto hace que la integración de webhooks con n8n sea explícita, directa y muy fácil de depurar. |
+| `app/Core/` | **Infraestructura base.** El `Autoloader` evita los molestos `require_once` manuales a lo largo del código. El `Controller` estandariza el JSON de respuesta (`{ success, message, data }`), y `Database` maneja el singleton de la conexión PDO. |
+| `app/Modules/*/` | **Lógica de negocio.** Aquí viven los Servicios. Tienen estrictamente prohibido acceder a la base de datos de manera directa; deben pedir la información a través de los Repositorios inyectados. |
+| `app/Data/Interfaces/` | **Contratos.** Aseguran que métodos como `findByCodigo()` existan obligatoriamente en todos los repositorios que los implementen, sin importar el motor de BD. |
+| `app/Data/Repositories/` | **Consultas SQL.** Separa las sentencias puras de MySQL (usadas en Docker para desarrollo y testing) de las sentencias Informix (producción). |
+| `app/bootstrap.php` | **Carga inicial.** Archivo requerido por todos los endpoints para inicializar el Autoloader, cargar variables de entorno, y configurar headers (CORS). |
 
-## Recomendación: Composer solo para autoload
+## Decisiones Técnicas Clave
 
-PHP 7.3 es compatible con Composer. Se recomienda usarlo únicamente para el **autoload PSR-4**, sin añadir ningún framework, para no violar la restricción de "PHP puro sin framework":
-
-```json
-{
-  "autoload": {
-    "psr-4": {
-      "App\\": "app/"
-    }
-  }
-}
-```
-
-Esto reemplaza la necesidad de un `Autoloader.php` manual y simplifica el mantenimiento del proyecto a medida que se agreguen nuevos módulos (Clientes, Facturación, Reclamos).
-
-**Nota:** el esqueleto de carpetas y archivos NO debe crearse hasta que el responsable lo indique explícitamente.
+1. **Sin frameworks pesados:** Desarrollo en PHP puro (`Vanilla PHP 7.3`) para asegurar máxima compatibilidad con el entorno de servidor local y alto rendimiento.
+2. **Autoloader nativo sin Composer:** Se implementó `spl_autoload_register` siguiendo el estándar PSR-4 de manera nativa. Al no haber dependencias de terceros por el momento, esto mantiene el proyecto simple.
+3. **Respuesta Estandarizada:** Todas las llamadas a la API devuelven una estructura JSON uniforme: `{"success": bool, "message": string, "data": array|null}`.
+4. **Entorno Contenerizado:** El desarrollo local se realiza exclusivamente con Docker (PHP + n8n + MySQL 5.7). Se elimina la dependencia de herramientas como XAMPP, garantizando que el entorno de todos los desarrolladores sea idéntico.

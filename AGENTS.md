@@ -18,7 +18,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
   - **API PHP:** Se levantará en su propio contenedor, garantizando un entorno escalable e idéntico para producción.
 - **Base de Datos:**
   - **Producción:** IBM Informix 4GL (mediante el driver `pdo_informix` compilado dentro del contenedor de Docker).
-  - **Desarrollo Local:** XAMPP VERSION 3.2.2 (MySQL) simulando un espejo del sistema SAI.
+  - **Desarrollo Local:** MySQL 5.7 corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) simulando un espejo del sistema SAI. Se usa exclusivamente Docker para pruebas; no se utiliza XAMPP.
 
 ## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
 1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
@@ -37,7 +37,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 
 ## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
-- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, instalación de XAMPP local y creación de Endpoints PHP simulados (Mocks).
+- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + MySQL) y creación de Endpoints PHP simulados (Mocks).
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
 - **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
 - **Sprint 4 (Migración e Informix):** Configuración final de los conectores `pdo_informix` para apuntar el código PHP local hacia el servidor de producción.

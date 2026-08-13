@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data\Repositories\MySQL;
 
 use App\Data\Interfaces\ReclamoRepositoryInterface;
@@ -22,7 +24,7 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
     public function createReclamo(array $data): int {
         // Preparamos la consulta SQL para evitar inyecciones SQL
         $stmt = $this->pdo->prepare(
-            "INSERT INTO reclamos
+            "INSERT INTO reclamo
                 (codigo_socio, tipo_reclamo, descripcion, direccion, estado, fecha_creacion)
              VALUES
                 (:codigo_socio, :tipo, :descripcion, :direccion, 'PENDIENTE', NOW())"
@@ -46,7 +48,7 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
     public function findByCodigoSocio(string $codigo): array {
         $stmt = $this->pdo->prepare(
             "SELECT id, codigo_socio, tipo_reclamo, descripcion, direccion, estado, fecha_creacion 
-             FROM reclamos 
+             FROM reclamo 
              WHERE codigo_socio = :codigo 
              ORDER BY fecha_creacion DESC"
         );

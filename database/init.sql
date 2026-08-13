@@ -25,8 +25,6 @@ CREATE TABLE IF NOT EXISTS reclamo(
     CONSTRAINT fk_reclamo_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
 
--- (Nota: Si tu compañero tiene las tablas de la Fase 2 como "socios", puede agregarlas a este mismo archivo)
-
 CREATE TABLE IF NOT EXISTS factura(
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo_socio INT NOT NULL,
@@ -38,9 +36,8 @@ CREATE TABLE IF NOT EXISTS factura(
     CONSTRAINT fk_factura_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
 
--- ========================================================
--- MOCK DATA (Datos de Prueba)
--- ========================================================
+-- DATOS DE PRUEBA
+
 -- Insertamos un socio de prueba (Código: 267657)
 INSERT IGNORE INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion) 
 VALUES (267657, '1234567', 'Juan', 'Pérez', '59170000000', 'Av. Prueba 123', 1);

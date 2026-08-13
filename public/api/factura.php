@@ -2,49 +2,56 @@
 
 declare(strict_types=1);
 
-// Punto de entrada HTTP del módulo de Facturas.
-// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
-require_once __DIR__ . '/../../app/bootstrap.php';
+// Carga manual de dependencias
+require_once __DIR__ . '/../../app/Core/Controller.php';
+require_once __DIR__ . '/../../app/Config/database.php';
+require_once __DIR__ . '/../../app/Core/Controller.php';
+require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
+require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
+require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
+require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
 
 use App\Core\Controller;
+use App\Integrations\CosmolApi\ClienteApiCosmol;
+use App\Data\Repositories\Api\RepositorioSocioApi;
+use App\Modules\Socio\SocioService;
 
 /**
- * Endpoint temporal de MOCK para Facturas
+ * Endpoint para Facturas (Deudas)
  */
 class FacturaEndpoint extends Controller
 {
     public function handleRequest()
     {
-        $codigo_socio = null;
+        $cod_socio = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Soportar tanto JSON como Form Data
             $input = json_decode(file_get_contents('php://input'), true);
-            $codigo_socio = $input['codigo_socio'] ?? $input['cod_socio'] ?? null;
+            $cod_socio = $_POST['cod_socio'] ?? ($input['cod_socio'] ?? null);
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $codigo_socio = $_GET['codigo_socio'] ?? $_GET['cod_socio'] ?? null;
+            $cod_socio = $_GET['cod_socio'] ?? null;
         } else {
-            $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
+            $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
         }
 
-        if ($codigo_socio === null) {
-            $this->json(['success' => false, 'message' => 'El parámetro codigo_socio es requerido', 'data' => null], 400);
+        if ($cod_socio === null) {
+            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
         }
 
-        // --- INICIO DEL MOCK TEMPORAL ---
-        // Simula la respuesta de la base de datos para el menú interactivo
-        $this->json([
-            'success' => true,
-            'message' => "El Código Fijo ($codigo_socio) tiene 2 facturas impagas, cuyo monto total es 221,90 Bs.",
-            'data' => [
-                'codigo_socio' => $codigo_socio,
-                'total_deuda' => 221.90,
-                'facturas_pendientes' => [
-                    ['periodo' => 'Junio-2026', 'monto' => 107.60, 'estado' => 'PENDIENTE'],
-                    ['periodo' => 'Julio-2026', 'monto' => 114.30, 'estado' => 'PENDIENTE']
-                ]
-            ]
-        ], 200);
-        // --- FIN DEL MOCK TEMPORAL ---
+        try {
+            $clienteApi = new ClienteApiCosmol();
+            $repository = new RepositorioSocioApi($clienteApi);
+            $service = new SocioService($repository);
+
+            $resultado = $service->obtenerDeudas((string)$cod_socio);
+
+            $httpStatus = $resultado['status'] === 'success' ? 200 : 400;
+            $this->json($resultado, $httpStatus);
+        } catch (Exception $e) {
+            error_log("Error crítico en FacturaEndpoint: " . $e->getMessage());
+            $this->json(['status' => 'error', 'mensaje_texto' => 'Ocurrió un error interno en el servidor'], 500);
+        }
     }
 }
 

@@ -31,37 +31,118 @@ class SocioService
     /**
      * Valida la existencia de un socio por su código y devuelve sus datos formateados.
      *
-     * @param string $codigo_socio El código fijo a validar.
+     * @param string $cod_socio El código fijo a validar.
      * @return array Arreglo estandarizado con el resultado de la operación.
      */
-    public function validarSocio(string $codigo_socio): array
+    public function validarSocio(string $cod_socio): array
     {
         // Limpiamos el código ingresado (ej. quitamos espacios)
-        $codigo_socio = trim($codigo_socio);
+        $cod_socio = trim($cod_socio);
 
-        if (empty($codigo_socio)) {
+        if (empty($cod_socio)) {
             return [
-                'success' => false,
-                'message' => 'El código de socio es requerido.',
-                'data' => null
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
             ];
         }
 
         // Delegamos la búsqueda al repositorio
-        $socioData = $this->socioRepository->findByCodigo($codigo_socio);
+        $socioData = $this->socioRepository->findByCodigo($cod_socio);
 
         if ($socioData) {
+            // Limpiar campos devueltos por la API (quitar espacios en blanco sobrantes)
+            if (isset($socioData['NOMBRE'])) {
+                $socioData['NOMBRE'] = trim($socioData['NOMBRE']);
+            }
+            if (isset($socioData['DIRECCION'])) {
+                $socioData['DIRECCION'] = trim($socioData['DIRECCION']);
+            }
+
             return [
-                'success' => true,
-                'message' => 'Socio encontrado exitosamente.',
-                'data' => $socioData
+                'status' => 'success',
+                'mensaje' => 'Socio encontrado exitosamente.',
+                'datos_socio' => [
+                    'nombre' => $socioData['NOMBRE'],
+                    'direccion' => $socioData['DIRECCION'] ?? ''
+                ]
+            ];
+        } else {
+            return [
+                'status' => 'not_found',
+                'mensaje' => 'No se encontró un asociado con el código proporcionado.',
+                'datos_socio' => null
+            ];
+        }
+    }
+
+    /**
+     * Obtiene el listado de deudas pendientes y calcula el monto total.
+     *
+     * @param string $cod_socio El código fijo.
+     * @return array Arreglo estandarizado con el resultado y cálculos.
+     */
+    public function obtenerDeudas(string $cod_socio): array
+    {
+        $cod_socio = trim($cod_socio);
+
+        if (empty($cod_socio)) {
+            return [
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
             ];
         }
 
-        return [
-            'success' => false,
-            'message' => 'No se encontró un asociado con el código proporcionado.',
-            'data' => null
-        ];
+        $deudas = $this->socioRepository->findDeudasByCodigo($cod_socio);
+
+        if ($deudas !== null) {
+            $totalSuma = 0.0;
+            $listaDeudas = [];
+
+            foreach ($deudas as $deuda) {
+                $monto = isset($deuda['MONTOTOTAL']) ? (float) $deuda['MONTOTOTAL'] : 0.0;
+                $totalSuma += $monto;
+
+                // Limpiar textos de la factura si es necesario
+                $razonSocial = isset($deuda['RAZONSOCIAL']) ? trim($deuda['RAZONSOCIAL']) : '';
+
+                $listaDeudas[] = [
+                    'factura' => $deuda['NROFACTURA'] ?? '',
+                    'periodo' => ($deuda['NMES'] ?? '') . '-' . ($deuda['ANIO'] ?? ''),
+                    'monto' => $monto,
+                    'razon_social' => $razonSocial
+                ];
+            }
+
+            $mensajeTexto = "";
+            $cantidadFacturas = count($listaDeudas);
+            $totalRedondeado = round($totalSuma, 2);
+            $totalFormateado = number_format($totalRedondeado, 2, ',', '.');
+
+            if ($cantidadFacturas > 0) {
+                $mensajeTexto = "El Código Fijo ($cod_socio) tiene $cantidadFacturas facturas impagas, cuyo monto total es $totalFormateado Bs.\nEl detalle es el siguiente:\n\n";
+                $contador = 1;
+                foreach ($listaDeudas as $d) {
+                    $montoF = number_format($d['monto'], 2, ',', '.');
+                    $mensajeTexto .= "$contador. {$d['periodo']}, $montoF Bs. (Pendiente)\n";
+                    $contador++;
+                }
+                $mensajeTexto = trim($mensajeTexto);
+            } else {
+                $mensajeTexto = "El Código Fijo ($cod_socio) no tiene deudas pendientes en este momento.";
+            }
+
+            return [
+                'status' => 'success',
+                'codigo_socio' => $cod_socio,
+                'mensaje_texto' => $mensajeTexto,
+                'facturas_pendientes' => $listaDeudas,
+                'total_deuda' => $totalRedondeado
+            ];
+        } else {
+            return [
+                'status' => 'error',
+                'mensaje_texto' => 'Ocurrió un error al obtener las deudas o no se encontró el socio.'
+            ];
+        }
     }
 }

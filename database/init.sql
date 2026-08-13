@@ -24,19 +24,32 @@ CREATE TABLE IF NOT EXISTS reclamo(
 );
 
 
-insert into socio 
-(codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion)
-values
-('267657', '1234567', 'Juan', 'Perez', '59170000000', 'Av. Prueba 123', 1); 
+CREATE TABLE IF NOT EXISTS factura(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_socio INT NOT NULL,
+    periodo VARCHAR(20) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(20) DEFAULT 'PENDIENTE',
+    fecha_emision DATE,
+    fecha_vencimiento DATE,
+    CONSTRAINT fk_factura_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
+);
 
-insert into reclamo
-(codigo_socio, tipo_reclamo, descripcion, direccion, estado)
-values
-('267657', 'Agua turbia', 'El agua sale turbia', 'Av. Prueba 123', 'PENDIENTE');
+-- ========================================================
+-- MOCK DATA (Datos de Prueba)
+-- ========================================================
+-- Insertamos un socio de prueba (Código: 267657)
+INSERT IGNORE INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion) 
+VALUES (267657, '1234567', 'Juan', 'Pérez', '59170000000', 'Av. Prueba 123', 1);
 
-insert into factura 
-(codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento)
-values
-('267657', 'Enero-2025', 100, 'PENDIENTE', '2025-01-01', '2025-01-31');
+-- Insertamos facturas para este socio
+-- Una pagada (Histórico)
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Mayo-2026', 95.50, 'PAGADA', '2026-05-01', '2026-05-15');
 
+-- Dos pendientes (Deuda actual)
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Junio-2026', 107.60, 'PENDIENTE', '2026-06-01', '2026-06-15');
 
+INSERT INTO factura (codigo_socio, periodo, monto, estado, fecha_emision, fecha_vencimiento) 
+VALUES (267657, 'Julio-2026', 114.30, 'PENDIENTE', '2026-07-01', '2026-07-15');

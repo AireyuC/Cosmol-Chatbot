@@ -10,7 +10,10 @@ use PDO;
 
 class RepositorioSessionMySQL implements SessionRepositoryInterface
 {
-    private PDO $db;
+    /**
+     * @var PDO
+     */
+    private $db;
 
     public function __construct()
     {

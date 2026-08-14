@@ -9,8 +9,10 @@ require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php'
 require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
 require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
 require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
+require_once __DIR__ . '/../../app/Core/Validator.php';
 
 use App\Core\Controller;
+use App\Core\Validator;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
@@ -46,8 +48,9 @@ class SocioEndpoint extends Controller
             return;
         }
 
-        if ($cod_socio === null) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
+        if (!Validator::codigoSocio((string)$cod_socio)) {
+            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado'], 400);
+            return;
         }
 
         // Elimino la lectura redundante de action que estaba aquí

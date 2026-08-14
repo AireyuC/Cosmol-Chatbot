@@ -34,3 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
+
+// 6. Rate Limiting: Proteger la API de abusos (Fase 4)
+\App\Core\RateLimiter::check();

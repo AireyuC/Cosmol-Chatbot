@@ -36,11 +36,9 @@ class Database{
                     // DSN Básico para Informix (después podrás agregar server, protocol, etc.)
                     $dsn = "informix:host={$host};service={$port};database={$dbName};";
                 } else {
-                    // DSN para MySQL
                     $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset={$charset}";
                 }
 
-                // 1. Definir opciones de seguridad y buenas prácticas para PDO
                 $options = [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -51,7 +49,7 @@ class Database{
                 self::$instance = new PDO($dsn, $user, $password, $options);
 
             } catch (PDOException $e) {
-                // 3. Capturar errores de forma segura
+
                 $isDebug = defined('APP_DEBUG') && APP_DEBUG === true;
                 
                 $errorMessage = $isDebug 

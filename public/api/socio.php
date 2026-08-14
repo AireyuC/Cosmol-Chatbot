@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Logger;
+use App\Core\Validator;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
@@ -42,8 +43,8 @@ class SocioEndpoint extends Controller
             return;
         }
 
-        if ($cod_socio === null) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
+        if ($cod_socio === null || !Validator::codigoSocio((string)$cod_socio)) {
+            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o requerido (solo dígitos, 1-10 caracteres).', 'data' => null], 400);
         }
 
         // Elimino la lectura redundante de action que estaba aquí

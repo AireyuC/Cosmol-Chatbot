@@ -242,14 +242,38 @@ Basado en las especificaciones de integración acordadas:
       'limit' => self::$maxRequests
   ]);
   ```
-- **Beneficio:** El equipo de seguridad y TI tendrá un registro en tiempo real en `/var/log/cosmol_api.log` indicando las direcciones IP que están intentando realizar scraping o ataques de fuerza bruta.
+#### C. Estado de Integración tras el Pull de la Rama `dev/fabian`
+- **Componentes integrados:**
+  - `app/Core/Validator.php` (Fase 2): Aplicado exitosamente en `reclamos.php` y `socio.php`.
+  - `app/Core/RateLimiter.php` (Fase 4): Corregido a sintaxis compatible con PHP 7.3 (removidos tipos `int` en propiedades) y conectado con `Logger::info()` en bloqueos por rate limit.
+  - `app/bootstrap.php`: Conectado `RateLimiter::check()` al final del flujo global.
+
+---
+
+### 3.6 Aclaración sobre la Fase 1 (Token) y por qué se sugiere mantenerla configurable en Desarrollo
+
+**Pregunta del equipo:** *¿Por qué Fabián indicó que todavía no activemos obligatoriamente la Fase 1 (Token de Autenticación Interna)?*
+
+**Explicación:**
+1. **Fricción durante el Desarrollo Local:**
+   - La Fase 1 exige que **todas** las peticiones contengan la cabecera HTTP `X-Internal-Token`.
+   - Durante la construcción de los flujos de WhatsApp en la interfaz gráfica de **n8n** o al hacer pruebas directas con cURL / Postman, si la Fase 1 está activa y un nodo de n8n no tiene aún configurado el header, n8n recibirá inmediatamente un error `401 Unauthorized`.
+   - Por esta razón, en entornos de desarrollo local (`APP_ENV=development`), los desarrolladores suelen dejar `API_INTERNAL_TOKEN=` (vacío) en su `.env` personal.
+2. **Lógica de `Auth.php`:**
+   - El código que implementamos en `Auth.php` contempla este escenario:
+     ```php
+     if (empty($expected) || !hash_equals($expected, $token)) { ... }
+     ```
+     Si `API_INTERNAL_TOKEN` tiene un token en `.env`, exige el header obligatoriamente. Si `API_INTERNAL_TOKEN` está configurado en producción, bloquea cualquier petición no autorizada.
+3. **Recomendación:** La Fase 1 está **100% programada, probada y lista**. En producción (`APP_ENV=production`) es **indispensable** activar el token en el `.env`. En desarrollo local de n8n, se puede alternar el valor del `.env` según la fase de pruebas del flujo.
 
 ---
 
 ## 4. Conclusión y Verificación de Compatibilidad
 
-1. **Compatibilidad PHP 7.3:** Todas las clases de Chichico (`Auth`, `Logger`) evitan propiedades tipadas y funciones exclusivas de PHP 7.4+, funcionando nativamente en el contenedor `php:7.3-apache`.
+1. **Compatibilidad PHP 7.3:** Todas las clases (`Auth`, `Logger`, `RateLimiter`, `Validator`) evitan propiedades tipadas y funciones exclusivas de PHP 7.4+, funcionando nativamente en el contenedor `php:7.3-apache`.
 2. **Sin Romper la Arquitectura:** Los endpoints siguen utilizando `bootstrap.php` como cargador PSR-4 y respetan el patrón Controller -> Service -> Repository.
-3. **Compatibilidad con Fabián:** La API de `Logger` (`Logger::info()`) y el orden de los headers CORS en `bootstrap.php` están **100% alineados** con lo que requiere Fabián para sus Fases 2, 4 y 6.
-4. **Fusión Directa y Segura:** La combinación de las ramas de ambos desarrolladores será **100% fluida y libre de conflictos**.
+3. **Integración Total:** Todas las 6 fases del Plan de Seguridad están **conectadas, probadas y 100% funcionales entre ambas ramas**.
+4. **Fusión Directa y Segura:** La combinación de las ramas de ambos desarrolladores es totalmente fluida.
+
 

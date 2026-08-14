@@ -40,3 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 use App\Core\Auth;
 Auth::validateInternalToken();
 
+// 7. [FASE 4 — Seguridad] Rate Limiting por IP (30 peticiones/minuto)
+use App\Core\RateLimiter;
+RateLimiter::check();
+
+

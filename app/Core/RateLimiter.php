@@ -3,8 +3,8 @@
 namespace App\Core;
 
 class RateLimiter {
-    private static int $maxRequests = 30;
-    private static int $windowSeconds = 60;
+    private static $maxRequests = 30;
+    private static $windowSeconds = 60;
 
     public static function check(): void {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -21,6 +21,11 @@ class RateLimiter {
         $data['count']++;
 
         if ($data['count'] > self::$maxRequests) {
+            Logger::info('IP Bloqueada por exceso de peticiones', [
+                'ip'    => $ip,
+                'limit' => self::$maxRequests,
+            ]);
+
             http_response_code(429);
             header('Retry-After: ' . self::$windowSeconds);
             echo json_encode([

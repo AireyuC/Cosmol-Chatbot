@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\Logger;
 use App\Data\Repositories\MySQL\SocioRepository;
 use App\Data\Repositories\MySQL\ReclamoRepository;
 use App\Modules\Reclamo\ReclamoService;
@@ -67,7 +68,11 @@ class ReclamoEndpoint extends Controller
 
         } catch (Exception $e) {
             // Manejo de errores a nivel superior (ej. base de datos caída)
-            error_log("Error crítico en ReclamoEndpoint: " . $e->getMessage());
+            Logger::error('Error crítico en ReclamoEndpoint', [
+                'exception'    => $e->getMessage(),
+                'codigo_socio' => $codigo_socio ?? null,
+                'tipo_reclamo' => $tipo_reclamo ?? null,
+            ]);
             $this->handleError('Ocurrió un error interno en el servidor.', 500);
         }
     }

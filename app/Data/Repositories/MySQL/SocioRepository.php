@@ -30,19 +30,20 @@ class SocioRepository implements SocioRepositoryInterface
         $this->db = $db;
     }
 
-    /* Busca un socio por su código fijo en la tabla 'socio'.
-     * @param string $codigo_socio El código fijo del socio a buscar.
-     * @return array|null Retorna los datos básicos del socio o null si no se encuentra. */
-    public function findByCodigo(string $codigo_socio): ?array
+    /**
+     * Busca un socio por su código fijo en la tabla 'socios'.
+     *
+     * @param string $cod_socio El código fijo del socio a buscar.
+     * @return array|null Retorna los datos básicos del socio o null si no se encuentra.
+     */
+    public function findByCodigo(string $cod_socio): ?array
     {
         try {
-            // Extraeccion de los campos del esquema
-            // telefono, direccion y estado_conexion. 'direccion' se usa en el módulo de Reclamos.
-            $query = "SELECT codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion
-                      FROM socio
-                      WHERE codigo_socio = :codigo_socio LIMIT 1";
+            // Consulta SQL preparada para evitar inyección SQL.
+            // Se extraen específicamente los campos solicitados: cod_socio, nombre, ci, telefono
+            $query = "SELECT codigo_socio AS cod_socio, nombre, ci, telefono FROM socio WHERE codigo_socio = :cod_socio LIMIT 1";
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':codigo_socio', $codigo_socio, PDO::PARAM_STR);
+            $stmt->bindParam(':cod_socio', $cod_socio, PDO::PARAM_STR);
             $stmt->execute();
 
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,6 +56,7 @@ class SocioRepository implements SocioRepositoryInterface
             return null;
         }
     }
+<<<<<<< HEAD
 
     /**
      * Stub: La BD MySQL local no tiene deudas reales.
@@ -66,4 +68,6 @@ class SocioRepository implements SocioRepositoryInterface
     {
         return null;
     }
+=======
+>>>>>>> 5d7abf724bb19196f6a8bc791fcee19d27bbfe13
 }

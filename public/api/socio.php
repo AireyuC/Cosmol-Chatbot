@@ -2,16 +2,11 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
-require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
-require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
-require_once __DIR__ . '/../../app/Core/Validator.php';
+// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Core\Validator;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
@@ -49,7 +44,7 @@ class SocioEndpoint extends Controller
         }
 
         if (!Validator::codigoSocio((string)$cod_socio)) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado'], 400);
+            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado.', 'data' => null], 400);
             return;
         }
 
@@ -72,12 +67,17 @@ class SocioEndpoint extends Controller
             }
 
             // Devolver la respuesta usando el método del Controller base
-            $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);
+            $status = $resultado['status'] ?? ($resultado['success'] ?? false ? 'success' : 'error');
+            $httpStatus = $status === 'success' ? 200 : ($status === 'not_found' ? 404 : 400);
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
-            error_log("Error crítico en SocioEndpoint: " . $e->getMessage());
-            $this->json(['success' => false, 'message' => 'Ocurrió un error interno en el servidor', 'data' => null], 500);
+            Logger::error('Error crítico en SocioEndpoint', [
+                'exception'    => $e->getMessage(),
+                'codigo_socio' => $cod_socio ?? null,
+                'action'       => $action ?? null,
+            ]);
+            $this->json(['success' => false, 'message' => 'Error interno en el servidor.', 'data' => null], 500);
         }
     }
 }

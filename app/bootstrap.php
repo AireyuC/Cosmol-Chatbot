@@ -19,9 +19,10 @@ if (defined('APP_ENV') && APP_ENV === 'development') {
 }
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$origin = defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '';
+header("Access-Control-Allow-Origin: {$origin}");
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Internal-Token');
 
 // 5. Manejar peticiones previas de CORS (Preflight requests - OPTIONS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -29,5 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// 6. Rate Limiting: Proteger la API de abusos (Fase 4)
-\App\Core\RateLimiter::check();
+// 6. [FASE 1 — Seguridad] Validar el token interno antes de procesar cualquier petición.
+// Si el header X-Internal-Token no coincide con API_INTERNAL_TOKEN → responde 401 y muere.
+use App\Core\Auth;
+Auth::validateInternalToken();
+
+// 7. [FASE 4 — Seguridad] Rate Limiting por IP.
+// Se ejecuta DESPUÉS del Auth: los atacantes sin token válido ya fueron cortados (401) y no
+// consumen el contador. Solo las peticiones autenticadas incrementan el rate limiter.
+use App\Core\RateLimiter;
+RateLimiter::check();
+

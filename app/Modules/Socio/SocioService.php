@@ -31,24 +31,23 @@ class SocioService
     /**
      * Valida la existencia de un socio por su código y devuelve sus datos formateados.
      *
-     * @param string $codigo_socio El código fijo a validar.
+     * @param string $cod_socio El código fijo a validar.
      * @return array Arreglo estandarizado con el resultado de la operación.
      */
-    public function validarSocio(string $codigo_socio): array
+    public function validarSocio(string $cod_socio): array
     {
         // Limpiamos el código ingresado (ej. quitamos espacios)
-        $codigo_socio = trim($codigo_socio);
+        $cod_socio = trim($cod_socio);
 
-        if (empty($codigo_socio)) {
+        if (empty($cod_socio)) {
             return [
-                'success' => false,
-                'message' => 'El código de socio es requerido.',
-                'data' => null
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
             ];
         }
 
         // Delegamos la búsqueda al repositorio
-        $socioData = $this->socioRepository->findByCodigo($codigo_socio);
+        $socioData = $this->socioRepository->findByCodigo($cod_socio);
 
         if ($socioData) {
             // Limpiar campos devueltos por la API (quitar espacios en blanco sobrantes)

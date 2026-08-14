@@ -16,3 +16,10 @@ define('APP_DEBUG', filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BO
 
 // API Externa
 define('COSMOL_API_URL', getenv('COSMOL_API_URL') ?: '');
+
+// Seguridad — Token interno compartido entre n8n y la API PHP (Fase 1)
+define('API_INTERNAL_TOKEN', getenv('API_INTERNAL_TOKEN') ?: '');
+
+// Seguridad — Origen permitido para CORS (Fase 3)
+define('ALLOWED_ORIGIN', getenv('ALLOWED_ORIGIN') ?: 'http://cosmol_n8n:5678');
+

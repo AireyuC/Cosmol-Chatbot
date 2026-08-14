@@ -1,8 +1,6 @@
 -- Script de inicialización para Docker MySQL
 -- Este script se ejecutará automáticamente la primera vez que se levante el contenedor de base de datos.
-
-CREATE DATABASE IF NOT EXISTS cosmol_sai;
-USE cosmol_sai;
+-- Las tablas se crean dentro de la base definida en MYSQL_DATABASE (docker-compose / .env).
 
 CREATE TABLE IF NOT EXISTS socio(
     codigo_socio INT PRIMARY KEY,
@@ -24,6 +22,7 @@ CREATE TABLE IF NOT EXISTS reclamo(
     codigo_socio INT NOT NULL,
     CONSTRAINT fk_reclamo_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
+
 
 CREATE TABLE IF NOT EXISTS factura(
     id INT AUTO_INCREMENT PRIMARY KEY,

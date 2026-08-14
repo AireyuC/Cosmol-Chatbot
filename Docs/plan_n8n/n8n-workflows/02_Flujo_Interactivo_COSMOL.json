@@ -97,7 +97,13 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "ignoreResponseCode": true
+            }
+          }
+        }
       },
       "name": "4. Validar Socio (PHP)",
       "type": "n8n-nodes-base.httpRequest",
@@ -115,7 +121,7 @@
           "string": [
             {
               "name": "meta_payload",
-              "value": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"list\",\n    \"header\": {\n      \"type\": \"text\",\n      \"text\": \"Menú Principal\"\n    },\n    \"body\": {\n      \"text\": \"Su Código Fijo {{ $json.datos_socio.nombre ?? '267657' }} ha sido validado.\\n\\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú.\"\n    },\n    \"footer\": {\n      \"text\": \"COSMOL - Tu cooperativa\"\n    },\n    \"action\": {\n      \"button\": \"Mostrar Menú\",\n      \"sections\": [\n        {\n          \"title\": \"Facturas y Pagos\",\n          \"rows\": [\n            {\n              \"id\": \"MENU_PAGAR_{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text.body }}\",\n              \"title\": \"Pagar Deuda\",\n              \"description\": \"Consultar y pagar tus facturas\"\n            }\n          ]\n        }\n      ]\n    }\n  }\n}"
+              "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('4. Validar Socio (PHP)').item.json.whatsapp_payload) }}"
             }
           ]
         },
@@ -211,7 +217,13 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "ignoreResponseCode": true
+            }
+          }
+        }
       },
       "name": "8. Consultar Facturas (PHP)",
       "type": "n8n-nodes-base.httpRequest",
@@ -229,7 +241,7 @@
           "string": [
             {
               "name": "meta_payload",
-              "value": "={{ JSON.stringify({   \"messaging_product\": \"whatsapp\",   \"recipient_type\": \"individual\",   \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,   \"type\": \"text\",   \"text\": {     \"body\": $json.mensaje_texto + \"\\n\\n💳 *Link de pago seguro:*\\nhttps://multipago.com/service/cosmol_payment/first\\n\\n¡Gracias por preferir nuestros canales digitales!\"   } }) }}"
+              "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('8. Consultar Facturas (PHP)').item.json.whatsapp_payload) }}"
             }
           ]
         },

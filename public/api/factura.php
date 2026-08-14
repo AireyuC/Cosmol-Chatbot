@@ -46,7 +46,7 @@ class FacturaEndpoint extends Controller
 
             $resultado = $service->obtenerDeudas((string)$cod_socio);
 
-            $httpStatus = $resultado['status'] === 'success' ? 200 : 400;
+            $httpStatus = 200;
             $this->json($resultado, $httpStatus);
         } catch (Exception $e) {
             error_log("Error crítico en FacturaEndpoint: " . $e->getMessage());

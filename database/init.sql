@@ -36,6 +36,15 @@ CREATE TABLE IF NOT EXISTS factura(
     CONSTRAINT fk_factura_socio FOREIGN KEY (codigo_socio) REFERENCES socio(codigo_socio)
 );
 
+CREATE TABLE IF NOT EXISTS chat_session(
+    telefono_whatsapp VARCHAR(20) PRIMARY KEY,
+    codigo_socio INT NULL,
+    estado_actual VARCHAR(50) DEFAULT 'AWAITING_CODE',
+    intentos_fallidos INT DEFAULT 0,
+    ultima_interaccion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    -- No usamos FOREIGN KEY hacia socio local porque los socios vienen de la API de COSMOL (Informix)
+);
+
 -- DATOS DE PRUEBA
 
 -- Insertamos un socio de prueba (Código: 267657)

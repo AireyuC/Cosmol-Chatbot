@@ -61,8 +61,9 @@ class SocioEndpoint extends Controller
                 $resultado = $service->validarSocio((string)$cod_socio);
             }
 
-            // Devolver la respuesta usando el método del Controller base
-            $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);
+            // Devolver la respuesta siempre con HTTP 200 para que n8n no rompa el flujo.
+            // El estado real va dentro del JSON ('status' => 'not_found' o 'success').
+            $httpStatus = 200;
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {

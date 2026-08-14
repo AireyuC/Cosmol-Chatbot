@@ -1,0 +1,1283 @@
+{
+  "updatedAt": "2026-08-14T14:50:27.367Z",
+  "createdAt": "2026-08-14T13:46:08.956Z",
+  "id": "Fb5hvxSq1OhHLAAO",
+  "name": "02_Flujo_Interactivo_COSMOL",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "options": {}
+      },
+      "name": "1. Recibir Webhook Meta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1312,
+        592
+      ],
+      "id": "1701063e-f436-4ab0-b09d-45629b1c9392",
+      "webhookId": "cosmol-webhook-id-post"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1342d549-56a4-463b-b34f-48ccbf44f08c",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "2. Es un mensaje válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1104,
+        592
+      ],
+      "id": "f48cfe9f-9091-4d3a-b1fe-42724d58b0cf"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9945c7e1-8840-4289-8d1e-2e0618459424",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages[0].type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "3. Es Texto o Boton?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -896,
+        592
+      ],
+      "id": "a69cbdc1-b2a9-46d2-b387-9ee01d90a57c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:80/api/socio.php",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "cod_socio",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "name": "4. Validar Socio (PHP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -608,
+        448
+      ],
+      "id": "a90e643b-e4d6-44f3-8335-0903df114a00"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "meta_payload",
+              "value": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"list\",\n    \"header\": {\n      \"type\": \"text\",\n      \"text\": \"Menú Principal\"\n    },\n    \"body\": {\n      \"text\": \"Su Código Fijo {{ $json.datos_socio.nombre ?? '267657' }} ha sido validado.\\n\\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú.\"\n    },\n    \"footer\": {\n      \"text\": \"COSMOL - Tu cooperativa\"\n    },\n    \"action\": {\n      \"button\": \"Mostrar Menú\",\n      \"sections\": [\n        {\n          \"title\": \"Facturas y Pagos\",\n          \"rows\": [\n            {\n              \"id\": \"MENU_PAGAR_{{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text.body }}\",\n              \"title\": \"Pagar Deuda\",\n              \"description\": \"Consultar y pagar tus facturas\"\n            }\n          ]\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "5. Formatear Menú (Lista)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        448
+      ],
+      "id": "807768c9-73d3-4752-85a6-dd5c0e0416c2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.meta_payload }}",
+        "options": {}
+      },
+      "name": "6. Enviar Menú a Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -160,
+        448
+      ],
+      "id": "3a330b1f-6718-4071-84cd-379212f51c9c",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "rJpuibvo8y9lXuFH",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f51270c1-ecfc-451e-ad52-95cd28b49b43",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id }}",
+              "rightValue": "MENU_PAGAR_",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "7. Quiere Pagar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -608,
+        736
+      ],
+      "id": "ee0e58ae-b49f-4b74-a25f-23b6bca37d66"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:80/api/factura.php",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "cod_socio",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id.split('_')[2] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "8. Consultar Facturas (PHP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -384,
+        736
+      ],
+      "id": "8a12d609-c978-41bd-9e4b-b221104d53f0"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "meta_payload",
+              "value": "={{ JSON.stringify({   \"messaging_product\": \"whatsapp\",   \"recipient_type\": \"individual\",   \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,   \"type\": \"text\",   \"text\": {     \"body\": $json.mensaje_texto + \"\\n\\n💳 *Link de pago seguro:*\\nhttps://multipago.com/service/cosmol_payment/first\\n\\n¡Gracias por preferir nuestros canales digitales!\"   } }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "9. Formatear Respuesta Pago",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        736
+      ],
+      "id": "50224780-eafe-4857-a4c2-e0110f2cdeab"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.meta_payload }}",
+        "options": {}
+      },
+      "name": "10. Enviar Respuesta a Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        80,
+        736
+      ],
+      "id": "d6662961-d27f-4a48-8ae5-10fc9f92a9da",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "rJpuibvo8y9lXuFH",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "1. Recibir Webhook Meta": {
+      "main": [
+        [
+          {
+            "node": "2. Es un mensaje válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Es un mensaje válido?": {
+      "main": [
+        [
+          {
+            "node": "3. Es Texto o Boton?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Es Texto o Boton?": {
+      "main": [
+        [
+          {
+            "node": "4. Validar Socio (PHP)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "7. Quiere Pagar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Validar Socio (PHP)": {
+      "main": [
+        [
+          {
+            "node": "5. Formatear Menú (Lista)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Formatear Menú (Lista)": {
+      "main": [
+        [
+          {
+            "node": "6. Enviar Menú a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Quiere Pagar?": {
+      "main": [
+        [
+          {
+            "node": "8. Consultar Facturas (PHP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Consultar Facturas (PHP)": {
+      "main": [
+        [
+          {
+            "node": "9. Formatear Respuesta Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Formatear Respuesta Pago": {
+      "main": [
+        [
+          {
+            "node": "10. Enviar Respuesta a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "69114253-fd8e-4263-974f-e9cd7e98204e",
+  "activeVersionId": "69114253-fd8e-4263-974f-e9cd7e98204e",
+  "versionCounter": 18,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-14T13:46:08.963Z",
+      "createdAt": "2026-08-14T13:46:08.963Z",
+      "role": "workflow:owner",
+      "workflowId": "Fb5hvxSq1OhHLAAO",
+      "projectId": "2qirVJQrq1Yp70qq",
+      "project": {
+        "updatedAt": "2026-08-14T13:44:53.889Z",
+        "createdAt": "2026-08-14T13:44:08.887Z",
+        "id": "2qirVJQrq1Yp70qq",
+        "name": "carlos daniel <aireyucd@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "updatedAt": "2026-08-14T13:44:08.887Z",
+            "createdAt": "2026-08-14T13:44:08.887Z",
+            "userId": "fe3f067c-edfe-4fb3-90ff-015dc96b6b2d",
+            "projectId": "2qirVJQrq1Yp70qq",
+            "user": {
+              "updatedAt": "2026-08-14T13:53:53.637Z",
+              "createdAt": "2026-08-14T13:44:08.108Z",
+              "id": "fe3f067c-edfe-4fb3-90ff-015dc96b6b2d",
+              "email": "aireyucd@gmail.com",
+              "firstName": "carlos",
+              "lastName": "daniel",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2026-08-14T13:45:05.652Z",
+                "personalization_survey_n8n_version": "1.123.27"
+              },
+              "settings": {
+                "userActivated": true,
+                "firstSuccessfulWorkflowId": "Fb5hvxSq1OhHLAAO",
+                "userActivatedAt": 1786715631742
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-08-14",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-08-14T14:50:26.497Z",
+    "createdAt": "2026-08-14T14:50:26.497Z",
+    "versionId": "69114253-fd8e-4263-974f-e9cd7e98204e",
+    "workflowId": "Fb5hvxSq1OhHLAAO",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "whatsapp",
+          "options": {}
+        },
+        "name": "1. Recibir Webhook Meta",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1.1,
+        "position": [
+          -5424,
+          3392
+        ],
+        "id": "df806c95-f2e7-4e8f-87fd-fc5b8da0bf6f",
+        "webhookId": "cosmol-webhook-id-post"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "cond-valid",
+                "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}",
+                "operator": {
+                  "type": "array",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "name": "2. Es un mensaje válido?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -5216,
+          3392
+        ],
+        "id": "e925d57d-50a3-4f08-bec2-17734b708058"
+      },
+      {
+        "parameters": {
+          "url": "http://backend:80/api/session.php",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "telefono",
+                "value": "={{ $json.body.entry[0].changes[0].value.messages[0].from }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "3. Obtener Sesion",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -5024,
+          3392
+        ],
+        "id": "24255a98-c704-4b8e-b57d-c3b9c3139065"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "cond-await",
+                      "leftValue": "={{ $json.estado_actual }}",
+                      "rightValue": "AWAITING_CODE",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "AWAITING_CODE"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "cond-main",
+                      "leftValue": "={{ $json.estado_actual }}",
+                      "rightValue": "MAIN_MENU",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "MAIN_MENU"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "4. Router Estado",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.1,
+        "position": [
+          -4816,
+          3392
+        ],
+        "id": "22bd2cb2-c543-4341-a94e-7c0a91899d9e"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "cond-msg",
+                "leftValue": "={{ $('3. Obtener Sesion').item.json.mensaje }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Tiene Mensaje?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -4624,
+          3104
+        ],
+        "id": "5ea5bbe2-66c9-4092-a995-6eb906315ce7"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('3. Obtener Sesion').item.json.whatsapp_payload) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Enviar Greet",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -4416,
+          2992
+        ],
+        "id": "47d19a32-c30a-4188-b0f8-bcf888ab0bd8"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://backend:80/api/socio.php",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "cod_socio",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text.body }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {}
+            }
+          }
+        },
+        "name": "AWAIT - Validar Socio",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -4416,
+          3200
+        ],
+        "id": "27285c5a-8f06-426c-b46b-0b175d4c2208"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "cond-success",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "success",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Exitosa?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -4224,
+          3200
+        ],
+        "id": "a4250ef8-202f-4dbb-afb7-6066157e23c9"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://backend:80/api/session.php",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "telefono",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}"
+              },
+              {
+                "name": "action",
+                "value": "update"
+              },
+              {
+                "name": "estado_actual",
+                "value": "MAIN_MENU"
+              },
+              {
+                "name": "codigo_socio",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text.body }}"
+              },
+              {
+                "name": "intentos",
+                "value": 0
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Set MAIN_MENU",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -4016,
+          3104
+        ],
+        "id": "08530762-a598-4e1a-84c2-0570104fb4b3"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('AWAIT - Validar Socio').item.json.whatsapp_payload) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Formatear Menu",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -3824,
+          3104
+        ],
+        "id": "9c386230-8353-4650-bd14-84cc68f16d25"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://backend:80/api/session.php",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "telefono",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}"
+              },
+              {
+                "name": "action",
+                "value": "update"
+              },
+              {
+                "name": "estado_actual",
+                "value": "AWAITING_CODE"
+              },
+              {
+                "name": "intentos",
+                "value": "={{ $('3. Obtener Sesion').item.json.intentos + 1 }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Sumar Intento",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -4016,
+          3296
+        ],
+        "id": "fef860ca-8d47-41b3-bc16-440e89962cbc"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('AWAIT - Sumar Intento').item.json.whatsapp_payload) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "AWAIT - Error Msg",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -3824,
+          3296
+        ],
+        "id": "e9aa09c2-6130-44d9-812c-90428916bae1"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "cond-pagar",
+                      "leftValue": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id }}",
+                      "rightValue": "MENU_PAGAR_",
+                      "operator": {
+                        "type": "string",
+                        "operation": "startsWith"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "PAGAR"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "cond-cambiar",
+                      "leftValue": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id }}",
+                      "rightValue": "MENU_CAMBIAR_CODIGO",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "CAMBIAR"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Opciones",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.1,
+        "position": [
+          -4624,
+          3600
+        ],
+        "id": "9dfd8778-1280-4627-be53-417637ccc167"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://backend:80/api/factura.php",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "cod_socio",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive.list_reply.id.split('_')[2] }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Deudas",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -4416,
+          3504
+        ],
+        "id": "0f2b6bf4-4c47-41d4-abbe-c9746b6a12d4"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('MAIN - Deudas').item.json.whatsapp_payload) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Formato Pago",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -4224,
+          3504
+        ],
+        "id": "518642bb-f384-435f-96bd-24a678ca5c00"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://backend:80/api/session.php",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "telefono",
+                "value": "={{ $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }}"
+              },
+              {
+                "name": "action",
+                "value": "reset"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Reset Sesion",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          -4416,
+          3696
+        ],
+        "id": "b79348cf-30bb-4cc1-b811-29663f941cdf"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ Object.assign({ 'messaging_product': 'whatsapp', 'recipient_type': 'individual', 'to': $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from }, $('MAIN - Reset Sesion').item.json.whatsapp_payload) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Msg Reset",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -4224,
+          3696
+        ],
+        "id": "138812b8-0b52-4a57-b207-f87a6ea799fd"
+      },
+      {
+        "parameters": {
+          "keepOnlySet": true,
+          "values": {
+            "string": [
+              {
+                "name": "meta_payload",
+                "value": "={{ JSON.stringify({\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": $('2. Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  \"type\": \"text\",\n  \"text\": { \"body\": \"Opción inválida. Por favor usa el menú para Pagar o Cambiar de Socio.\" }\n}) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "MAIN - Invalido",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          -4416,
+          3904
+        ],
+        "id": "952783e2-70b0-4d1a-b549-4d2e74c0c3e1"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpMultipleHeadersAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.meta_payload }}",
+          "options": {}
+        },
+        "name": "Enviar a Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          -3616,
+          3392
+        ],
+        "id": "9b78ff6c-878d-4622-99df-660e8aba4753",
+        "credentials": {
+          "httpMultipleHeadersAuth": {
+            "id": "rJpuibvo8y9lXuFH",
+            "name": "Multiple Headers Auth account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "1. Recibir Webhook Meta": {
+        "main": [
+          [
+            {
+              "node": "2. Es un mensaje válido?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "2. Es un mensaje válido?": {
+        "main": [
+          [
+            {
+              "node": "3. Obtener Sesion",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "3. Obtener Sesion": {
+        "main": [
+          [
+            {
+              "node": "4. Router Estado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "4. Router Estado": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Tiene Mensaje?",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MAIN - Opciones",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Tiene Mensaje?": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Enviar Greet",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "AWAIT - Validar Socio",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Enviar Greet": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Validar Socio": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Exitosa?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Exitosa?": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Set MAIN_MENU",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "AWAIT - Sumar Intento",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Set MAIN_MENU": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Formatear Menu",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Sumar Intento": {
+        "main": [
+          [
+            {
+              "node": "AWAIT - Error Msg",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Formatear Menu": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AWAIT - Error Msg": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Opciones": {
+        "main": [
+          [
+            {
+              "node": "MAIN - Deudas",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MAIN - Reset Sesion",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Deudas": {
+        "main": [
+          [
+            {
+              "node": "MAIN - Formato Pago",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Formato Pago": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Reset Sesion": {
+        "main": [
+          [
+            {
+              "node": "MAIN - Msg Reset",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Msg Reset": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MAIN - Invalido": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "carlos daniel",
+    "name": null,
+    "description": null
+  },
+  "scopes": [
+    "workflow:create",
+    "workflow:delete",
+    "workflow:execute",
+    "workflow:list",
+    "workflow:move",
+    "workflow:read",
+    "workflow:share",
+    "workflow:update"
+  ]
+}

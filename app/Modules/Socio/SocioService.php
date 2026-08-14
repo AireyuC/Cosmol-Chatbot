@@ -42,7 +42,27 @@ class SocioService
         if (empty($cod_socio)) {
             return [
                 'status' => 'error',
-                'message' => 'El código de socio es requerido.'
+                'message' => 'El código de socio es requerido.',
+                'whatsapp_payload' => [
+                    'type' => 'text',
+                    'text' => [
+                        'body' => '¡Hola! Bienvenido al Chatbot de COSMOL 💧. Por favor, escribe tu *Código Fijo de Socio* (solo números) para poder atenderte.'
+                    ]
+                ]
+            ];
+        }
+
+        if (!is_numeric($cod_socio)) {
+            return [
+                'status' => 'not_found',
+                'mensaje' => 'El valor ingresado no es un número.',
+                'datos_socio' => null,
+                'whatsapp_payload' => [
+                    'type' => 'text',
+                    'text' => [
+                        'body' => '¡Hola! Bienvenido al Chatbot de COSMOL 💧. Por favor, escribe únicamente tu *Código Fijo de Socio* (solo números) para poder consultar tus datos y deudas.'
+                    ]
+                ]
             ];
         }
 
@@ -58,19 +78,64 @@ class SocioService
                 $socioData['DIRECCION'] = trim($socioData['DIRECCION']);
             }
 
+            $nombreSocio = $socioData['NOMBRE'];
+            $mensaje = "Su Código Fijo $cod_socio ($nombreSocio) ha sido validado.\n\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú.";
+
             return [
                 'status' => 'success',
                 'mensaje' => 'Socio encontrado exitosamente.',
                 'datos_socio' => [
-                    'nombre' => $socioData['NOMBRE'],
+                    'nombre' => $nombreSocio,
                     'direccion' => $socioData['DIRECCION'] ?? ''
+                ],
+                'whatsapp_payload' => [
+                    'type' => 'interactive',
+                    'interactive' => [
+                        'type' => 'list',
+                        'header' => [
+                            'type' => 'text',
+                            'text' => 'Menú Principal'
+                        ],
+                        'body' => [
+                            'text' => $mensaje
+                        ],
+                        'footer' => [
+                            'text' => 'COSMOL - Tu cooperativa'
+                        ],
+                        'action' => [
+                            'button' => 'Mostrar Menú',
+                            'sections' => [
+                                [
+                                    'title' => 'Opciones',
+                                    'rows' => [
+                                        [
+                                            'id' => 'MENU_PAGAR_' . $cod_socio,
+                                            'title' => 'Pagar Deuda',
+                                            'description' => 'Consultar y pagar tus facturas'
+                                        ],
+                                        [
+                                            'id' => 'MENU_CAMBIAR_CODIGO',
+                                            'title' => 'Consultar otro Socio',
+                                            'description' => 'Ingresar un código fijo diferente'
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
                 ]
             ];
         } else {
             return [
                 'status' => 'not_found',
                 'mensaje' => 'No se encontró un asociado con el código proporcionado.',
-                'datos_socio' => null
+                'datos_socio' => null,
+                'whatsapp_payload' => [
+                    'type' => 'text',
+                    'text' => [
+                        'body' => 'No se encontró un asociado con el código proporcionado. Por favor, verifica el código e inténtalo de nuevo.'
+                    ]
+                ]
             ];
         }
     }
@@ -127,6 +192,7 @@ class SocioService
                     $contador++;
                 }
                 $mensajeTexto = trim($mensajeTexto);
+                $mensajeTexto .= "\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first";
             } else {
                 $mensajeTexto = "El Código Fijo ($cod_socio) no tiene deudas pendientes en este momento.";
             }
@@ -136,12 +202,24 @@ class SocioService
                 'codigo_socio' => $cod_socio,
                 'mensaje_texto' => $mensajeTexto,
                 'facturas_pendientes' => $listaDeudas,
-                'total_deuda' => $totalRedondeado
+                'total_deuda' => $totalRedondeado,
+                'whatsapp_payload' => [
+                    'type' => 'text',
+                    'text' => [
+                        'body' => $mensajeTexto
+                    ]
+                ]
             ];
         } else {
             return [
                 'status' => 'error',
-                'mensaje_texto' => 'Ocurrió un error al obtener las deudas o no se encontró el socio.'
+                'mensaje_texto' => 'Ocurrió un error al obtener las deudas o no se encontró el socio.',
+                'whatsapp_payload' => [
+                    'type' => 'text',
+                    'text' => [
+                        'body' => 'Ocurrió un error al obtener las deudas o no se encontró el socio. Por favor, intenta de nuevo más tarde.'
+                    ]
+                ]
             ];
         }
     }

@@ -24,13 +24,19 @@ if (defined('APP_ENV') && APP_ENV === 'development') {
 
 // 4. Configurar headers globales para los endpoints de nuestra API
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *'); // Habilita peticiones CORS (ej. llamadas desde n8n)
+$origin = defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '';
+header("Access-Control-Allow-Origin: {$origin}");
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Internal-Token');
 
 // 5. Manejar peticiones previas de CORS (Preflight requests - OPTIONS)
-// Los navegadores o herramientas suelen mandar un 'OPTIONS' antes de la petición real
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
+
+// 6. [FASE 1 — Seguridad] Validar el token interno antes de procesar cualquier petición.
+// Si el header X-Internal-Token no coincide con API_INTERNAL_TOKEN → responde 401 y muere.
+use App\Core\Auth;
+Auth::validateInternalToken();
+

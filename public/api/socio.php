@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
-require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
-require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
+// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
@@ -69,11 +65,16 @@ class SocioEndpoint extends Controller
             }
 
             // Devolver la respuesta usando el método del Controller base
-            $httpStatus = $resultado['status'] === 'success' ? 200 : ($resultado['status'] === 'not_found' ? 404 : 400);
+            $status = $resultado['status'] ?? ($resultado['success'] ?? false ? 'success' : 'error');
+            $httpStatus = $status === 'success' ? 200 : ($status === 'not_found' ? 404 : 400);
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
-            error_log("Error crítico en SocioEndpoint: " . $e->getMessage());
+            Logger::error('Error crítico en SocioEndpoint', [
+                'exception'    => $e->getMessage(),
+                'codigo_socio' => $cod_socio ?? null,
+                'action'       => $action ?? null,
+            ]);
             $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
         }
     }

@@ -8,6 +8,9 @@ RUN a2enmod rewrite
 # Instalar extensiones necesarias de PDO MySQL para la conexión a la base de datos
 RUN docker-php-ext-install pdo pdo_mysql mysqli
 
+# Asegurar que el archivo de logs sea escribible por Apache (Fase 5 — Seguridad)
+RUN touch /var/log/cosmol_api.log && chown www-data:www-data /var/log/cosmol_api.log
+
 # Cambiar el DocumentRoot de Apache para que apunte directamente a la carpeta /public
 # (Protegiendo así el código fuente en /app)
 ENV APACHE_DOCUMENT_ROOT /app/public

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias
 require_once __DIR__ . '/../../app/Core/Controller.php';
 require_once __DIR__ . '/../../app/Config/database.php';
 require_once __DIR__ . '/../../app/Core/Controller.php';

@@ -62,7 +62,7 @@ class SocioRepository implements SocioRepositoryInterface
      * @param string $codigo_socio
      * @return array|null
      */
-    public function getDeuda(string $codigo_socio): ?array
+    public function findDeudasByCodigo(string $codigo_socio): ?array
     {
         return null;
     }

@@ -94,7 +94,7 @@ class SocioService
             ];
         }
 
-        $deudaData = $this->socioRepository->getDeuda($codigo_socio);
+        $deudaData = $this->socioRepository->findDeudasByCodigo($codigo_socio);
 
         if ($deudaData === null) {
             return [
@@ -103,6 +103,11 @@ class SocioService
                 'datos_socio' => null
             ];
         }
+        return [
+            'success' => true,
+            'message' => 'Deudas consultadas exitosamente.',
+            'data' => $deudaData
+        ];
     }
 
     /**
@@ -174,11 +179,5 @@ class SocioService
                 'mensaje_texto' => 'Ocurrió un error al obtener las deudas o no se encontró el socio.'
             ];
         }
-
-        return [
-            'success' => true,
-            'message' => 'Deudas consultadas exitosamente.',
-            'data' => $deudaData
-        ];
     }
 }

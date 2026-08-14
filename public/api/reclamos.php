@@ -12,6 +12,7 @@ use App\Core\Logger;
 use App\Data\Repositories\MySQL\SocioRepository;
 use App\Data\Repositories\MySQL\ReclamoRepository;
 use App\Modules\Reclamo\ReclamoService;
+use App\Core\Validator;
 
 /**
  * Endpoint de la API para Reclamos
@@ -33,9 +34,15 @@ class ReclamoEndpoint extends Controller
         $tipo_reclamo = $input['tipo_reclamo'] ?? null;
         $descripcion  = $input['descripcion'] ?? null;
 
-        // Validar que los campos requeridos existan
-        if (!$codigo_socio || !$tipo_reclamo || !$descripcion) {
-            $this->handleError('Faltan campos requeridos: codigo_socio, tipo_reclamo, descripcion.', 400);
+        // Validar entradas con Validator
+        if (!Validator::codigoSocio((string)$codigo_socio)) {
+            $this->handleError('El campo codigo_socio es inválido.', 400);
+        }
+        if (!Validator::tipoReclamo((string)$tipo_reclamo)) {
+            $this->handleError('El campo tipo_reclamo es inválido o no permitido.', 400);
+        }
+        if (!Validator::descripcion((string)$descripcion)) {
+            $this->handleError('El campo descripcion es inválido o supera los 500 caracteres sin HTML permitidos.', 400);
         }
 
         try {

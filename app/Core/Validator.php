@@ -21,6 +21,6 @@ class Validator {
     // descripcion: texto libre, max 500 caracteres, sin HTML
     public static function descripcion(?string $value): bool {
         if ($value === null || strlen($value) > 500) return false;
-        return strip_tags($value) === $value; // No permite HTML
+        return strip_tags($value) === $value;
     }
 }

@@ -72,3 +72,7 @@ En cada nodo HTTP Request de n8n que llame a la API PHP:
 ### Verificación
 - Llamar a `/api/socio.php?codigo_socio=1` sin el header → respuesta `401`
 - Llamar con el header correcto → respuesta normal `200`/`404`
+
+
+
+

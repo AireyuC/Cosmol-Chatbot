@@ -7,7 +7,10 @@ class RateLimiter {
     private static $windowSeconds = 60;
 
     public static function check(): void {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        if (strpos($ip, ',') !== false) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
         $safeIp = preg_replace('/[^a-zA-Z0-9\._\-]/', '_', $ip);
         $file = sys_get_temp_dir() . "/rl_{$safeIp}.json";
 

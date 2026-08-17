@@ -56,3 +56,4 @@ Asegurar que el directorio `/var/log` sea escribible por el proceso de Apache/PH
 
 ### Verificación
 - Verificar que los errores aparecen en `/var/log/cosmol_api.log` en formato JSON
+ook 

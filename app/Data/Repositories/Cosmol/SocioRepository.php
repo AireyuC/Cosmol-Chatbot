@@ -32,11 +32,10 @@ class SocioRepository implements SocioRepositoryInterface
     {
         // Se leen las constantes definidas en Config/database.php desde el .env
         $this->baseUrl = rtrim(defined('COSMOL_API_URL') ? COSMOL_API_URL : '', '/');
-        $this->apiToken = defined('COSMOL_API_TOKEN') ? COSMOL_API_TOKEN : '';
+        /*$this->apiToken = defined('COSMOL_API_TOKEN') ? COSMOL_API_TOKEN : '';*/
     }
 
     /**
-     * Busca un socio por su código fijo consultando la API externa.
      * Endpoint: GET /socios/{codigo_socio}
      *
      * @param string $codigo_socio El código fijo del socio a buscar.
@@ -64,7 +63,7 @@ class SocioRepository implements SocioRepositoryInterface
      * @param string $codigo_socio El código fijo del socio.
      * @return array|null Array con las deudas o null si falla.
      */
-    public function getDeuda(string $codigo_socio): ?array
+    public function findDeudasByCodigo(string $codigo_socio): ?array
     {
         $url = "{$this->baseUrl}/socios/" . urlencode($codigo_socio) . "/deudas";
         $response = $this->get($url);

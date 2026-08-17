@@ -17,6 +17,21 @@ class RepositorioSocioApi implements SocioRepositoryInterface
         $this->clienteApi = $clienteApi;
     }
 
+    private function trimDatos(array $datos): array
+    {
+        $limpios = [];
+        foreach ($datos as $key => $value) {
+            if (is_array($value)) {
+                $limpios[$key] = $this->trimDatos($value);
+            } elseif (is_string($value)) {
+                $limpios[$key] = trim($value);
+            } else {
+                $limpios[$key] = $value;
+            }
+        }
+        return $limpios;
+    }
+
     /**
      * Busca un socio por su código fijo utilizando la API externa.
      *
@@ -28,14 +43,12 @@ class RepositorioSocioApi implements SocioRepositoryInterface
         try {
             $respuesta = $this->clienteApi->obtenerSocio($cod_socio);
 
-            // Verificamos si la respuesta indica éxito
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return $respuesta['datos'] ?? null;
+                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : null;
             }
 
             return null;
         } catch (Exception $e) {
-            // Loguear el error internamente si es necesario
             error_log("RepositorioSocioApi::findByCodigo error - " . $e->getMessage());
             return null;
         }
@@ -54,7 +67,7 @@ class RepositorioSocioApi implements SocioRepositoryInterface
 
             // Verificamos si la respuesta indica éxito
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return $respuesta['datos'] ?? [];
+                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;

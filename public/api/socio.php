@@ -2,15 +2,12 @@
 
 declare(strict_types=1);
 
-// Carga manual de dependencias debido a que aún no hay Autoloader (Fase 4)
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
-require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
-require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
+// bootstrap.php carga el autoloader (PSR-4), la configuración global y los headers de la API.
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
+use App\Core\Logger;
+use App\Core\Validator;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
@@ -39,8 +36,9 @@ class SocioEndpoint extends Controller
             $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
         }
 
-        if ($cod_socio === null) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
+        if (!Validator::codigoSocio((string)$cod_socio)) {
+            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado.', 'data' => null], 400);
+            return;
         }
 
         // Elimino la lectura redundante de action que estaba aquí

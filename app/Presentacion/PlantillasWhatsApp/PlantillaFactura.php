@@ -24,16 +24,11 @@ class PlantillaFactura
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first\n\n¡Gracias por preferir nuestros canales digitales!";
+            $mensajeTexto .= "\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         } else {
-            $mensajeTexto = "El Código Fijo ($codSocio) no tiene deudas pendientes en este momento.";
+            $mensajeTexto = "El Código Fijo ($codSocio) no tiene deudas pendientes en este momento.\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         }
 
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => $mensajeTexto
-            ]
-        ];
+        return PlantillaSocio::menuPrincipal($codSocio, '', false, $mensajeTexto, true);
     }
 }

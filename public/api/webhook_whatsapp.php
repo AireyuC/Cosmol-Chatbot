@@ -139,16 +139,20 @@ class WebhookWhatsAppEndpoint extends Controller
                         } else {
                             $whatsappPayload = PlantillaSistema::textoSimple("Ocurrió un error al obtener las deudas.");
                         }
+                    } elseif ($contenido === 'MENU_AGENTE') {
+                        $whatsappPayload = PlantillaSocio::redireccionAgente();
+                    } elseif ($contenido === 'MENU_PRINCIPAL_VOLVER') {
+                        $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio);
                     } elseif ($contenido === 'MENU_CAMBIAR_CODIGO') {
                         // Resetear sesión y pedir código
                         $sessionService->resetSession($telefono);
                         $whatsappPayload = PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
                     } else {
-                        $whatsappPayload = PlantillaSistema::opcionInvalida();
+                        $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
                     }
                 } else {
                     // Si escribe texto en lugar de usar botones del menú
-                    $whatsappPayload = PlantillaSistema::opcionInvalida();
+                    $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
                 }
             }
 

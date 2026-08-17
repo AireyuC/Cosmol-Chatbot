@@ -43,8 +43,9 @@ class SocioEndpoint extends Controller
             return;
         }
 
-        if ($cod_socio === null || !Validator::codigoSocio((string)$cod_socio)) {
-            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o requerido (solo dígitos, 1-10 caracteres).', 'data' => null], 400);
+        if (!Validator::codigoSocio((string)$cod_socio)) {
+            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado.', 'data' => null], 400);
+            return;
         }
 
         // Elimino la lectura redundante de action que estaba aquí
@@ -76,7 +77,7 @@ class SocioEndpoint extends Controller
                 'codigo_socio' => $cod_socio ?? null,
                 'action'       => $action ?? null,
             ]);
-            $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
+            $this->json(['success' => false, 'message' => 'Error interno en el servidor.', 'data' => null], 500);
         }
     }
 }

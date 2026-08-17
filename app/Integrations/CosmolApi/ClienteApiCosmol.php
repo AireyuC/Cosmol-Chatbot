@@ -18,6 +18,7 @@ class ClienteApiCosmol
     }
 
     /**
+     * Obtiene los datos del socio desde la API de Cosmol.
      *
      * @param string $codSocio
      * @return array|null

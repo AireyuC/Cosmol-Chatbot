@@ -65,8 +65,11 @@ class SocioEndpoint extends Controller
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
-            // Manejo de errores a nivel superior (ej. falla en conexión BD)
-            error_log("Error crítico en SocioEndpoint: " . $e->getMessage());
+            \App\Core\Logger::error('Error crítico en SocioEndpoint', [
+                'exception' => $e->getMessage(),
+                'codigo_socio' => $cod_socio ?? null,
+                'action' => $action ?? null
+            ]);
             $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
         }
     }

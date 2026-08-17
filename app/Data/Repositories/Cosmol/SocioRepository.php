@@ -19,14 +19,14 @@ class SocioRepository implements SocioRepositoryInterface
      * URL base de la API externa (ej. https://api.cosmol.com.bo/api-consultas)
      * @var string
      */
-    private string $baseUrl;
+    private $baseUrl;
 
     /**
      * Token de autenticación Bearer (opcional).
      * Si COSMOL_API_TOKEN está vacío en el .env, no se envía cabecera Authorization.
      * @var string
      */
-    private string $apiToken;
+    private $apiToken;
 
     public function __construct()
     {

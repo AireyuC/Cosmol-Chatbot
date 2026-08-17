@@ -2,23 +2,11 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../app/Config/database.php';
-require_once __DIR__ . '/../../app/Core/Database.php';
-require_once __DIR__ . '/../../app/Core/Controller.php';
-require_once __DIR__ . '/../../app/Data/Interfaces/SessionRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/RepositorioSessionMySQL.php';
-require_once __DIR__ . '/../../app/Modules/Session/SessionService.php';
-
-require_once __DIR__ . '/../../app/Data/Interfaces/SocioRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Integrations/CosmolApi/ClienteApiCosmol.php';
-require_once __DIR__ . '/../../app/Data/Repositories/Api/RepositorioSocioApi.php';
-require_once __DIR__ . '/../../app/Modules/Socio/SocioService.php';
-
-require_once __DIR__ . '/../../app/Presentacion/PlantillasWhatsApp/PlantillaSocio.php';
-require_once __DIR__ . '/../../app/Presentacion/PlantillasWhatsApp/PlantillaFactura.php';
-require_once __DIR__ . '/../../app/Presentacion/PlantillasWhatsApp/PlantillaSistema.php';
+// Incluir el bootstrap central para cargar clases (PSR-4), variables de entorno, CORS, Token y Logger
+require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Data\Repositories\MySQL\RepositorioSessionMySQL;
 use App\Modules\Session\SessionService;
 
@@ -167,7 +155,11 @@ class WebhookWhatsAppEndpoint extends Controller
             ], 200);
 
         } catch (Exception $e) {
-            error_log("Error en WebhookWhatsAppEndpoint: " . $e->getMessage());
+            \App\Core\Logger::error('Error en WebhookWhatsAppEndpoint', [
+                'exception' => $e->getMessage(),
+                'telefono' => $telefono ?? null
+            ]);
+            
             $this->json([
                 'status' => 'error',
                 'whatsapp_payload' => PlantillaSistema::textoSimple("Ocurrió un error interno en el servidor.")

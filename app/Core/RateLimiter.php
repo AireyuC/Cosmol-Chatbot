@@ -3,10 +3,19 @@
 namespace App\Core;
 
 class RateLimiter {
-    private static int $maxRequests = 30;
-    private static int $windowSeconds = 60;
+    private static $maxRequests = 30;
+    private static $windowSeconds = 60;
 
     public static function check(): void {
+        // [BYPASS] Si la petición proviene de nuestro propio ecosistema (n8n)
+        // y tiene el token interno correcto, omitimos el Rate Limiter.
+        // Esto evita que todos los usuarios de WhatsApp queden bloqueados simultáneamente.
+        $token = $_SERVER['HTTP_X_INTERNAL_TOKEN'] ?? '';
+        $expected = defined('API_INTERNAL_TOKEN') ? API_INTERNAL_TOKEN : '';
+        if (!empty($expected) && hash_equals($expected, $token)) {
+            return;
+        }
+
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $safeIp = preg_replace('/[^a-zA-Z0-9\._\-]/', '_', $ip);
         $file = sys_get_temp_dir() . "/rl_{$safeIp}.json";

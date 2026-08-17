@@ -36,6 +36,12 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({\n  telefono: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  tipo_mensaje: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type,\n  contenido: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type === 'text' ? $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text?.body : ($('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive?.list_reply?.id || $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive?.button_reply?.id || '')\n}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Token", "value": "c4b9d031e13f41249e0c90494fbdb96a2982d6b3fcb5962b9a715a6b0c2a71d0" }
+          ]
+        },
         "options": {
           "response": { "response": { "ignoreResponseCode": true } }
         }

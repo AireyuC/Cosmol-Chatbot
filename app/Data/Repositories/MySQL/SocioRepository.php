@@ -56,7 +56,6 @@ class SocioRepository implements SocioRepositoryInterface
             return null;
         }
     }
-<<<<<<< HEAD
 
     /**
      * Stub: La BD MySQL local no tiene deudas reales.
@@ -68,6 +67,4 @@ class SocioRepository implements SocioRepositoryInterface
     {
         return null;
     }
-=======
->>>>>>> 5d7abf724bb19196f6a8bc791fcee19d27bbfe13
 }

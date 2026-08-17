@@ -49,7 +49,7 @@ class RepositorioSocioApi implements SocioRepositoryInterface
 
             return null;
         } catch (Exception $e) {
-            error_log("RepositorioSocioApi::findByCodigo error - " . $e->getMessage());
+            \App\Core\Logger::error("RepositorioSocioApi::findByCodigo error", ['exception' => $e->getMessage()]);
             return null;
         }
     }
@@ -72,8 +72,7 @@ class RepositorioSocioApi implements SocioRepositoryInterface
 
             return null;
         } catch (Exception $e) {
-            // Loguear el error internamente si es necesario
-            error_log("RepositorioSocioApi::findDeudasByCodigo error - " . $e->getMessage());
+            \App\Core\Logger::error("RepositorioSocioApi::findDeudasByCodigo error", ['exception' => $e->getMessage()]);
             return null;
         }
     }

@@ -14,21 +14,14 @@ use App\Modules\Socio\SocioService;
 
 /**
  * Endpoint de la API para Socios
- *
- * Selección de repositorio según entorno:
- *  - Si COSMOL_API_URL está configurado en el .env → usa CosmolSocioRepository (API real).
- *  - Si no → usa MySQLSocioRepository (BD local de desarrollo).
- *
- * Acciones disponibles (parámetro GET 'action'):
- *  - 'validar'  → busca si el socio existe (por defecto)
- *  - 'deudas'   → devuelve las deudas/facturas pendientes del socio
+ * Maneja las peticiones entrantes desde n8n.
  */
 class SocioEndpoint extends Controller
 {
     public function handleRequest()
     {
-        $codigo_socio = null;
-        $action       = 'validar'; // acción por defecto
+        // Obtener el código de socio, ya sea de GET (query param) o POST (JSON payload)
+        $cod_socio = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Soportar tanto JSON como Form Data
@@ -39,8 +32,8 @@ class SocioEndpoint extends Controller
             $cod_socio = $_GET['cod_socio'] ?? null;
             $action = $_GET['action'] ?? 'validar';
         } else {
-            $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
-            return;
+            // Método no permitido
+            $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
         }
 
         if (!Validator::codigoSocio((string)$cod_socio)) {
@@ -66,18 +59,18 @@ class SocioEndpoint extends Controller
                 $resultado = $service->validarSocio((string)$cod_socio);
             }
 
-            // Devolver la respuesta usando el método del Controller base
-            $status = $resultado['status'] ?? ($resultado['success'] ?? false ? 'success' : 'error');
-            $httpStatus = $status === 'success' ? 200 : ($status === 'not_found' ? 404 : 400);
+            // Devolver la respuesta siempre con HTTP 200 para que n8n no rompa el flujo.
+            // El estado real va dentro del JSON ('status' => 'not_found' o 'success').
+            $httpStatus = 200;
             $this->json($resultado, $httpStatus);
 
         } catch (Exception $e) {
-            Logger::error('Error crítico en SocioEndpoint', [
-                'exception'    => $e->getMessage(),
+            \App\Core\Logger::error('Error crítico en SocioEndpoint', [
+                'exception' => $e->getMessage(),
                 'codigo_socio' => $cod_socio ?? null,
-                'action'       => $action ?? null,
+                'action' => $action ?? null
             ]);
-            $this->json(['success' => false, 'message' => 'Error interno en el servidor.', 'data' => null], 500);
+            $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
         }
     }
 }

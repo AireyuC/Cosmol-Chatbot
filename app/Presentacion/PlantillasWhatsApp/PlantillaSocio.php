@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
-/**
- * Genera los payloads JSON de WhatsApp relacionados a Saludos y Menú Principal del Socio.
- */
 class PlantillaSocio
 {
-    /**
-     * Retorna el mensaje de saludo inicial cuando no hay sesión.
-     */
     public static function saludo(): array
     {
         return [
@@ -22,9 +16,6 @@ class PlantillaSocio
         ];
     }
 
-    /**
-     * Retorna el menú principal interactivo cuando el socio fue validado.
-     */
     public static function menuPrincipal(string $codSocio, string $nombreSocio = '', bool $esError = false, ?string $mensajePersonalizado = null, bool $ocultarPagar = false): array
     {
         if ($mensajePersonalizado !== null) {
@@ -84,9 +75,6 @@ class PlantillaSocio
         ];
     }
 
-    /**
-     * Retorna el mensaje con el enlace al agente humano y los botones de volver/cancelar.
-     */
     public static function redireccionAgente(): array
     {
         $numeroAgente = "59170003204";

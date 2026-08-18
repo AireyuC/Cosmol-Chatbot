@@ -16,9 +16,9 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
   - **Pruebas (ngrok):** Para recibir los Webhooks de Meta durante el desarrollo, se utilizará **ngrok** de manera temporal. Esto creará un túnel público HTTPS que apuntará al puerto local de n8n.
   - **Producción:** En el despliegue final, ya no se usará ngrok. El servidor de producción deberá contar con una IP pública o dominio y un certificado SSL (idealmente a través de un proxy inverso como Nginx o Apache) para recibir las peticiones de Meta directamente al contenedor de n8n.
   - **API PHP:** Se levantará en su propio contenedor, garantizando un entorno escalable e idéntico para producción.
-- **Base de Datos:**
-  - **Producción:** IBM Informix 4GL (mediante el driver `pdo_informix` compilado dentro del contenedor de Docker).
-  - **Desarrollo Local:** MySQL 5.7 corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) simulando un espejo del sistema SAI. Se usa exclusivamente Docker para pruebas; no se utiliza XAMPP.
+- **Integración con Sistema SAI (Informix):**
+  - **Producción:** No se realizará una conexión directa ni migración a Informix. En su lugar, se consumirán **APIs REST** proporcionadas por el servidor Informix del sistema SAI. La API PHP actuará como intermediaria, haciendo peticiones HTTP a estos endpoints externos.
+  - **Desarrollo Local:** MySQL 5.7 corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) como base de datos simulada para pruebas locales (mock del sistema SAI). Se usa exclusivamente Docker; no se utiliza XAMPP.
 
 ## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
 1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
@@ -33,11 +33,11 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 1. **Webhook:** n8n recibe los mensajes de Meta WhatsApp.
 2. **Decisión Lógica:** n8n evalúa el texto o la plantilla recibida.
 3. **Consulta al Backend:** n8n hace una petición HTTP GET/POST a la API PHP (`/api/socio.php`, `/api/reclamos.php`).
-4. **Consulta a BD:** La API PHP se conecta a Informix o MySQL local y devuelve la respuesta.
+4. **Consulta de Datos:** La API PHP hace una petición a las **APIs REST del sistema SAI** (Informix) en producción, o a MySQL local en desarrollo, y devuelve la respuesta formateada.
 5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 
 ## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
 - **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + MySQL) y creación de Endpoints PHP simulados (Mocks).
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
 - **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
-- **Sprint 4 (Migración e Informix):** Configuración final de los conectores `pdo_informix` para apuntar el código PHP local hacia el servidor de producción.
+- **Sprint 4 (Integración APIs SAI):** Sustitución de las llamadas al MySQL local por las **APIs REST del sistema SAI** (Informix) proporcionadas por el equipo de producción. Validación end-to-end del flujo completo contra datos reales.

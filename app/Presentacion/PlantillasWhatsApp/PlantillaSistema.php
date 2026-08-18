@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
-/**
- * Genera los payloads JSON de WhatsApp relacionados a Mensajes de Sistema (Errores, Validaciones, Bloqueos).
- */
+/** Genera los payloads JSON de WhatsApp relacionados a Mensajes de Sistema (Errores, Validaciones, Bloqueos) */
 class PlantillaSistema
 {
-    /**
-     * Retorna el mensaje cuando el socio no fue encontrado o el código es inválido.
-     */
     public static function codigoInvalido(): array
     {
         return [
@@ -22,9 +17,6 @@ class PlantillaSistema
         ];
     }
 
-    /**
-     * Retorna el mensaje cuando la sesión del usuario ha sido bloqueada temporalmente por intentos fallidos.
-     */
     public static function bloqueado(): array
     {
         return [
@@ -35,9 +27,6 @@ class PlantillaSistema
         ];
     }
 
-    /**
-     * Retorna el mensaje cuando se desbloquea al usuario.
-     */
     public static function desbloqueado(): array
     {
         return [
@@ -48,9 +37,6 @@ class PlantillaSistema
         ];
     }
 
-    /**
-     * Retorna el mensaje de sesión expirada.
-     */
     public static function sesionExpirada(): array
     {
         return [
@@ -61,9 +47,6 @@ class PlantillaSistema
         ];
     }
 
-    /**
-     * Retorna el mensaje de opción inválida en el menú principal.
-     */
     public static function opcionInvalida(): array
     {
         return [
@@ -74,9 +57,6 @@ class PlantillaSistema
         ];
     }
 
-    /**
-     * Retorna un texto simple genérico.
-     */
     public static function textoSimple(string $mensaje): array
     {
         return [

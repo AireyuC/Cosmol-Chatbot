@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
-/**
- * Genera los payloads JSON de WhatsApp relacionados a Facturas y Pagos.
- */
 class PlantillaFactura
 {
-    /**
-     * Retorna el mensaje con el listado de deudas y el link de pago.
-     */
     public static function listaDeudas(string $codSocio, int $cantidadFacturas, float $totalRedondeado, array $listaDeudas): array
     {
         if ($cantidadFacturas > 0) {

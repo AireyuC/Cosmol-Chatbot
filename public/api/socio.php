@@ -20,7 +20,6 @@ class SocioEndpoint extends Controller
 {
     public function handleRequest()
     {
-        // Obtener el código de socio, ya sea de GET (query param) o POST (JSON payload)
         $cod_socio = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -32,7 +31,6 @@ class SocioEndpoint extends Controller
             $cod_socio = $_GET['cod_socio'] ?? null;
             $action = $_GET['action'] ?? 'validar';
         } else {
-            // Método no permitido
             $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
         }
 
@@ -40,8 +38,6 @@ class SocioEndpoint extends Controller
             $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o no fue proporcionado.', 'data' => null], 400);
             return;
         }
-
-        // Elimino la lectura redundante de action que estaba aquí
 
         try {
             // Instanciar el cliente HTTP de la API externa
@@ -75,6 +71,5 @@ class SocioEndpoint extends Controller
     }
 }
 
-// Ejecutar el endpoint
 $endpoint = new SocioEndpoint();
 $endpoint->handleRequest();

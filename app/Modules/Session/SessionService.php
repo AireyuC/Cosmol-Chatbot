@@ -13,7 +13,7 @@ class SessionService
      */
     private $repository;
     private const MAX_ATTEMPTS = 200;
-    private const INACTIVE_TIMEOUT_SECONDS = 60; // 1 minuto
+    private const INACTIVE_TIMEOUT_SECONDS = 60;
     private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos
 
     public function __construct(SessionRepositoryInterface $repository)
@@ -26,7 +26,6 @@ class SessionService
         $session = $this->repository->getSession($telefono);
         
         if (!$session) {
-            // No existe sesión, inicializamos
             $this->repository->saveSession($telefono, null, 'AWAITING_CODE', 0);
             return $this->buildResponse('AWAITING_CODE', null, 'Hola, bienvenido. Por favor envía tu código de socio válido.');
         }
@@ -38,10 +37,9 @@ class SessionService
         $ahora = time();
         $tiempoTranscurrido = $ahora - $ultimaInteraccion;
 
-        // Comprobaciones de Timeout
         if ($estado === 'BLOCKED') {
             if ($tiempoTranscurrido > self::BLOCKED_TIMEOUT_SECONDS) {
-                // Desbloqueo automático tras 5 min
+
                 $this->repository->resetSession($telefono);
                 return $this->buildResponse('AWAITING_CODE', null, 'Tu bloqueo ha expirado. Por favor, envía tu código de socio.');
             }
@@ -50,18 +48,18 @@ class SessionService
         }
 
         if ($tiempoTranscurrido > self::INACTIVE_TIMEOUT_SECONDS) {
-            // Reset por inactividad
+            
             $this->repository->resetSession($telefono);
             return $this->buildResponse('AWAITING_CODE', null, 'Sesión expirada por inactividad. Por favor, envía tu código de socio.');
         }
 
-        // Devolver el estado actual tal cual está (sin cambiarlo aquí, eso lo decide n8n)
+        // Devolver el estado actual tal cual está (sin cambiarlo aquí, eso lo decide n8n).
         return $this->buildResponse($estado, $codigoSocio, null, $intentos);
     }
 
     public function updateSession(string $telefono, ?int $codigoSocio, string $nuevoEstado, int $intentos): bool
     {
-        // Validar si el intento llega a max attempts para bloquear
+
         if ($intentos >= self::MAX_ATTEMPTS) {
             $nuevoEstado = 'BLOCKED';
         }

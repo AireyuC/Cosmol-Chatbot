@@ -31,6 +31,7 @@ class SocioEndpoint extends Controller
             $cod_socio = $_GET['cod_socio'] ?? null;
             $action = $_GET['action'] ?? 'validar';
         } else {
+            
             $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
         }
 
@@ -64,7 +65,7 @@ class SocioEndpoint extends Controller
             \App\Core\Logger::error('Error crítico en SocioEndpoint', [
                 'exception' => $e->getMessage(),
                 'codigo_socio' => $cod_socio ?? null,
-                'action' => $action ?? null
+                'action' => $action ?? null,
             ]);
             $this->json(['status' => 'error', 'message' => 'Ocurrió un error interno en el servidor'], 500);
         }

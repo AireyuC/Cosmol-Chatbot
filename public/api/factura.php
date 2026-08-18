@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Logger;
+use App\Core\Validator;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Data\Repositories\Api\RepositorioSocioApi;
 use App\Modules\Socio\SocioService;
@@ -27,11 +28,12 @@ class FacturaEndpoint extends Controller
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $cod_socio = $_GET['cod_socio'] ?? null;
         } else {
-            $this->json(['status' => 'error', 'message' => 'Método HTTP no soportado'], 405);
+            $this->json(['success' => false, 'message' => 'Método HTTP no soportado', 'data' => null], 405);
+            return;
         }
 
-        if ($cod_socio === null) {
-            $this->json(['status' => 'error', 'message' => 'El parámetro cod_socio es requerido'], 400);
+        if ($cod_socio === null || !Validator::codigoSocio((string)$cod_socio)) {
+            $this->json(['success' => false, 'message' => 'El parámetro cod_socio es inválido o requerido (solo dígitos, 1-10 caracteres).', 'data' => null], 400);
         }
 
         try {
@@ -48,7 +50,7 @@ class FacturaEndpoint extends Controller
                 'exception' => $e->getMessage(),
                 'cod_socio' => $cod_socio ?? null,
             ]);
-            $this->json(['status' => 'error', 'mensaje_texto' => 'Ocurrió un error interno en el servidor'], 500);
+            $this->json(['success' => false, 'message' => 'Ocurrió un error interno en el servidor.', 'data' => null], 500);
         }
     }
 }

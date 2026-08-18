@@ -37,7 +37,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 
 ## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
-- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + MySQL) y creación de Endpoints PHP simulados (Mocks).
+- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, instalación de XAMPP local y creación de Endpoints PHP simulados (Mocks).
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
 - **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
 - **Sprint 4 (Integración APIs SAI):** Sustitución de las llamadas al MySQL local por las **APIs REST del sistema SAI** (Informix) proporcionadas por el equipo de producción. Validación end-to-end del flujo completo contra datos reales.

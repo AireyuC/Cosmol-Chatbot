@@ -36,21 +36,21 @@ services:
       db:
         condition: service_healthy
 
+  # Base de Datos (PostgreSQL 13.22-alpine)
   db:
-    image: mysql:5.7
-    container_name: cosmol_mysql
-    networks:
-      - cosmol_network
+    image: postgres:13.22-alpine
+    container_name: cosmol_postgres
+    ports:
+      - "5432:5432"
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,5 +63,5 @@ networks:
 volumes:
   n8n_data:
     name: cosmol_n8n_data
-  mysql_data:
-    name: cosmol_mysql_data
+  postgres_data:
+    name: cosmol_postgres_data

@@ -5,7 +5,10 @@ WORKDIR /app
 # Habilitar mod_rewrite de Apache
 RUN a2enmod rewrite
 
-RUN docker-php-ext-install pdo pdo_mysql mysqli
+# Instalar dependencias para PostgreSQL y compilar drivers (manteniendo pdo_mysql para fallback)
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pdo_mysql mysqli \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Asegurar que el archivo de logs sea escribible por Apache (Fase 5 — Seguridad)
 RUN touch /var/log/cosmol_api.log && chown www-data:www-data /var/log/cosmol_api.log

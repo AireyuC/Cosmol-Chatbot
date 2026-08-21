@@ -36,7 +36,6 @@ services:
       db:
         condition: service_healthy
 
-  # Base de Datos (MySQL 5.7)
   db:
     image: mysql:5.7
     container_name: cosmol_mysql

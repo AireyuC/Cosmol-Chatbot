@@ -18,7 +18,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
   - **API PHP:** Se levantará en su propio contenedor, garantizando un entorno escalable e idéntico para producción.
 - **Integración con Sistema SAI (Informix):**
   - **Producción:** No se realizará una conexión directa ni migración a Informix. En su lugar, se consumirán **APIs REST** proporcionadas por el servidor Informix del sistema SAI. La API PHP actuará como intermediaria, haciendo peticiones HTTP a estos endpoints externos.
-  - **Desarrollo Local:** MySQL 5.7 corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) como base de datos simulada para pruebas locales (mock del sistema SAI). Se usa exclusivamente Docker; no se utiliza XAMPP.
+  - **Desarrollo Local:** MySQL 5.7 corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) como base de datos simulada para pruebas locales (mock del sistema SAI). Todo el entorno de desarrollo corre exclusivamente en Docker.
 
 ## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
 1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
@@ -37,7 +37,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 
 ## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
-- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, instalación de XAMPP local y creación de Endpoints PHP simulados (Mocks).
+- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + MySQL) y creación de Endpoints PHP simulados (Mocks).
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
 - **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
 - **Sprint 4 (Integración APIs SAI):** Sustitución de las llamadas al MySQL local por las **APIs REST del sistema SAI** (Informix) proporcionadas por el equipo de producción. Validación end-to-end del flujo completo contra datos reales.

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Data\Repositories\MySQL\RepositorioSessionMySQL;
+use App\Data\Repositories\Postgres\RepositorioSessionPostgres;
 use App\Modules\Session\SessionService;
 
 use App\Integrations\CosmolApi\ClienteApiCosmol;
@@ -49,7 +49,7 @@ class WebhookWhatsAppEndpoint extends Controller
 
         try {
             // Inicializar Servicios
-            $sessionRepo = new RepositorioSessionMySQL();
+            $sessionRepo = new RepositorioSessionPostgres();
             $sessionService = new SessionService($sessionRepo);
 
             $clienteApi = new ClienteApiCosmol();

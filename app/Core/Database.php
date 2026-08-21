@@ -24,15 +24,17 @@ class Database{
         if (self::$instance === null) {
 
             try {
-                $driver = defined('DB_DRIVER') ? DB_DRIVER : 'mysql';
+                $driver = defined('DB_DRIVER') ? DB_DRIVER : 'pgsql';
                 $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-                $port = defined('DB_PORT') ? DB_PORT : '3306';
+                $port = defined('DB_PORT') ? DB_PORT : '5432';
                 $dbName = defined('DB_NAME') ? DB_NAME : '';
                 $user = defined('DB_USER') ? DB_USER : '';
                 $password = defined('DB_PASSWORD') ? DB_PASSWORD : '';
-                $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
+                $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8';
 
-                if ($driver === 'informix') {
+                if ($driver === 'pgsql' || $driver === 'postgres') {
+                    $dsn = "pgsql:host={$host};port={$port};dbname={$dbName};options='--client_encoding=UTF8'";
+                } elseif ($driver === 'informix') {
                     // DSN Básico para Informix (después podrás agregar server, protocol, etc.)
                     $dsn = "informix:host={$host};service={$port};database={$dbName};";
                 } else {
@@ -45,7 +47,6 @@ class Database{
                     PDO::ATTR_EMULATE_PREPARES => false,
                 ];
 
-                // 2. Crear la instancia real de la conexión usando el DSN
                 self::$instance = new PDO($dsn, $user, $password, $options);
 
             } catch (PDOException $e) {

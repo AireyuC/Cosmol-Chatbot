@@ -6,11 +6,11 @@ require_once __DIR__ . '/../../app/Config/database.php';
 require_once __DIR__ . '/../../app/Core/Database.php';
 require_once __DIR__ . '/../../app/Core/Controller.php';
 require_once __DIR__ . '/../../app/Data/Interfaces/SessionRepositoryInterface.php';
-require_once __DIR__ . '/../../app/Data/Repositories/MySQL/RepositorioSessionMySQL.php';
+require_once __DIR__ . '/../../app/Data/Repositories/Postgres/RepositorioSessionPostgres.php';
 require_once __DIR__ . '/../../app/Modules/Session/SessionService.php';
 
 use App\Core\Controller;
-use App\Data\Repositories\MySQL\RepositorioSessionMySQL;
+use App\Data\Repositories\Postgres\RepositorioSessionPostgres;
 use App\Modules\Session\SessionService;
 
 class SessionEndpoint extends Controller
@@ -36,7 +36,7 @@ class SessionEndpoint extends Controller
         }
 
         try {
-            $repository = new RepositorioSessionMySQL();
+            $repository = new RepositorioSessionPostgres();
             $service = new SessionService($repository);
 
             if ($action === 'get') {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Repositories\MySQL;
+namespace App\Data\Repositories\Postgres;
 
 use App\Data\Interfaces\SessionRepositoryInterface;
 use App\Core\Database;
 use PDO;
 
-class RepositorioSessionMySQL implements SessionRepositoryInterface
+class RepositorioSessionPostgres implements SessionRepositoryInterface
 {
     /**
      * @var PDO
@@ -31,13 +31,21 @@ class RepositorioSessionMySQL implements SessionRepositoryInterface
 
     public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos): bool
     {
-        // Upsert (Insert or Update)
-        $sql = "INSERT INTO chat_session (telefono_whatsapp, codigo_socio, estado_actual, intentos_fallidos) 
-                VALUES (:telefono, :codigo, :estado, :intentos)
-                ON DUPLICATE KEY UPDATE 
-                codigo_socio = :codigo_upd, 
-                estado_actual = :estado_upd, 
-                intentos_fallidos = :intentos_upd";
+        $stmtCheck = $this->db->prepare("SELECT telefono_whatsapp FROM chat_session WHERE telefono_whatsapp = :telefono");
+        $stmtCheck->execute(['telefono' => $telefonoWhatsapp]);
+        
+        if ($stmtCheck->fetch()) {
+            // Existe, actualizamos y renovamos el timestamp
+            $sql = "UPDATE chat_session 
+                    SET codigo_socio = :codigo, 
+                        estado_actual = :estado, 
+                        intentos_fallidos = :intentos,
+                        ultima_interaccion = CURRENT_TIMESTAMP
+                    WHERE telefono_whatsapp = :telefono";
+        } else {
+            $sql = "INSERT INTO chat_session (telefono_whatsapp, codigo_socio, estado_actual, intentos_fallidos) 
+                    VALUES (:telefono, :codigo, :estado, :intentos)";
+        }
 
         $stmt = $this->db->prepare($sql);
         
@@ -45,10 +53,7 @@ class RepositorioSessionMySQL implements SessionRepositoryInterface
             'telefono' => $telefonoWhatsapp,
             'codigo' => $codigoSocio,
             'estado' => $estadoActual,
-            'intentos' => $intentosFallidos,
-            'codigo_upd' => $codigoSocio,
-            'estado_upd' => $estadoActual,
-            'intentos_upd' => $intentosFallidos
+            'intentos' => $intentosFallidos
         ]);
     }
 

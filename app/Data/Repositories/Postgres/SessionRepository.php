@@ -8,7 +8,7 @@ use App\Data\Interfaces\SessionRepositoryInterface;
 use App\Core\Database;
 use PDO;
 
-class RepositorioSessionPostgres implements SessionRepositoryInterface
+class SessionRepository implements SessionRepositoryInterface
 {
     /**
      * @var PDO

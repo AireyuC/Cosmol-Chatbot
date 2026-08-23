@@ -8,7 +8,7 @@ use App\Data\Interfaces\SocioRepositoryInterface;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use Exception;
 
-class RepositorioSocioApi implements SocioRepositoryInterface
+class SocioRepository implements SocioRepositoryInterface
 {
     private $clienteApi;
 

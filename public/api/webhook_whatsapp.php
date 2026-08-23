@@ -7,11 +7,11 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Data\Repositories\Postgres\RepositorioSessionPostgres;
+use App\Data\Repositories\Postgres\SessionRepository;
 use App\Modules\Session\SessionService;
 
 use App\Integrations\CosmolApi\ClienteApiCosmol;
-use App\Data\Repositories\Api\RepositorioSocioApi;
+use App\Data\Repositories\Api\SocioRepository;
 use App\Modules\Socio\SocioService;
 
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
@@ -49,11 +49,11 @@ class WebhookWhatsAppEndpoint extends Controller
 
         try {
             // Inicializar Servicios
-            $sessionRepo = new RepositorioSessionPostgres();
+            $sessionRepo = new SessionRepository();
             $sessionService = new SessionService($sessionRepo);
 
             $clienteApi = new ClienteApiCosmol();
-            $socioRepo = new RepositorioSocioApi($clienteApi);
+            $socioRepo = new SocioRepository($clienteApi);
             $socioService = new SocioService($socioRepo);
 
             // Obtener el estado actual y procesar Timeouts automáticos

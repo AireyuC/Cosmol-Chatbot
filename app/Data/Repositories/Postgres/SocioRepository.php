@@ -11,7 +11,7 @@ use PDOException;
 /**
  * Class SocioRepository
  * 
- * Implementación de repositorio para acceder a los datos de Socios en MySQL.
+ * Implementación de repositorio para acceder a los datos de Socios en PostgreSQL / Informix local.
  */
 class SocioRepository implements SocioRepositoryInterface
 {

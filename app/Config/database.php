@@ -21,5 +21,5 @@ define('COSMOL_API_URL', getenv('COSMOL_API_URL') ?: '');
 define('API_INTERNAL_TOKEN', getenv('API_INTERNAL_TOKEN') ?: '');
 
 // Seguridad — Origen permitido para CORS (Fase 3)
-define('ALLOWED_ORIGIN', getenv('ALLOWED_ORIGIN') ?: 'http://cosmol_n8n:5678');
+define('ALLOWED_ORIGIN', getenv('ALLOWED_ORIGIN') ?: '');
 

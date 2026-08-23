@@ -12,7 +12,7 @@ class SessionService
      * @var SessionRepositoryInterface
      */
     private $repository;
-    private const MAX_ATTEMPTS = 200;
+    private const MAX_ATTEMPTS = 6;
     private const INACTIVE_TIMEOUT_SECONDS = 60; // 1 minuto
     private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos
 

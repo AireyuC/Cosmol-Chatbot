@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Repositories\MySQL;
+namespace App\Data\Repositories\Postgres;
 
 use App\Data\Interfaces\ReclamoRepositoryInterface;
 use PDO;
@@ -27,7 +27,7 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
             "INSERT INTO reclamo
                 (codigo_socio, tipo_reclamo, descripcion, direccion, estado, fecha_creacion)
              VALUES
-                (:codigo_socio, :tipo, :descripcion, :direccion, 'PENDIENTE', NOW())"
+                (:codigo_socio, :tipo, :descripcion, :direccion, 'PENDIENTE', CURRENT_TIMESTAMP)"
         );
 
         // Ejecutamos la consulta reemplazando las variables con los datos reales

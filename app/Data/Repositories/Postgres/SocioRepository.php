@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Repositories\MySQL;
+namespace App\Data\Repositories\Postgres;
 
 use App\Data\Interfaces\SocioRepositoryInterface;
 use PDO;

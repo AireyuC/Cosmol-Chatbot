@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Logger;
-use App\Data\Repositories\MySQL\SocioRepository;
-use App\Data\Repositories\MySQL\ReclamoRepository;
+use App\Data\Repositories\Postgres\SocioRepository;
+use App\Data\Repositories\Postgres\ReclamoRepository;
 use App\Modules\Reclamo\ReclamoService;
 use App\Core\Validator;
 

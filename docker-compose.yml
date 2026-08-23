@@ -1,17 +1,15 @@
 services:
-  # Orquestador (n8n)
   n8n:
     image: docker.n8n.io/n8nio/n8n:1
     container_name: cosmol_n8n
     ports:
       - "5678:5678"
+    networks:
+      - cosmol_network
     env_file:
       - .env
     volumes:
       - n8n_data:/home/node/.n8n
-    depends_on:
-      backend:
-        condition: service_healthy
 
   # API (PHP 7.3 + Apache)
   backend:
@@ -19,12 +17,16 @@ services:
       context: .
       dockerfile: dockerfile
     container_name: cosmol_php_backend
+    networks:
+      - cosmol_network
     ports:
-      - "8000:80" # Tu compañero y tú podrán ver la API en http://localhost:8000
+      - "8000:80"
+    profiles:
+      - dev
     env_file:
       - .env
     volumes:
-      - .:/app # Sincroniza el código en tiempo real sin tener que reconstruir la imagen
+      - .:/app
     healthcheck:
       test: ["CMD-SHELL", "php -r \"exit(@fsockopen('localhost', 80) ? 0 : 1);\""]
       interval: 10s
@@ -34,29 +36,32 @@ services:
       db:
         condition: service_healthy
 
-  # Base de Datos (MySQL 5.7)
+  # Base de Datos (PostgreSQL 13.22-alpine)
   db:
-    image: mysql:5.7
-    container_name: cosmol_mysql
+    image: postgres:13.22-alpine
+    container_name: cosmol_postgres
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      # Los valores reales ahora se jalan desde el archivo .env por seguridad
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+networks:
+  cosmol_network:
+    driver: bridge
+    name: cosmol_internal_network
+
 volumes:
   n8n_data:
     name: cosmol_n8n_data
-  mysql_data:
-    name: cosmol_mysql_data
+  postgres_data:
+    name: cosmol_postgres_data

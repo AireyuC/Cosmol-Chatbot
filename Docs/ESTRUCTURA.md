@@ -8,11 +8,11 @@ Al ser una API consumida exclusivamente por n8n (no hay Frontend HTML), el patr�
 
 - **Controller (Endpoints)**: Archivos independientes en `public/api/` que reciben la petición HTTP de n8n, leen los parámetros y delegan la ejecución al Servicio.
 - **Service (Capa de Negocio)**: Clases en `app/Modules/` que contienen las reglas del negocio (ej. validar si un reclamo procede, aplicar lógica de "fricción cero").
-- **Repository (Capa de Datos)**: Clases en `app/Data/Repositories/` que se encargan de armar y ejecutar las sentencias SQL. 
+- **Repository (Capa de Datos)**: Clases en `app/Data/Repositories/` que se encargan de obtener y persistir datos. En desarrollo consultan MySQL local; en producción hacen peticiones HTTP a las **APIs REST del sistema SAI** (Informix).
 - **Interfaces**: Contratos en `app/Data/Interfaces/` que garantizan que los repositorios sean intercambiables.
 
 > [!IMPORTANT]
-> **El valor de esta arquitectura:** El Servicio (`SocioService`) nunca sabe si está hablando con MySQL (entorno de desarrollo) o con IBM Informix (producción). Solo habla con una Interfaz. Esto permite la futura migración de base de datos sin tocar ni una línea de la lógica de negocio principal.
+> **El valor de esta arquitectura:** El Servicio (`SocioService`) nunca sabe si está hablando con MySQL (desarrollo) o con la API REST del SAI (producción). Solo habla con una Interfaz. Esto permite cambiar la fuente de datos sin tocar ni una línea de la lógica de negocio principal.
 
 ## Estructura de carpetas actual
 
@@ -33,7 +33,7 @@ cosmol-chatbot/
 │   │       ├── MySQL/
 │   │       │   ├── SocioRepository.php
 │   │       │   └── ReclamoRepository.php
-│   │       └── Informix/             ← Fase 5 (Futura)
+│   │       └── SAI/                  ← Fase 5 (Futura — HTTP client hacia APIs REST del SAI)
 │   ├── Modules/
 │   │   ├── Socio/
 │   │   │   └── SocioService.php
@@ -60,7 +60,7 @@ cosmol-chatbot/
 | `app/Core/` | **Infraestructura base.** El `Autoloader` evita los molestos `require_once` manuales a lo largo del código. El `Controller` estandariza el JSON de respuesta (`{ success, message, data }`), y `Database` maneja el singleton de la conexión PDO. |
 | `app/Modules/*/` | **Lógica de negocio.** Aquí viven los Servicios. Tienen estrictamente prohibido acceder a la base de datos de manera directa; deben pedir la información a través de los Repositorios inyectados. |
 | `app/Data/Interfaces/` | **Contratos.** Aseguran que métodos como `findByCodigo()` existan obligatoriamente en todos los repositorios que los implementen, sin importar el motor de BD. |
-| `app/Data/Repositories/` | **Consultas SQL.** Separa las sentencias puras de MySQL (usadas en Docker para desarrollo y testing) de las sentencias Informix (producción). |
+| `app/Data/Repositories/` | **Capa de datos intercambiable.** `MySQL/` contiene queries SQL para el entorno de desarrollo local (Docker). `SAI/` (Fase 5) contendrá clientes HTTP que consumen las APIs REST proporcionadas por el servidor Informix del sistema SAI en producción. |
 | `app/bootstrap.php` | **Carga inicial.** Archivo requerido por todos los endpoints para inicializar el Autoloader, cargar variables de entorno, y configurar headers (CORS). |
 
 ## Decisiones Técnicas Clave

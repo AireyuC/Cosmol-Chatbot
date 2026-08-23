@@ -65,7 +65,6 @@ class RepositorioSocioApi implements SocioRepositoryInterface
         try {
             $respuesta = $this->clienteApi->obtenerDeudasSocio($cod_socio);
 
-            // Verificamos si la respuesta indica éxito
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
                 return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
             }

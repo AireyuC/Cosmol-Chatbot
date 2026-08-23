@@ -30,6 +30,11 @@ class RateLimiter {
         $data['count']++;
 
         if ($data['count'] > self::$maxRequests) {
+            Logger::info('IP Bloqueada por exceso de peticiones', [
+                'ip'    => $ip,
+                'limit' => self::$maxRequests,
+            ]);
+
             http_response_code(429);
             header('Retry-After: ' . self::$windowSeconds);
             echo json_encode([

@@ -22,14 +22,14 @@ La URL base de la API externa de Cosmol no está escrita directamente en el cód
 
 ## 3. Flujos y Endpoints Implementados
 
-El sistema cuenta con dos flujos principales integrados al flujo de n8n (`02_Flujo_Interactivo_COSMOL.json`). Ambos endpoints soportan la recepción de datos tanto en formato JSON como en `x-www-form-urlencoded` (Form Data), garantizando compatibilidad nativa con n8n.
+El sistema cuenta con dos flujos principales integrados al flujo de n8n (`03_Flujo_Centralizado_MVC.json`). Todo el tráfico converge en un solo controlador centralizado (`webhook_whatsapp.php`), el cual a su vez invoca los servicios correspondientes de cada módulo.
 
-### A. Validación de Socio (`socio.php`)
+### A. Validación de Socio
 
 Utilizado cuando el usuario ingresa su código fijo por primera vez para validar su identidad.
 
-- **URL Interna (n8n):** `http://backend:80/api/socio.php`
-- **Método:** `POST`
+- **Servicio Interno:** `SocioService`
+- **Controlador Frontal (n8n):** `http://backend:80/api/webhook_whatsapp.php`
 - **Parámetros:** `cod_socio` (Ej. "2587")
 - **API Externa Consultada:** `/api-consultas/socios/{cod_socio}`
 - **Respuesta Exitosa (Ejemplo):**
@@ -45,12 +45,12 @@ Utilizado cuando el usuario ingresa su código fijo por primera vez para validar
   ```
   *(El campo `datos_socio.nombre` es utilizado por el Nodo 5 de n8n para saludar al cliente).*
 
-### B. Consulta de Facturas/Deudas (`factura.php`)
+### B. Consulta de Facturas/Deudas
 
 Utilizado cuando el usuario selecciona la opción "Pagar Deuda" en el menú interactivo.
 
-- **URL Interna (n8n):** `http://backend:80/api/factura.php`
-- **Método:** `POST`
+- **Servicio Interno:** `SocioService`
+- **Controlador Frontal (n8n):** `http://backend:80/api/webhook_whatsapp.php`
 - **Parámetros:** `cod_socio`
 - **API Externa Consultada:** `/api-consultas/socios/{cod_socio}/deudas`
 - **Respuesta Exitosa (Ejemplo):**

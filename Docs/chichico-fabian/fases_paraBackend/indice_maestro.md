@@ -33,8 +33,8 @@ Infraestructura base del backend: entorno, conexión a BD y controlador base.
 Implementa la autenticación "Fricción Cero" (solo con el Código de Asociado) usando el Patrón Repositorio.
 - `app/Data/Interfaces/SocioRepositoryInterface.php` — contrato (`findByCodigo`, `@todo getDeuda`, `getHistorialFacturas`).
 - `app/Data/Repositories/Postgres/SocioRepository.php` — implementación para desarrollo local.
-- `app/Modules/Socio/SocioService.php` — lógica de negocio.
-- `public/api/socio.php` — endpoint HTTP.
+- `app/Modules/Socio/SocioService.php` — lógica de negocio agnóstica a HTTP.
+- `public/api/webhook_whatsapp.php` — controlador frontal único para N8N.
 
 ### Fase 3 — Módulo de Reclamos
 Registro de reclamos (agua turbia, fuga, etc.) tomando la ubicación de la BD, sin GPS del usuario.
@@ -65,8 +65,8 @@ Migración completa de MySQL a PostgreSQL 16-alpine adoptando estándar ANSI SQL
 | [`app/Config/database.php`](file:///c:/Proyectos/Cosmol-Chatbot/app/Config/database.php) | Defaults fallback apuntan a `pgsql` y `5432` |
 | [`app/Core/Database.php`](file:///c:/Proyectos/Cosmol-Chatbot/app/Core/Database.php) | DSN para `pgsql` con `--client_encoding=UTF8`, soporte `informix` preparado |
 | [`database/init.sql`](file:///c:/Proyectos/Cosmol-Chatbot/database/init.sql) | ANSI SQL: `SERIAL`, `BOOLEAN`, `TIMESTAMP`, `CURRENT_TIMESTAMP`, sin `AUTO_INCREMENT` ni `NOW()` |
-| `ReclamoRepository.php` | `NOW()` → `CURRENT_TIMESTAMP` |
-| `RepositorioSessionMySQL.php` | `ON DUPLICATE KEY UPDATE` → patrón ANSI `SELECT` + `INSERT`/`UPDATE` |
+| `SocioRepository.php` (Api) | No usa base de datos local, utiliza `ClienteApiCosmol` para el SAI |
+| `SessionRepository.php` | Patrón ANSI `SELECT` + `INSERT`/`UPDATE` para persistencia de estados |
 
 **Restricciones ANSI SQL activas** (portabilidad a Informix):
 - ❌ `AUTO_INCREMENT` → usar `SERIAL`
@@ -137,10 +137,8 @@ cosmol-chatbot/
 │   └── bootstrap.php                 ← Inicializador global + pipeline de seguridad
 │
 ├── public/api/
-│   ├── socio.php
-│   ├── reclamos.php
-│   ├── factura.php
-│   └── session.php
+│   ├── reclamos.php                  ← Endpoint independiente (opcional)
+│   └── webhook_whatsapp.php          ← Controlador Central (MVC)
 │
 ├── database/
 │   └── init.sql                      ← Esquema ANSI SQL (PostgreSQL + futuro Informix)
@@ -157,7 +155,7 @@ cosmol-chatbot/
 | Decisión | Razón |
 |---|---|
 | Autoloader manual sin Composer | Sin dependencias de terceros, más simple |
-| Endpoints separados en lugar de router | Simplifica debug e integración con n8n |
+| Endpoints centralizados en `webhook_whatsapp.php` | El flujo de n8n funciona de manera más óptima en un solo punto |
 | PostgreSQL 16-alpine en Docker | ~80 MB vs ~380 MB de MySQL; ANSI SQL; portabilidad a Informix |
 | ANSI SQL estricto en init.sql | Simula el sistema SAI y garantiza migración a Informix sin reescritura |
 | Rate limiter basado en archivos `/tmp` | PHP 7.3 puro, sin Redis ni APCu |

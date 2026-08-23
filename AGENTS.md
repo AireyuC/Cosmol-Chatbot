@@ -33,7 +33,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 ## 4. ESTRUCTURA DE MICROSERVICIOS Y FLUJO
 1. **Webhook:** n8n recibe los mensajes de Meta WhatsApp.
 2. **Decisión Lógica:** n8n evalúa el texto o la plantilla recibida.
-3. **Consulta al Backend:** n8n hace una petición HTTP GET/POST a la API PHP (`/api/socio.php`, `/api/reclamos.php`).
+3. **Consulta al Backend:** n8n hace una petición HTTP GET/POST a la API PHP (`/api/webhook_whatsapp.php`).
 4. **Consulta de Datos:** La API PHP hace una petición a las **APIs REST del sistema SAI** (Informix) en producción, o a **PostgreSQL local** (mock con ANSI SQL) en desarrollo, y devuelve la respuesta formateada.
 5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
 

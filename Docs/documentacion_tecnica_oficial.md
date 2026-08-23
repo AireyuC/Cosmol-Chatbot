@@ -87,8 +87,8 @@ El sistema opera como una cadena de microservicios con flujo de información bid
                ▼                                  ▼
 ┌──────────────────────┐             ┌────────────────────────────┐
 │  Base de Datos Local │             │  APIs REST del Sistema SAI │
-│  PostgreSQL 13.22    │             │  (IBM Informix — Prod.)    │
-│  Contenedor: db      │             │  COSMOL_API_URL            │
+│  PostgreSQL 16-alpine  │             │  (IBM Informix — Prod.)    │
+│  Contenedor: db        │             │  COSMOL_API_URL            │
 └──────────────────────┘             └────────────────────────────┘
 ```
 
@@ -126,7 +126,7 @@ FROM php:7.3-apache
 RUN a2enmod rewrite
 
 RUN apt-get update && apt-get install -y libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql pdo_mysql mysqli \
+    && docker-php-ext-install pdo pdo_pgsql \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV APACHE_DOCUMENT_ROOT /app/public
@@ -160,8 +160,8 @@ El núcleo del flujo es el **Nodo Switch**, que evalúa el contenido del mensaje
 
 | Ruta | Condición de Activación | Acción |
 |---|---|---|
-| **Ruta 1 — Autenticación** | El usuario escribe un valor numérico (Código de Socio) | n8n realiza un `HTTP Request POST` a `/api/socio.php` para validar la identidad |
-| **Ruta 2 — Menú / Deuda** | El payload del botón es `BTN_DEUDA` o `BTN_PAGAR` | n8n enruta hacia la consulta de facturas (`/api/factura.php`) y entrega el link de la pasarela de pagos |
+| **Ruta 1 — Autenticación** | El usuario escribe un valor numérico (Código de Socio) | n8n enruta hacia `webhook_whatsapp.php` para validar la identidad y generar la sesión |
+| **Ruta 2 — Menú / Deuda** | El payload del botón es `MENU_PAGAR_...` | n8n enruta hacia `webhook_whatsapp.php` que consulta facturas y entrega el menú correspondiente |
 | **Ruta 3 — Reclamos** | El payload del botón es `BTN_RECLAMO` | n8n captura los datos del problema y delega el registro a `/api/reclamos.php` |
 
 #### Capa 3 — Capa de Presentación (Formateadores)
@@ -240,7 +240,7 @@ cosmol-chatbot/
 │   │   │   ├── SocioRepositoryInterface.php
 │   │   │   └── ReclamoRepositoryInterface.php
 │   │   └── Repositories/
-│   │       ├── MySQL/
+│   │       ├── Postgres/
 │   │       │   ├── SocioRepository.php
 │   │       │   └── ReclamoRepository.php
 │   │       ├── Api/
@@ -257,10 +257,7 @@ cosmol-chatbot/
 │   └── bootstrap.php                 ← Inicializador global del sistema
 ├── public/
 │   └── api/
-│       ├── socio.php
-│       ├── factura.php
 │       ├── reclamos.php
-│       ├── session.php
 │       └── webhook_whatsapp.php
 ├── database/
 │   └── init.sql                      ← Esquema SQL canónico para Docker
@@ -357,12 +354,10 @@ Todos los endpoints devuelven una estructura JSON estandarizada.
 
 **Catálogo de Endpoints:**
 
-| Endpoint | Método | URL Interna (n8n) | Descripción |
+| Archivo | Método | URL Ejemplo Interna | Descripción |
 |---|---|---|---|
-| `socio.php` | `POST` / `GET` | `http://cosmol_php_backend/api/socio.php` | Validación de socio y consulta de deudas |
-| `factura.php` | `POST` | `http://cosmol_php_backend/api/factura.php` | Consulta de facturas pendientes e historial |
-| `reclamos.php` | `POST` | `http://cosmol_php_backend/api/reclamos.php` | Registro de reclamos técnicos |
-| `session.php` | `POST` | `http://cosmol_php_backend/api/session.php` | Gestión de sesiones de WhatsApp |
+| `webhook_whatsapp.php` | `POST` | `http://cosmol_php_backend/api/webhook_whatsapp.php` | Controlador frontal único (Máquina de Estados) que procesa todos los mensajes de WhatsApp |
+| `reclamos.php` | `POST` | `http://cosmol_php_backend/api/reclamos.php` | Registro de reclamos técnicos y comerciales |
 
 ---
 

@@ -186,34 +186,35 @@ Docker resuelve `cosmol_php_backend` como hostname automáticamente.
 Al eliminar `"8000:80"` del bloque de `ports` sin perfil, ya no se puede llamar a la API
 desde Postman, curl o el navegador en la máquina local directamente en modo producción.
 
-**Decisión tomada: Opción A — Perfil de desarrollo (`--profile dev`) ✅**
+**Decisión tomada: Opción A — Archivo Override Local (`docker-compose.override.yml`) ✅**
 
-Se utilizará un perfil de Docker Compose para que el puerto `8000` solo se exponga
-cuando se levanta el entorno explícitamente en modo desarrollo, sin afectar la
-configuración de producción:
+Se utilizará el patrón estándar de la industria mediante un archivo override que inyecta los puertos **únicamente en la computadora local**, dejando el archivo principal de producción totalmente aislado.
 
-```yaml
-backend:
-  ports:
-    - "8000:80"   # Solo activo con: docker compose --profile dev up
-  profiles:
-    - dev
-```
+1. **El archivo base de producción (`docker-compose.yml`)**:
+   No contiene mapeo de puertos (`ports`) para el backend. Cuando el servidor corre `docker compose up -d`, la API PHP enciende pero permanece 100% oculta del exterior.
 
-```bash
-# Desarrollo (con puerto 8000 expuesto para Postman, curl, navegador)
-docker compose --profile dev up
+2. **El archivo local de desarrollo (`docker-compose.override.yml`)**:
+   Este archivo se ignora en Git (`.gitignore`). Lo tienes tú en tu máquina y contiene lo siguiente:
+   ```yaml
+   services:
+     backend:
+       ports:
+         - "8000:80"
+   ```
 
-# Producción (sin perfil → sin puerto expuesto, aislamiento completo)
-docker compose up
-```
+### ¿Cómo funciona en la práctica?
 
-> [!NOTE]
-> Con `--profile dev`, el puerto `8000` queda disponible en `http://localhost:8000`.
-> Sin el flag, Docker ignora la sección `ports` del perfil y el contenedor
-> solo es accesible desde dentro de `cosmol_network`.
+Docker Compose busca automáticamente la existencia de un archivo `.override.yml`. 
 
-### Opción B — Exec directo al contenedor (alternativa sin perfil)
+- **En Desarrollo (tu computadora local):**
+  Solo escribes `docker compose up -d`. Docker detecta el override, lo fusiona con el original y expone el puerto `8000` mágicamente para que uses Postman o el navegador.
+
+- **En Producción (el servidor):**
+  Como el archivo `override` no se sube a Git, cuando haces un clon en el servidor solo existe el `docker-compose.yml` base. Escribes el mismo comando `docker compose up -d`, pero esta vez Docker solo lee el archivo base, y el backend arranca pero **sin el puerto expuesto**.
+
+¡Ambos entornos usan el mismo comando universal sin riesgo de cometer errores humanos con perfiles!
+
+### Opción B — Exec directo al contenedor (alternativa estricta)
 Si no se quiere levantar con `--profile dev`, es posible llamar a PHP desde
 dentro de la red ejecutando comandos en el contenedor de n8n:
 

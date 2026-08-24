@@ -23,3 +23,6 @@ node_modules/
 # Datos locales de Docker (Ignorar volúmenes de BD o n8n para no subir la data)
 /docker/mysql/data/
 /docker/n8n/data/
+
+# Ignorar el archivo de override de Docker (solo para desarrollo local)
+docker-compose.override.yml

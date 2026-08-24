@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Repositories\MySQL;
+namespace App\Data\Repositories\Postgres;
 
 use App\Data\Interfaces\ReclamoRepositoryInterface;
 use PDO;
@@ -18,7 +18,7 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
     }
 
     /**
-     * Inserta un nuevo reclamo en la base de datos de MySQL.
+     * Inserta un nuevo reclamo en la base de datos de PostgreSQL.
      * Implementa la promesa del contrato (interfaz).
      */
     public function createReclamo(array $data): int {
@@ -27,7 +27,8 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
             "INSERT INTO reclamo
                 (codigo_socio, tipo_reclamo, descripcion, direccion, estado, fecha_creacion)
              VALUES
-                (:codigo_socio, :tipo, :descripcion, :direccion, 'PENDIENTE', NOW())"
+                (:codigo_socio, :tipo, :descripcion, :direccion, 'PENDIENTE', CURRENT_TIMESTAMP)
+             RETURNING id"
         );
 
         // Ejecutamos la consulta reemplazando las variables con los datos reales
@@ -38,8 +39,8 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
             ':direccion'    => $data['direccion'], // Esta dirección se extrae de la BD, no del usuario
         ]);
 
-        // lastInsertId() devuelve el ID autoincremental que MySQL le acaba de dar al reclamo
-        return (int) $this->pdo->lastInsertId();
+        // PostgreSQL devuelve el ID autoincremental generado a través de RETURNING id
+        return (int) $stmt->fetchColumn();
     }
 
     /**

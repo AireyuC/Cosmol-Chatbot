@@ -11,18 +11,13 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
 
-  # API (PHP 7.3 + Apache)
   backend:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: cosmol_php_backend
+    container_name: cosmol_backend
     networks:
       - cosmol_network
-    ports:
-      - "8000:80"
-    profiles:
-      - dev
     env_file:
       - .env
     volumes:
@@ -35,17 +30,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  # Base de Datos (PostgreSQL 13.22-alpine)
+      
   db:
-    image: postgres:13.22-alpine
+    image: postgres:16-alpine
     container_name: cosmol_postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - cosmol_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql

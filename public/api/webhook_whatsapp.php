@@ -7,11 +7,11 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Data\Repositories\MySQL\RepositorioSessionMySQL;
+use App\Data\Repositories\Postgres\SessionRepository;
 use App\Modules\Session\SessionService;
 
 use App\Integrations\CosmolApi\ClienteApiCosmol;
-use App\Data\Repositories\Api\RepositorioSocioApi;
+use App\Data\Repositories\Api\SocioRepository;
 use App\Modules\Socio\SocioService;
 
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
@@ -49,11 +49,11 @@ class WebhookWhatsAppEndpoint extends Controller
 
         try {
             // Inicializar Servicios
-            $sessionRepo = new RepositorioSessionMySQL();
+            $sessionRepo = new SessionRepository();
             $sessionService = new SessionService($sessionRepo);
 
             $clienteApi = new ClienteApiCosmol();
-            $socioRepo = new RepositorioSocioApi($clienteApi);
+            $socioRepo = new SocioRepository($clienteApi);
             $socioService = new SocioService($socioRepo);
 
             // Obtener el estado actual y procesar Timeouts automáticos
@@ -72,41 +72,58 @@ class WebhookWhatsAppEndpoint extends Controller
             if ($estadoActual === 'BLOCKED') {
                 // Si sigue bloqueado (processSessionState ya evalúa el timeout de 5 min)
                 // Si el timeout hubiera pasado, processSessionState devolvería AWAITING_CODE.
-                $whatsappPayload = PlantillaSistema::bloqueado();
+                // El usuario solicitó: "el bot no le contestara hasta que acabe los 5 minutos"
+                $whatsappPayload = null;
             } 
             elseif ($estadoActual === 'AWAITING_CODE') {
                 if ($tipoMensaje === 'text') {
                     $cod = trim((string)$contenido);
+                    $esCodigoValido = false;
+                    $validacion = null;
 
-                    if (!is_numeric($cod)) {
-                        // Es un saludo o texto inválido -> Devolver saludo, sin sumar intentos
-                        $whatsappPayload = PlantillaSocio::saludo();
-                    } else {
-                        // Es numérico -> Validar Socio
+                    if (is_numeric($cod)) {
                         $validacion = $socioService->validarSocio($cod);
-
                         if ($validacion['status'] === 'success') {
-                            // Socio válido -> Actualizar estado a MAIN_MENU
-                            $sessionService->updateSession($telefono, (int)$cod, 'MAIN_MENU', 0);
-                            $nombreSocio = $validacion['datos_socio']['nombre'] ?? 'Socio';
-                            $whatsappPayload = PlantillaSocio::menuPrincipal($cod, $nombreSocio);
+                            $esCodigoValido = true;
+                        }
+                    }
+
+                    if ($esCodigoValido) {
+                        // Socio válido -> Actualizar estado a MAIN_MENU
+                        $sessionService->updateSession($telefono, (int)$cod, 'MAIN_MENU', 0);
+                        $nombreSocio = $validacion['datos_socio']['nombre'] ?? 'Socio';
+                        $whatsappPayload = PlantillaSocio::menuPrincipal($cod, $nombreSocio);
+                    } else {
+                        // Socio inválido (sea numérico o texto) -> Sumar intento
+                        $intentos++;
+                        
+                        // Si el usuario simplemente dice "hola" por primera vez (intentos=1), enviamos el saludo
+                        if (!is_numeric($cod) && $intentos === 1) {
+                            $whatsappPayload = PlantillaSocio::saludo();
                         } else {
-                            // Socio inválido -> Sumar intento
-                            $intentos++;
-                            $sessionService->updateSession($telefono, null, 'AWAITING_CODE', $intentos);
-                            
-                            // Verificar si con este error ya se bloqueó (límite 6 intentos en el Service)
-                            $nuevaSesion = $sessionService->processSessionState($telefono, '');
-                            if ($nuevaSesion['estado_actual'] === 'BLOCKED') {
-                                $whatsappPayload = PlantillaSistema::bloqueado();
-                            } else {
-                                $whatsappPayload = PlantillaSistema::codigoInvalido();
-                            }
+                            $whatsappPayload = PlantillaSistema::codigoInvalido();
+                        }
+
+                        // Actualizar intentos en BD (puede cambiar el estado a BLOCKED si excede MAX_ATTEMPTS)
+                        $sessionService->updateSession($telefono, null, 'AWAITING_CODE', $intentos);
+                        
+                        // Verificar el estado de la sesión INMEDIATAMENTE después de actualizar
+                        $nuevaSesion = $sessionService->processSessionState($telefono, '');
+                        if ($nuevaSesion['estado_actual'] === 'BLOCKED') {
+                            // En el MOMENTO en que se bloquea, SÍ le notificamos. Luego lo ignoraremos.
+                            $whatsappPayload = PlantillaSistema::bloqueado();
                         }
                     }
                 } else {
-                    // Si manda un botón pero estamos esperando código (ej. bug o mensaje antiguo)
-                    $whatsappPayload = PlantillaSocio::saludo();
+                    // Si manda un botón pero estamos esperando código, lo contamos como intento
+                    $intentos++;
+                    $sessionService->updateSession($telefono, null, 'AWAITING_CODE', $intentos);
+                    $nuevaSesion = $sessionService->processSessionState($telefono, '');
+                    if ($nuevaSesion['estado_actual'] === 'BLOCKED') {
+                        $whatsappPayload = PlantillaSistema::bloqueado();
+                    } else {
+                        $whatsappPayload = PlantillaSistema::codigoInvalido();
+                    }
                 }
             } 
             elseif ($estadoActual === 'MAIN_MENU') {

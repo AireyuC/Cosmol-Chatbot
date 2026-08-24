@@ -1,6 +1,6 @@
 # Índice Maestro y Documentación Consolidada — Plan Backend COSMOL
 
-Este documento centraliza la documentación y estado de todas las fases del desarrollo del backend, sustituyendo los archivos individuales de los sprints anteriores (Fases 1 a 4) para simplificar la lectura.
+Este documento centraliza el estado de todas las fases del desarrollo del backend y sirve como **registro de avances** del proyecto.
 
 ---
 
@@ -12,89 +12,151 @@ Este documento centraliza la documentación y estado de todas las fases del desa
 | **Fase 2** | Módulo de Socios | ✅ Completada |
 | **Fase 3** | Módulo de Reclamos | ✅ Completada |
 | **Fase 4** | Autoloading y Utilidades | ✅ Completada |
-| [**Fase 5**](fase5_migracion_informix.md) | Migración a Informix | ⏳ Futuro (Sprint 4) |
+| **Migración PostgreSQL** | Migración MySQL → PostgreSQL 16 + ANSI SQL | ✅ Completada |
+| **Seguridad API** | Hardening de API PHP e infraestructura Docker (7 fases) | ✅ Completada |
+| [**Fase 5**](fase5_migracion_informix.md) | Migración a IBM Informix (APIs REST del SAI) | ⏳ Futuro (Sprint 4) |
 
 > [!NOTE]
-> **Pendiente documentado:** la funcionalidad "Consultas de Cuenta" (`getDeuda()`, `getHistorialFacturas()`) del módulo de Socios queda como deuda técnica, marcada con `@todo` en `SocioRepositoryInterface.php`.
+> **Deuda técnica documentada:** `getDeuda()` y `getHistorialFacturas()` del módulo Socios quedan pendientes, marcados con `@todo` en `SocioRepositoryInterface.php`.
 
 ---
 
-## Fases Completadas (Documentación)
+## Fases Completadas
 
 ### Fase 1 — Configuración Base y Conexión a Base de Datos
-Establece la infraestructura invisible del backend: la configuración del entorno, la conexión a la base de datos y el controlador base.
-- `.env`: Archivo de configuración puro con variables de entorno y credenciales.
-- `app/Config/database.php`: Archivo de configuración que recibe los valores del `.env` y los almacena en constantes.
-- `app/Core/Database.php`: Singleton que gestiona físicamente la conexión a la base de datos usando PDO. Reutiliza la conexión.
-- `app/Core/Controller.php`: Clase base para endpoints con métodos comunes como `json()`, `getBody()`, y `handleError()`.
+Infraestructura base del backend: entorno, conexión a BD y controlador base.
+- `app/Config/database.php` — constantes de entorno (ahora apunta a PostgreSQL).
+- `app/Core/Database.php` — Singleton PDO con soporte multi-driver (`pgsql`, `mysql`, `informix`).
+- `app/Core/Controller.php` — métodos `json()`, `getBody()`, `handleError()`.
 
 ### Fase 2 — Módulo de Socios (Autenticación y Consultas)
-Implementa el principio de "Fricción Cero" (validación solo con el Código de Asociado) utilizando el Patrón Repositorio.
-- `app/Data/Interfaces/SocioRepositoryInterface.php`: Contrato que define métodos obligatorios (`findByCodigo`).
-- `app/Data/Repositories/MySQL/SocioRepository.php`: Implementación concreta del repositorio para MySQL.
-- `app/Modules/Socio/SocioService.php`: Capa de lógica de negocio que abstrae la fuente de datos.
-- `public/api/socio.php`: Punto de entrada HTTP para la API de socios.
+Implementa la autenticación "Fricción Cero" (solo con el Código de Asociado) usando el Patrón Repositorio.
+- `app/Data/Interfaces/SocioRepositoryInterface.php` — contrato (`findByCodigo`, `@todo getDeuda`, `getHistorialFacturas`).
+- `app/Data/Repositories/Postgres/SocioRepository.php` — implementación para desarrollo local.
+- `app/Modules/Socio/SocioService.php` — lógica de negocio agnóstica a HTTP.
+- `public/api/webhook_whatsapp.php` — controlador frontal único para N8N.
 
 ### Fase 3 — Módulo de Reclamos
-Permite registrar reclamos (agua turbia, fuga, etc.) asociando la ubicación directamente desde la base de datos (sin pedir GPS al usuario).
-- `app/Data/Interfaces/ReclamoRepositoryInterface.php`: Contrato para reclamos (`createReclamo`, `findByCodigoSocio`).
-- `app/Data/Repositories/MySQL/ReclamoRepository.php`: Implementación concreta para insertar reclamos en MySQL.
-- `app/Modules/Reclamo/ReclamoService.php`: Capa de lógica que valida datos y cruza información usando ambos repositorios (Reclamos y Socios).
-- `public/api/reclamos.php`: Punto de entrada HTTP para la creación de reclamos.
+Registro de reclamos (agua turbia, fuga, etc.) tomando la ubicación de la BD, sin GPS del usuario.
+- `app/Data/Interfaces/ReclamoRepositoryInterface.php` — contrato (`createReclamo`, `findByCodigoSocio`).
+- `app/Data/Repositories/Postgres/ReclamoRepository.php` — implementación con ANSI SQL (`CURRENT_TIMESTAMP`).
+- `app/Modules/Reclamo/ReclamoService.php` — lógica de validación cruzando datos de socios.
+- `public/api/reclamos.php` — endpoint HTTP.
 
 ### Fase 4 — Autoloading y Utilidades
-Infraestructura de conveniencia que hace la vida del desarrollador más fácil y evita errores.
-- `app/Core/Autoloader.php`: Implementa el estándar PSR-4 de forma manual (`spl_autoload_register`) para la carga automática de clases sin Composer.
-- `app/bootstrap.php`: Iniciador global que carga el autoloader, la configuración de base de datos, maneja errores y establece headers globales (CORS).
+- `app/Core/Autoloader.php` — PSR-4 manual con `spl_autoload_register`.
+- `app/bootstrap.php` — inicializador global (Autoloader + config + headers + seguridad).
 
 ---
 
-## Árbol de archivos del proyecto completo
+## Migración PostgreSQL ← plan_imple_Mdocker.md (ARCHIVADO)
+
+> **Ejecutado:** 2026-08-21 | **Planeado en:** `Docs/chichico-fabian/plan_imple_Mdocker.md` (eliminado tras aplicación)
+
+Migración completa de MySQL a PostgreSQL 16-alpine adoptando estándar ANSI SQL para garantizar futura portabilidad a IBM Informix.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| [`dockerfile`](file:///c:/Proyectos/Cosmol-Chatbot/dockerfile) | `libpq-dev` + `pdo_pgsql` + `pdo_mysql` (dual driver) |
+| [`docker-compose.yml`](file:///c:/Proyectos/Cosmol-Chatbot/docker-compose.yml) | Servicio `db` → `postgres:16-alpine`, volumen `postgres_data`, healthcheck `pg_isready` |
+| [`.env`](file:///c:/Proyectos/Cosmol-Chatbot/.env) | `DB_DRIVER=pgsql`, `DB_PORT=5432`, `DB_NAME=chatbot_cosmol` |
+| [`app/Config/database.php`](file:///c:/Proyectos/Cosmol-Chatbot/app/Config/database.php) | Defaults fallback apuntan a `pgsql` y `5432` |
+| [`app/Core/Database.php`](file:///c:/Proyectos/Cosmol-Chatbot/app/Core/Database.php) | DSN para `pgsql` con `--client_encoding=UTF8`, soporte `informix` preparado |
+| [`database/init.sql`](file:///c:/Proyectos/Cosmol-Chatbot/database/init.sql) | ANSI SQL: `SERIAL`, `BOOLEAN`, `TIMESTAMP`, `CURRENT_TIMESTAMP`, sin `AUTO_INCREMENT` ni `NOW()` |
+| `SocioRepository.php` (Api) | No usa base de datos local, utiliza `ClienteApiCosmol` para el SAI |
+| `SessionRepository.php` | Patrón ANSI `SELECT` + `INSERT`/`UPDATE` para persistencia de estados |
+
+**Restricciones ANSI SQL activas** (portabilidad a Informix):
+- ❌ `AUTO_INCREMENT` → usar `SERIAL`
+- ❌ `NOW()` → usar `CURRENT_TIMESTAMP`
+- ❌ `ON DUPLICATE KEY UPDATE`, `INSERT IGNORE`, `REPLACE INTO`
+- ❌ `ON UPDATE CURRENT_TIMESTAMP` (se maneja a nivel de aplicación)
+- ❌ Tipos exclusivos de Postgres: `JSONB`, arrays, `UUID` nativo
+
+---
+
+## Seguridad API + Infraestructura Docker
+
+> **Ejecutado:** 2026-08-17–2026-08-21 | **Detalle completo:** [`Informacion_seguridad.md`](file:///c:/Proyectos/Cosmol-Chatbot/Docs/chichico-fabian/Plan_seguridad/Informacion_seguridad.md)
+
+Hardening completo de la API PHP y su infraestructura Docker en 7 fases:
+
+| Fase | Qué hace | Clase / Archivo clave |
+|---|---|---|
+| 1 — Token Interno | Valida `X-Internal-Token` entre n8n y PHP. `401` si falla. | `app/Core/Auth.php` |
+| 2 — Validación de Inputs | Regex + lista blanca + sanitización antes de la capa de negocio. | `app/Core/Validator.php` |
+| 3 — CORS Restrictivo | `Access-Control-Allow-Origin` solo al hostname de n8n. | `bootstrap.php` + `.env` |
+| 4 — Rate Limiting | Máx. 30 peticiones/min por IP. `429` si se supera. | `app/Core/RateLimiter.php` |
+| 5 — Logging Estructurado | JSON estructurado en `/var/log/cosmol_api.log`. | `app/Core/Logger.php` |
+| 6 — Hardening `.env` | Convenciones dev/prod documentadas. Token regenerable. | `.env`, `env.example` |
+| 7 — Aislamiento Docker | Backend sin puertos públicos. Perfil `dev` para desarrollo local. Red interna `cosmol_network`. | `docker-compose.yml` |
+
+**Cómo conectan los servicios Docker:**
+- `n8n` (puerto `5678`) → llama a `backend` vía red interna `cosmol_network` (`http://cosmol_backend/api/...`).
+- `backend` → conecta a `db` (`cosmol_postgres:5432`) vía red interna.
+- En desarrollo: `docker compose --profile dev up` expone `backend` en `localhost:8000`.
+- En producción: solo `n8n` es accesible desde el exterior (a través del proxy inverso COSMOL con SSL).
+
+---
+
+## Árbol de Archivos del Proyecto
 
 ```text
 cosmol-chatbot/
 │
 ├── app/
 │   ├── Config/
-│   │   └── database.php              ← Fase 1: Credenciales y variables de entorno
+│   │   └── database.php              ← Constantes de entorno (pgsql por defecto)
 │   │
 │   ├── Core/
-│   │   ├── Autoloader.php            ← Fase 4: PSR-4 class loader
-│   │   ├── Controller.php            ← Fase 1: Métodos JSON comunes (base)
-│   │   └── Database.php              ← Fase 1: Singleton de conexión PDO
+│   │   ├── Autoloader.php            ← PSR-4 class loader
+│   │   ├── Controller.php            ← Métodos JSON comunes (base)
+│   │   ├── Database.php              ← Singleton PDO multi-driver
+│   │   ├── Auth.php                  ← [Seguridad F1] Token interno
+│   │   ├── Validator.php             ← [Seguridad F2] Validación de inputs
+│   │   ├── RateLimiter.php           ← [Seguridad F4] Rate limiting por IP
+│   │   └── Logger.php                ← [Seguridad F5] Logging JSON estructurado
 │   │
 │   ├── Data/
 │   │   ├── Interfaces/
-│   │   │   ├── SocioRepositoryInterface.php    ← Fase 2: Contrato de socios
-│   │   │   └── ReclamoRepositoryInterface.php  ← Fase 3: Contrato de reclamos
-│   │   │
+│   │   │   ├── SocioRepositoryInterface.php
+│   │   │   └── ReclamoRepositoryInterface.php
 │   │   └── Repositories/
-│   │       ├── MySQL/
-│   │       │   ├── SocioRepository.php         ← Fase 2: Implementación MySQL
-│   │       │   └── ReclamoRepository.php       ← Fase 3: Implementación MySQL
-│   │       │
-│   │       └── Informix/
-│   │           ├── SocioRepository.php         ← Fase 5: Implementación Informix
-│   │           └── ReclamoRepository.php       ← Fase 5: Implementación Informix
+│   │       ├── Postgres/                ← Implementaciones para desarrollo local (PostgreSQL)
+│   │       │   ├── SocioRepository.php
+│   │       │   ├── ReclamoRepository.php
+│   │       │   └── RepositorioSessionPostgres.php
+│   │       └── SAI/                  ← Fase 5 (Futura — HTTP client hacia APIs REST del SAI)
 │   │
 │   ├── Modules/
-│   │   ├── Socio/
-│   │   │   └── SocioService.php      ← Fase 2: Lógica de negocio de socios
-│   │   │
-│   │   └── Reclamo/
-│   │       └── ReclamoService.php    ← Fase 3: Lógica de negocio de reclamos
+│   │   ├── Socio/SocioService.php
+│   │   └── Reclamo/ReclamoService.php
 │   │
-│   └── bootstrap.php                 ← Fase 4: Inicializador global del sistema
+│   └── bootstrap.php                 ← Inicializador global + pipeline de seguridad
 │
-└── public/
-    └── api/
-        ├── socio.php                 ← Fase 2: Endpoint HTTP para socios
-        └── reclamos.php              ← Fase 3: Endpoint HTTP para reclamos
+├── public/api/
+│   ├── reclamos.php                  ← Endpoint independiente (opcional)
+│   └── webhook_whatsapp.php          ← Controlador Central (MVC)
+│
+├── database/
+│   └── init.sql                      ← Esquema ANSI SQL (PostgreSQL + futuro Informix)
+│
+├── dockerfile                        ← PHP 7.3-apache + pdo_pgsql + pdo_mysql
+├── docker-compose.yml                ← n8n + backend (perfil dev) + postgres
+└── .env                              ← Variables de entorno (no subir a Git)
 ```
 
 ---
 
-## Decisiones de Arquitectura Tomadas (Preguntas Abiertas Resueltas)
-- **Autoloader manual vs Composer**: Se usa un autoloader manual (`spl_autoload_register`) ya que no hay dependencias de terceros.
-- **Endpoints separados vs Router**: Se mantienen archivos separados (`socio.php`, `reclamos.php`) para simplificar el debug.
-- **Entorno Docker**: Se utiliza un `docker-compose.yml` local para levantar la API, MySQL y n8n, dejando XAMPP de lado.
+## Decisiones de Arquitectura Tomadas
+
+| Decisión | Razón |
+|---|---|
+| Autoloader manual sin Composer | Sin dependencias de terceros, más simple |
+| Endpoints centralizados en `webhook_whatsapp.php` | El flujo de n8n funciona de manera más óptima en un solo punto |
+| PostgreSQL 16-alpine en Docker | ~80 MB vs ~380 MB de MySQL; ANSI SQL; portabilidad a Informix |
+| ANSI SQL estricto en init.sql | Simula el sistema SAI y garantiza migración a Informix sin reescritura |
+| Rate limiter basado en archivos `/tmp` | PHP 7.3 puro, sin Redis ni APCu |
+| Perfil `dev` en docker-compose | Backend no expuesto en producción; solo accesible internamente vía n8n |

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Repositories\MySQL;
+namespace App\Data\Repositories\Postgres;
 
 use App\Data\Interfaces\SocioRepositoryInterface;
 use PDO;
@@ -11,7 +11,7 @@ use PDOException;
 /**
  * Class SocioRepository
  * 
- * Implementación de repositorio para acceder a los datos de Socios en MySQL.
+ * Implementación de repositorio para acceder a los datos de Socios en PostgreSQL / Informix local.
  */
 class SocioRepository implements SocioRepositoryInterface
 {

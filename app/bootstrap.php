@@ -27,12 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Validar el token interno antes de procesar cualquier petición.
 use App\Core\Auth;
 Auth::validateInternalToken();
 
-// Se ejecuta DESPUÉS del Auth: los atacantes sin token válido ya fueron cortados (401)no
-// consumen el contador. Solo las peticiones autenticadas incrementan el rate limiter.
+// Solo las peticiones autenticadas incrementan el rate limiter.
 use App\Core\RateLimiter;
 RateLimiter::check();
 

@@ -14,8 +14,9 @@ class Validator {
 
     // tipo_reclamo: solo valores permitidos (lista blanca)
     public static function tipoReclamo(?string $value): bool {
-        $allowed = ['agua_turbia', 'fuga', 'sin_servicio', 'presion_baja', 'otro'];
-        return in_array($value, $allowed, true);
+        if ($value === null) return false;
+        $allowed = ['agua_turbia', 'fuga', 'sin_servicio', 'presion_baja', 'corte_injustificado', 'baja_presion', 'otro'];
+        return in_array(strtolower(trim($value)), $allowed, true);
     }
 
     // descripcion: texto libre, max 500 caracteres, sin HTML

@@ -70,5 +70,5 @@ Utilizado cuando el usuario selecciona la opción "Pagar Deuda" en el menú inte
 Siguiendo principios de Código Limpio, la integración se dividió en las siguientes capas:
 
 - **Integración (`app/Integrations/CosmolApi/ClienteApiCosmol.php`):** Contiene la lógica pura de conexión (cURL, timeouts, validación JSON).
-- **Repositorio (`app/Data/Repositories/Api/RepositorioSocioApi.php`):** Implementa `SocioRepositoryInterface` pero obtiene los datos desde la API (a través de `ClienteApiCosmol`) en lugar de MySQL/Informix.
+- **Repositorio (`app/Data/Repositories/Api/SocioRepository.php`):** Implementa `SocioRepositoryInterface` pero obtiene los datos desde la API (a través de `ClienteApiCosmol`) en lugar de PostgreSQL/Informix.
 - **Servicio (`app/Modules/Socio/SocioService.php`):** Ejecuta las reglas de negocio. Aquí se calculan las sumas, se limpian los espacios sobrantes de los nombres entregados por la API y se redactan los mensajes pre-formateados para WhatsApp.

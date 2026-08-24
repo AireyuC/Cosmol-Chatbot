@@ -13,11 +13,11 @@ class ReclamoService {
     private $socioRepo;
 
     // Constante con los tipos de reclamos permitidos para evitar basura en la BD
-    const TIPOS_VALIDOS = ['AGUA_TURBIA', 'FUGA', 'CORTE_INJUSTIFICADO', 'BAJA_PRESION'];
+    const TIPOS_VALIDOS = ['AGUA_TURBIA', 'FUGA', 'SIN_SERVICIO', 'PRESION_BAJA', 'CORTE_INJUSTIFICADO', 'BAJA_PRESION', 'OTRO'];
 
     /**
      * Inyección de ambos repositorios.
-     * Fíjate que pedimos las "Interfaces", no la clase de MySQL directamente.
+     * Recibe las Interfaces, independientemente del motor (PostgreSQL / API SAI).
      */
     public function __construct(
         ReclamoRepositoryInterface $reclamoRepo,

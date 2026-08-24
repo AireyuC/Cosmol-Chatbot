@@ -12,7 +12,7 @@ Al ser una API consumida exclusivamente por n8n (no hay Frontend HTML), el patr�
 - **Interfaces**: Contratos en `app/Data/Interfaces/` que garantizan que los repositorios sean intercambiables.
 
 > [!IMPORTANT]
-> **El valor de esta arquitectura:** El Servicio (`SocioService`) nunca sabe si está hablando con MySQL (desarrollo) o con la API REST del SAI (producción). Solo habla con una Interfaz. Esto permite cambiar la fuente de datos sin tocar ni una línea de la lógica de negocio principal.
+> **El valor de esta arquitectura:** El Servicio (`SocioService`) nunca sabe si está hablando con PostgreSQL (desarrollo) o con la API REST del SAI (producción). Solo habla con una Interfaz. Esto permite cambiar la fuente de datos sin tocar ni una línea de la lógica de negocio principal.
 
 ## Estructura de carpetas actual
 
@@ -22,13 +22,18 @@ cosmol-chatbot/
 │   ├── Config/
 │   │   └── database.php              ← Constantes de entorno y BD
 │   ├── Core/
+│   │   ├── Auth.php                  ← Autenticación por token interno
 │   │   ├── Autoloader.php            ← Autocarga de clases (PSR-4 manual)
 │   │   ├── Controller.php            ← Métodos base (json, getBody, handleError)
-│   │   └── Database.php              ← Singleton de conexión PDO
+│   │   ├── Database.php              ← Singleton de conexión PDO
+│   │   ├── Logger.php                ← Logging estructurado JSON
+│   │   ├── RateLimiter.php           ← Limitador de velocidad por IP
+│   │   └── Validator.php             ← Validación de inputs
 │   ├── Data/
 │   │   ├── Interfaces/
 │   │   │   ├── SocioRepositoryInterface.php
-│   │   │   └── ReclamoRepositoryInterface.php
+│   │   │   ├── ReclamoRepositoryInterface.php
+│   │   │   └── SessionRepositoryInterface.php
 │   │   └── Repositories/
 │   │       ├── Api/
 │   │       │   └── SocioRepository.php
@@ -39,17 +44,24 @@ cosmol-chatbot/
 │   ├── Modules/
 │   │   ├── Socio/
 │   │   │   └── SocioService.php
-│   │   └── Reclamo/
-│   │       └── ReclamoService.php
+│   │   ├── Reclamo/
+│   │   │   └── ReclamoService.php
+│   │   └── Session/
+│   │       └── SessionService.php
+│   ├── Presentacion/
+│   │   └── PlantillasWhatsApp/       ← Ensamblado de payloads para WhatsApp
+│   │       ├── PlantillaFactura.php
+│   │       ├── PlantillaSistema.php
+│   │       └── PlantillaSocio.php
 │   └── bootstrap.php                 ← Inicializador global del sistema
 │
 ├── public/
 │   └── api/
-│       ├── socio.php                 ← Endpoint independiente
-│       └── reclamos.php              ← Endpoint independiente
+│       ├── reclamos.php              ← Endpoint independiente de reclamos
+│       └── webhook_whatsapp.php      ← Controlador Frontal Centralizado (n8n)
 │
 ├── database/
-│   └── init.sql                      ← Inicialización de PostgreSQL
+│   └── init.sql                      ← Inicialización ANSI SQL de PostgreSQL 16
 ├── dockerfile                        ← Configuración de PHP 7.3
 ├── docker-compose.yml                ← Orquestación (n8n, backend, postgres)
 └── .env                              ← Configuración de entorno
@@ -59,12 +71,13 @@ cosmol-chatbot/
 
 | Carpeta / Archivo | Rol |
 |---|---|
-| `public/api/` | **Endpoints.** Todo el flujo del chatbot de N8N se procesa a través del `webhook_whatsapp.php` que orquesta la máquina de estados y las llamadas a los servicios. |
-| `app/Core/` | **Infraestructura base.** El `Autoloader` evita los molestos `require_once` manuales a lo largo del código. El `Controller` estandariza el JSON de respuesta (`{ success, message, data }`), y `Database` maneja el singleton de la conexión PDO. |
-| `app/Modules/*/` | **Lógica de negocio.** Aquí viven los Servicios. Tienen estrictamente prohibido acceder a la base de datos de manera directa; deben pedir la información a través de los Repositorios inyectados. |
+| `public/api/` | **Endpoints.** Todo el flujo del chatbot de n8n se procesa a través de `webhook_whatsapp.php` (máquina de estados y plantillas) y `reclamos.php` (registro directo de reclamos). |
+| `app/Core/` | **Infraestructura base.** El `Autoloader` evita los molestos `require_once` manuales a lo largo del código. El `Controller` estandariza el JSON de respuesta (`{ success, message, data }`), `Database` maneja el singleton de la conexión PDO, y `Auth`/`RateLimiter`/`Validator`/`Logger` aseguran el pipeline de seguridad. |
+| `app/Modules/*/` | **Lógica de negocio.** Aquí viven los Servicios (`SocioService`, `ReclamoService`, `SessionService`). Tienen estrictamente prohibido acceder a la base de datos de manera directa; deben pedir la información a través de los Repositorios inyectados. |
+| `app/Presentacion/PlantillasWhatsApp/` | **Formateo visual de WhatsApp.** Genera las estructuras JSON interactivas (botones, listas, textos de facturación con Multipago y errores de sistema) para n8n. |
 | `app/Data/Interfaces/` | **Contratos de Repositorios.** Aquí se define *qué* deben hacer los repositorios, no *cómo* lo hacen. Esto es vital para cambiar entre PostgreSQL y las APIs del SAI. |
 | `app/Data/Repositories/` | **Capa de datos intercambiable.** `Postgres/` contiene queries SQL para el entorno de desarrollo local (Docker). `Api/` contiene clientes HTTP que consumen las APIs REST proporcionadas por el servidor Informix del sistema SAI en producción. |
-| `app/bootstrap.php` | **Carga inicial.** Archivo requerido por todos los endpoints para inicializar el Autoloader, cargar variables de entorno, y configurar headers (CORS). |
+| `app/bootstrap.php` | **Carga inicial.** Archivo requerido por todos los endpoints para inicializar el Autoloader, cargar variables de entorno, emitir headers CORS y ejecutar la cadena de seguridad (`Auth` + `RateLimiter`). |
 
 ## Decisiones Técnicas Clave
 

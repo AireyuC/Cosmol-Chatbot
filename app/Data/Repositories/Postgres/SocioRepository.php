@@ -50,16 +50,14 @@ class SocioRepository implements SocioRepositoryInterface
 
             return $result ?: null;
         } catch (PDOException $e) {
-            // En un entorno de producción, se debería loguear el error en lugar de suprimirlo o exponerlo.
-            // Para el alcance actual, retornamos null o podríamos lanzar una excepción personalizada.
-            error_log("Error en SocioRepository::findByCodigo: " . $e->getMessage());
+            \App\Core\Logger::error("Error en Postgres/SocioRepository::findByCodigo", ['exception' => $e->getMessage()]);
             return null;
         }
     }
 
     /**
-     * Stub: La BD MySQL local no tiene deudas reales.
-     * Esta funcionalidad está implementada en el repositorio Cosmol (API externa).
+     * Stub: La BD PostgreSQL local de desarrollo no almacena deudas en este repositorio.
+     * Esta funcionalidad se consulta a través del repositorio API (CosmolApi / SAI).
      * @param string $codigo_socio
      * @return array|null
      */

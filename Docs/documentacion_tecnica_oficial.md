@@ -110,7 +110,7 @@ El flujo canónico de una petición es el siguiente:
 | Canal de Comunicación | Meta WhatsApp Cloud API | Graph API v20.0 | Recepción y envío de mensajes de WhatsApp |
 | Orquestador | n8n (Self-Hosted) | `docker.n8n.io/n8nio/n8n:1` | Gestión de flujos de conversación y webhooks |
 | Backend | PHP (Vanilla) + Apache | 7.3 (`php:7.3-apache`) | Lógica de negocio y exposición de la API REST interna |
-| Base de datos (desarrollo) | PostgreSQL | 13.22-alpine | Persistencia local simulada del sistema SAI (ANSI SQL) |
+| Base de datos (desarrollo) | PostgreSQL | 16-alpine | Persistencia local simulada del sistema SAI (ANSI SQL) |
 | Base de datos (producción) | IBM Informix (via APIs REST) | — | Sistema central SAI de COSMOL |
 | Contenedorización | Docker + Docker Compose | Última estable | Orquestación de todos los servicios |
 | Túnel de desarrollo | ngrok | Última estable | Exposición temporal del webhook local a Meta |
@@ -238,13 +238,15 @@ cosmol-chatbot/
 │   ├── Data/
 │   │   ├── Interfaces/
 │   │   │   ├── SocioRepositoryInterface.php
-│   │   │   └── ReclamoRepositoryInterface.php
+│   │   │   ├── ReclamoRepositoryInterface.php
+│   │   │   └── SessionRepositoryInterface.php
 │   │   └── Repositories/
 │   │       ├── Postgres/
 │   │       │   ├── SocioRepository.php
-│   │       │   └── ReclamoRepository.php
+│   │       │   ├── ReclamoRepository.php
+│   │       │   └── SessionRepository.php
 │   │       ├── Api/
-│   │       │   └── RepositorioSocioApi.php
+│   │       │   └── SocioRepository.php
 │   │       └── SAI/                  ← Sprint 4: Repositorios HTTP hacia APIs REST del SAI
 │   ├── Integrations/
 │   │   └── CosmolApi/
@@ -252,15 +254,22 @@ cosmol-chatbot/
 │   ├── Modules/
 │   │   ├── Socio/
 │   │   │   └── SocioService.php
-│   │   └── Reclamo/
-│   │       └── ReclamoService.php
+│   │   ├── Reclamo/
+│   │   │   └── ReclamoService.php
+│   │   └── Session/
+│   │       └── SessionService.php
+│   ├── Presentacion/
+│   │   └── PlantillasWhatsApp/       ← Ensambladores de payloads JSON para WhatsApp
+│   │       ├── PlantillaFactura.php
+│   │       ├── PlantillaSistema.php
+│   │       └── PlantillaSocio.php
 │   └── bootstrap.php                 ← Inicializador global del sistema
 ├── public/
 │   └── api/
-│       ├── reclamos.php
-│       └── webhook_whatsapp.php
+│       ├── reclamos.php              ← Registro de reclamos técnicos
+│       └── webhook_whatsapp.php      ← Controlador Frontal Centralizado (Máquina de Estados)
 ├── database/
-│   └── init.sql                      ← Esquema SQL canónico para Docker
+│   └── init.sql                      ← Esquema ANSI SQL canónico para Docker
 ├── docker-compose.yml
 └── .env
 ```
@@ -363,87 +372,90 @@ Todos los endpoints devuelven una estructura JSON estandarizada.
 
 **`POST /api/socio.php` — Validación de Socio**
 
-Valida la identidad del asociado mediante su Código Fijo. Soporta `application/json` y `application/x-www-form-urlencoded`.
+Procesa la totalidad de interacciones conversacionales de WhatsApp provenientes de n8n. Administra la sesión de usuario, timeouts, validación de socio, consulta de facturas y ensambla los payloads interactivos de WhatsApp (`whatsapp_payload`). Soporta `application/json` y `application/x-www-form-urlencoded`.
 
 | Parámetro | Tipo | Requerido | Descripción |
 |---|---|---|---|
-| `cod_socio` | `string` | Sí | Código numérico del asociado (1–10 dígitos) |
-| `action` | `string` | No | `validar` (por defecto) o `deudas` |
+| `telefono` | `string` | Sí | Número de WhatsApp del usuario (ej. `"59170000000"`) |
+| `tipo_mensaje` | `string` | Sí | Tipo de evento: `"text"` o `"interactive"` |
+| `contenido` | `string` | Sí | Texto ingresado (código fijo) o payload del botón presionado (ej. `"MENU_PAGAR_2587"`, `"MENU_AGENTE"`) |
 
-Respuesta exitosa (`action=validar`):
+Respuesta exitosa — Menú Principal generado (`HTTP 200 OK`):
 ```json
 {
   "status": "success",
-  "mensaje": "Socio encontrado exitosamente.",
-  "datos_socio": {
-    "nombre": "FIGUEREDO MONZON ANGEL NATALIO",
-    "direccion": "P. DIAZ 231 /CBBA. B"
+  "estado": "MAIN_MENU",
+  "whatsapp_payload": {
+    "type": "interactive",
+    "interactive": {
+      "type": "list",
+      "header": { "type": "text", "text": "Menú Principal" },
+      "body": { "text": "Su Código Fijo 267657 (JUAN PEREZ) ha sido validado.\n\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú." },
+      "footer": { "text": "COSMOL - Tu cooperativa" },
+      "action": {
+        "button": "Mostrar Menú",
+        "sections": [
+          {
+            "title": "Opciones",
+            "rows": [
+              { "id": "MENU_PAGAR_267657", "title": "Pagar Deuda", "description": "Consultar y pagar tus facturas" },
+              { "id": "MENU_AGENTE", "title": "Consultar con un agente", "description": "Soporte y registro de reclamos" },
+              { "id": "MENU_CAMBIAR_CODIGO", "title": "Consultar otro Socio", "description": "Ingresar un código fijo diferente" }
+            ]
+          }
+        ]
+      }
+    }
   }
 }
 ```
 
-Respuesta — Código no encontrado:
-```json
-{ "status": "not_found", "mensaje": "El código de socio ingresado no fue encontrado." }
-```
-
-Respuesta — Parámetro inválido (`HTTP 400`):
-```json
-{ "success": false, "message": "El parámetro cod_socio es inválido o no fue proporcionado.", "data": null }
-```
-
----
-
-**`POST /api/factura.php` — Consulta de Facturas**
-
-Retorna el listado de facturas pendientes y el monto total de deuda del asociado.
-
-| Parámetro | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `cod_socio` | `string` | Sí | Código numérico del asociado |
-
-Respuesta exitosa:
+Respuesta exitosa — Consulta de Deudas con enlace Multipago:
 ```json
 {
   "status": "success",
-  "codigo_socio": "2587",
-  "mensaje_texto": "El Código Fijo (2587) tiene 2 facturas impagas, cuyo monto total es 140,93 Bs.\nDetalle:\n1. 7-2026, 72,53 Bs. (Pendiente)\n2. 8-2026, 68,40 Bs. (Pendiente)",
-  "facturas_pendientes": [],
-  "total_deuda": 140.93
+  "estado": "MAIN_MENU",
+  "whatsapp_payload": {
+    "type": "interactive",
+    "interactive": {
+      "type": "list",
+      "body": {
+        "text": "El Código Fijo (267657) tiene 2 facturas impagas, cuyo monto total es 221,90 Bs.\nEl detalle es el siguiente:\n\n1. Junio-2026, 107,60 Bs. (Pendiente)\n2. Julio-2026, 114,30 Bs. (Pendiente)\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇"
+      }
+    }
+  }
 }
 ```
 
-> [!NOTE]
-> El campo `mensaje_texto` está pre-formateado para inyección directa en el mensaje de WhatsApp por el nodo de n8n correspondiente, junto con el enlace de la pasarela Multipago.
-
 ---
 
-**`POST /api/reclamos.php` — Registro de Reclamos**
+**`POST /api/reclamos.php` — Registro de Reclamos Técnicos y Comerciales**
 
-Registra un reclamo técnico. La ubicación se extrae de los datos del sistema (no se solicita GPS al usuario).
+Registra un nuevo reclamo en el sistema. La ubicación se obtiene automáticamente de los datos registrados del socio (no requiere GPS).
 
 | Parámetro | Tipo | Requerido | Descripción |
 |---|---|---|---|
-| `cod_socio` | `string` | Sí | Código numérico del asociado |
+| `codigo_socio` | `string` | Sí | Código numérico del asociado (1–10 dígitos) |
 | `tipo_reclamo` | `string` | Sí | Lista blanca: `agua_turbia`, `fuga`, `sin_servicio`, `presion_baja`, `otro` |
 | `descripcion` | `string` | No | Texto libre, máximo 500 caracteres, sin HTML |
 
-Respuesta exitosa:
+Respuesta exitosa (`HTTP 200 OK`):
 ```json
-{ "success": true, "message": "Reclamo registrado exitosamente.", "data": { "reclamo_id": 42 } }
+{
+  "success": true,
+  "message": "Reclamo registrado correctamente con el ticket #42.",
+  "data": { "ticket_id": 42 }
+}
 ```
 
----
-
-**`POST /api/session.php` — Gestión de Sesiones**
-
-Administra el estado de sesión de un número de WhatsApp.
-
-| Parámetro | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `action` | `string` | Sí | `get`, `update` o `reset` |
-| `telefono` | `string` | Sí | Número de WhatsApp del usuario |
-| `codigo_socio` | `string` | Condicional | Requerido cuando `action=update` |
+Respuesta — Validación fallida (`HTTP 400 Bad Request`):
+```json
+{
+  "success": false,
+  "message": "El campo tipo_reclamo es inválido o no permitido.",
+  "data": null
+}
+```
 
 **Códigos de respuesta HTTP:**
 
@@ -517,7 +529,7 @@ La URL base se configura exclusivamente mediante la variable de entorno `COSMOL_
 
 ### 4.2 Base de Datos de Desarrollo
 
-El entorno de desarrollo local utiliza **PostgreSQL 13.22-alpine** como motor de base de datos simulada del sistema SAI. El esquema sigue estrictamente el estándar **ANSI SQL**, garantizando la máxima compatibilidad posible con IBM Informix en la migración a producción.
+El entorno de desarrollo local utiliza **PostgreSQL 16-alpine** como motor de base de datos simulada del sistema SAI. El esquema sigue estrictamente el estándar **ANSI SQL**, garantizando la máxima compatibilidad posible con IBM Informix en la migración a producción.
 
 **Restricciones de modelado aplicadas:**
 
@@ -585,15 +597,15 @@ if ($driver === 'pgsql' || $driver === 'postgres') {
 
 ### 4.3 Especificaciones de Producción
 
-En producción (Sprint 4), los repositorios `app/Data/Repositories/MySQL/` son reemplazados por sus equivalentes en `app/Data/Repositories/SAI/`, que implementan las mismas interfaces pero obtienen los datos mediante peticiones HTTP hacia las **APIs REST del sistema SAI** (servidor Informix).
+En producción (Sprint 4), los repositorios locales (`app/Data/Repositories/Postgres/`) son reemplazados por sus equivalentes en `app/Data/Repositories/SAI/`, que implementan las mismas interfaces pero obtienen los datos mediante peticiones HTTP hacia las **APIs REST del sistema SAI** (servidor Informix).
 
 **Principio de intercambiabilidad:**
 
 ```
 SocioService → SocioRepositoryInterface (contrato inalterado)
                      │
-                     ├── MySQL/SocioRepository  (desarrollo: SQL → PostgreSQL)
-                     └── SAI/SocioRepository    (producción: HTTP → servidor Informix)
+                     ├── Postgres/SocioRepository  (desarrollo: SQL → PostgreSQL)
+                     └── SAI/SocioRepository       (producción: HTTP → servidor Informix)
 ```
 
 **Requisitos previos para habilitar la integración SAI:**
@@ -811,7 +823,7 @@ openssl rand -hex 32
 |---|---|---|---|
 | `n8n` | `cosmol_n8n` | `docker.n8n.io/n8nio/n8n:1` | `5678:5678` (público) |
 | `backend` | `cosmol_php_backend` | `php:7.3-apache` (build local) | `8000:80` (solo perfil `dev`) |
-| `db` | `cosmol_postgres` | `postgres:13.22-alpine` | Solo red interna |
+| `db` | `cosmol_postgres` | `postgres:16-alpine` | Red interna (`5433:5432` en host dev) |
 
 **Comandos esenciales:**
 

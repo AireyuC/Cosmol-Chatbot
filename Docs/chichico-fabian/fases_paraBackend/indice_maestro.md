@@ -127,7 +127,7 @@ cosmol-chatbot/
 │   │       ├── Postgres/                ← Implementaciones para desarrollo local (PostgreSQL)
 │   │       │   ├── SocioRepository.php
 │   │       │   ├── ReclamoRepository.php
-│   │       │   └── RepositorioSessionPostgres.php
+│   │       │   └── SessionRepository.php
 │   │       └── SAI/                  ← Fase 5 (Futura — HTTP client hacia APIs REST del SAI)
 │   │
 │   ├── Modules/

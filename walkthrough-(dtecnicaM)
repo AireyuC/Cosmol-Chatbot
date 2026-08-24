@@ -1,0 +1,29 @@
+# Walkthrough: Correcciones y Sincronización Integral del Proyecto
+
+Se ha realizado una revisión minuciosa y exhaustiva de [`Docs/documentacion_tecnica_oficial.md`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/Docs/documentacion_tecnica_oficial.md) y de los documentos de arquitectura de soporte, aplicando todas las correcciones necesarias.
+
+---
+
+## 1. Modificaciones Específicas en `Docs/documentacion_tecnica_oficial.md`
+
+1. **Sección 2.1 (Lógica del Orquestador n8n):**
+   - Se actualizó la arquitectura del flujo para reflejar fielmente el workflow centralizado real ([`03_Flujo_Centralizado_MVC.json`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/Docs/plan_n8n/n8n-workflows/03_Flujo_Centralizado_MVC.json)): 5 nodos secuenciales (`Webhook Meta` -> `Filtro IF` -> `HTTP Request a PHP` -> `IF ¿Hay que responder?` -> `POST Meta Graph API`), eliminando la descripción obsoleta de Nodos Set y Switch dentro de n8n.
+2. **Sección 2.2 (Gestión de Sesión y Estado):**
+   - Se corrigió la afirmación errónea de que no se usaba base de datos. Se documentó el modelo híbrido real: **persistencia en PostgreSQL** mediante la tabla `chat_session` (control de reintentos, socio autenticado, timeouts de 60s por inactividad y 300s por bloqueo) combinado con la **navegación guiada por payloads interactivos** de WhatsApp (`MENU_PAGAR_<cod>`, `MENU_AGENTE`, etc.).
+3. **Sección 3.1 & 3.3 (Árbol de Directorios y Catálogo de Endpoints):**
+   - Se documentó el controlador frontal centralizado [`webhook_whatsapp.php`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/public/api/webhook_whatsapp.php) junto a [`reclamos.php`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/public/api/reclamos.php), reflejando los parámetros reales (`telefono`, `tipo_mensaje`, `contenido`) y las respuestas estandarizadas con `whatsapp_payload`.
+4. **Sección 4.1 & 4.3 (Integraciones y Persistencia):**
+   - Se actualizaron las referencias de nombres de repositorios (`SocioRepository` en lugar de `RepositorioSocioApi`) y la versión de base de datos (`PostgreSQL 16-alpine`).
+5. **Sección 5.2 (Validaciones y Logs):**
+   - Se actualizó la lista homologada de `tipoReclamo` (`agua_turbia`, `fuga`, `sin_servicio`, `presion_baja`, `corte_injustificado`, `baja_presion`, `otro`) y los ejemplos de `Logger::error()`.
+
+---
+
+## 2. Ajustes Complementarios en la Documentación del Proyecto
+- **[`Docs/Integracion_API_Externa.md`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/Docs/Integracion_API_Externa.md):** Se actualizó la ruta de la clase a `app/Data/Repositories/Api/SocioRepository.php` y se corrigió la referencia a PostgreSQL.
+- **[`Docs/chichico-fabian/fases_paraBackend/indice_maestro.md`](file:///c:/Users/Lenovo/Desktop/Cosmol-Chatbot/Docs/chichico-fabian/fases_paraBackend/indice_maestro.md):** Se renombró la referencia a `SessionRepository.php`.
+
+---
+
+## 3. Estado de Consistencia Global
+Todos los archivos del proyecto (código PHP, base de datos `database/init.sql`, orquestación `docker-compose.yml`, configuración `env.example` y los manuales en `Docs/`) se encuentran 100% alineados y consistentes entre sí.

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-// Incluir el bootstrap central para cargar clases (PSR-4), variables de entorno, CORS, Token y Logger
 require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
@@ -48,7 +47,6 @@ class WebhookWhatsAppEndpoint extends Controller
         }
 
         try {
-            // Inicializar Servicios
             $sessionRepo = new SessionRepository();
             $sessionService = new SessionService($sessionRepo);
 
@@ -65,9 +63,6 @@ class WebhookWhatsAppEndpoint extends Controller
             // Variable para almacenar el JSON visual final que enviaremos a n8n
             $whatsappPayload = null;
 
-            // ==========================================
-            // MÁQUINA DE ESTADOS (STATE MACHINE)
-            // ==========================================
 
             if ($estadoActual === 'BLOCKED') {
                 // Si sigue bloqueado (processSessionState ya evalúa el timeout de 5 min)
@@ -94,20 +89,17 @@ class WebhookWhatsAppEndpoint extends Controller
                         $nombreSocio = $validacion['datos_socio']['nombre'] ?? 'Socio';
                         $whatsappPayload = PlantillaSocio::menuPrincipal($cod, $nombreSocio);
                     } else {
-                        // Socio inválido (sea numérico o texto) -> Sumar intento
+
                         $intentos++;
                         
-                        // Si el usuario simplemente dice "hola" por primera vez (intentos=1), enviamos el saludo
                         if (!is_numeric($cod) && $intentos === 1) {
                             $whatsappPayload = PlantillaSocio::saludo();
                         } else {
                             $whatsappPayload = PlantillaSistema::codigoInvalido();
                         }
 
-                        // Actualizar intentos en BD (puede cambiar el estado a BLOCKED si excede MAX_ATTEMPTS)
                         $sessionService->updateSession($telefono, null, 'AWAITING_CODE', $intentos);
                         
-                        // Verificar el estado de la sesión INMEDIATAMENTE después de actualizar
                         $nuevaSesion = $sessionService->processSessionState($telefono, '');
                         if ($nuevaSesion['estado_actual'] === 'BLOCKED') {
                             // En el MOMENTO en que se bloquea, SÍ le notificamos. Luego lo ignoraremos.
@@ -129,7 +121,7 @@ class WebhookWhatsAppEndpoint extends Controller
             elseif ($estadoActual === 'MAIN_MENU') {
                 if ($tipoMensaje === 'interactive') {
                     if (strpos($contenido, 'MENU_PAGAR_') === 0) {
-                        // Extraer código
+                        // El usuario quiere pagar
                         $partes = explode('_', $contenido);
                         $cod = $partes[2] ?? (string)$codigoSocio;
                         
@@ -149,7 +141,7 @@ class WebhookWhatsAppEndpoint extends Controller
                     } elseif ($contenido === 'MENU_PRINCIPAL_VOLVER') {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio);
                     } elseif ($contenido === 'MENU_CAMBIAR_CODIGO') {
-                        // Resetear sesión y pedir código
+                        
                         $sessionService->resetSession($telefono);
                         $whatsappPayload = PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
                     } else {
@@ -161,9 +153,7 @@ class WebhookWhatsAppEndpoint extends Controller
                 }
             }
 
-            // ==========================================
             // RESPUESTA AL N8N
-            // ==========================================
             // Siempre respondemos 200 OK para no romper el flujo HTTP de n8n.
             $this->json([
                 'status' => 'success',

@@ -13,7 +13,13 @@ interface SocioRepositoryInterface
      */
     public function findByCodigo(string $codigo_socio): ?array;
 
-    // @todo Pendiente (funcionalidad "Consultas de Cuenta"):
-    // getDeuda(string $codigo): ?array
-    // getHistorialFacturas(string $codigo): array
+    /**
+     * Busca las deudas pendientes de un socio.
+     */
+    public function findDeudasByCodigo(string $cod_socio): ?array;
+
+    /**
+     * Busca el historial de facturas pagadas de un socio.
+     */
+    public function findHistorialByCodigo(string $cod_socio): ?array;
 }

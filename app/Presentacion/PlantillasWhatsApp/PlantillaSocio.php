@@ -11,7 +11,7 @@ class PlantillaSocio
         return [
             'type' => 'text',
             'text' => [
-                'body' => '¡Hola! Bienvenido al Chatbot de COSMOL 💧. Por favor, escribe únicamente tu *Código Fijo de Socio* (solo números) para poder consultar tus datos y deudas.'
+                'body' => "Bienvenido a COSMOL R.L.\nGracias por comunicarse con nosotros.\nDigite su Código de asociado:"
             ]
         ];
     }
@@ -31,21 +31,45 @@ class PlantillaSocio
         if (!$ocultarPagar) {
             $rows[] = [
                 'id' => 'MENU_PAGAR_' . $codSocio,
-                'title' => 'Pagar Deuda',
-                'description' => 'Consultar y pagar tus facturas'
+                'title' => 'Consultar Deuda',
+                'description' => 'Ver y pagar facturas pendientes'
             ];
         }
 
         $rows[] = [
+            'id' => 'MENU_RECONEXION',
+            'title' => 'Solicitar Reconexión',
+            'description' => 'Solicita reconexión de servicio'
+        ];
+
+        $rows[] = [
+            'id' => 'MENU_HISTORIAL',
+            'title' => 'Historial',
+            'description' => 'Historial de pagos y consumos'
+        ];
+
+        $rows[] = [
+            'id' => 'MENU_RECLAMOS',
+            'title' => 'Reclamos',
+            'description' => 'Reporta emergencias y reclamos'
+        ];
+
+        $rows[] = [
+            'id' => 'MENU_OFICINAS',
+            'title' => 'Oficinas y horarios',
+            'description' => 'Información de atención'
+        ];
+
+        $rows[] = [
             'id' => 'MENU_AGENTE',
-            'title' => 'Consultar con un agente',
-            'description' => 'Soporte y registro de reclamos'
+            'title' => 'Hablar con un asesor',
+            'description' => 'Soporte personalizado'
         ];
 
         $rows[] = [
             'id' => 'MENU_CAMBIAR_CODIGO',
             'title' => 'Consultar otro Socio',
-            'description' => 'Ingresar un código fijo diferente'
+            'description' => 'Ingresar un código diferente'
         ];
 
         return [

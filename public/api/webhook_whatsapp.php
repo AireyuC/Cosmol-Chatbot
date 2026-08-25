@@ -16,6 +16,7 @@ use App\Modules\Socio\SocioService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaFactura;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
+use App\Presentacion\PlantillasWhatsApp\PlantillaReclamos;
 
 /**
  * Controlador Central para el Chatbot de WhatsApp.
@@ -141,9 +142,36 @@ class WebhookWhatsAppEndpoint extends Controller
                     } elseif ($contenido === 'MENU_PRINCIPAL_VOLVER') {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio);
                     } elseif ($contenido === 'MENU_CAMBIAR_CODIGO') {
-                        
                         $sessionService->resetSession($telefono);
                         $whatsappPayload = PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
+                    } elseif ($contenido === 'MENU_RECLAMOS') {
+                        $whatsappPayload = PlantillaReclamos::menuReclamos();
+                    } elseif ($contenido === 'MENU_HISTORIAL') {
+                        $historialResult = $socioService->obtenerHistorial((string)$codigoSocio);
+                        if ($historialResult['status'] === 'success') {
+                            $whatsappPayload = PlantillaFactura::historialFacturas(
+                                (string)$codigoSocio,
+                                $historialResult['facturas'],
+                                $historialResult['cantidad']
+                            );
+                        } else {
+                            $whatsappPayload = PlantillaSistema::textoSimple("Ocurrió un error al obtener el historial de facturas.");
+                        }
+                    } elseif (in_array($contenido, ['MENU_RECONEXION', 'MENU_OFICINAS'])) {
+                        $whatsappPayload = PlantillaSocio::menuPrincipal(
+                            (string)$codigoSocio, 
+                            '', 
+                            false, 
+                            "🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:"
+                        );
+                    } elseif (in_array($contenido, [
+                        'RECLAMO_AGUA_TURBIA',
+                        'RECLAMO_FUGA',
+                        'RECLAMO_REBALSE',
+                        'RECLAMO_TRANCADO',
+                        'RECLAMO_ESTADO'
+                    ])) {
+                        $whatsappPayload = PlantillaReclamos::menuReclamos("🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:");
                     } else {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
                     }

@@ -75,4 +75,26 @@ class SocioRepository implements SocioRepositoryInterface
             return null;
         }
     }
+
+    /**
+     * Busca el historial de facturas pagadas de un socio por su código fijo utilizando la API externa.
+     *
+     * @param string $cod_socio El código fijo del socio.
+     * @return array|null Retorna un array con el historial de facturas, o null si no hay datos.
+     */
+    public function findHistorialByCodigo(string $cod_socio): ?array
+    {
+        try {
+            $respuesta = $this->clienteApi->obtenerHistorialFacturas($cod_socio);
+
+            if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
+                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+            }
+
+            return null;
+        } catch (Exception $e) {
+            \App\Core\Logger::error("RepositorioSocioApi::findHistorialByCodigo error", ['exception' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

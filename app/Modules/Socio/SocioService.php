@@ -173,4 +173,47 @@ class SocioService
             ];
         }
     }
+
+    /**
+     * Obtiene y estandariza el historial de facturas pagadas.
+     *
+     * @param string $cod_socio El código fijo.
+     * @return array Arreglo estandarizado con el resultado.
+     */
+    public function obtenerHistorial(string $cod_socio): array
+    {
+        $cod_socio = trim($cod_socio);
+
+        if (empty($cod_socio)) {
+            return [
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
+            ];
+        }
+
+        $historial = $this->socioRepository->findHistorialByCodigo($cod_socio);
+
+        if ($historial !== null) {
+            $lista = [];
+            foreach ($historial as $factura) {
+                $lista[] = [
+                    'periodo' => ($factura['MES'] ?? '') . '/' . ($factura['ANIO'] ?? ''),
+                    'monto' => isset($factura['MONTO']) ? (float)$factura['MONTO'] : 0.0,
+                    'fecha' => $factura['FECHA'] ?? 'N/A'
+                ];
+            }
+
+            return [
+                'status' => 'success',
+                'codigo_socio' => $cod_socio,
+                'cantidad' => count($lista),
+                'facturas' => $lista
+            ];
+        } else {
+            return [
+                'status' => 'error',
+                'message' => 'No se pudo obtener el historial'
+            ];
+        }
+    }
 }

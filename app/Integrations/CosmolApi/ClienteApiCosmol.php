@@ -44,6 +44,19 @@ class ClienteApiCosmol
     }
 
     /**
+     * Obtiene el historial de facturas pagadas de un socio consultando /api-consultas/socios/{cod}/historial-facturas
+     *
+     * @param string $codSocio
+     * @return array|null
+     * @throws Exception
+     */
+    public function obtenerHistorialFacturas(string $codSocio): ?array
+    {
+        $endpoint = "/api-consultas/socios/" . urlencode($codSocio) . "/historial-facturas";
+        return $this->hacerPeticion($endpoint);
+    }
+
+    /**
      * @param string $endpoint
      * @return array|null
      * @throws Exception

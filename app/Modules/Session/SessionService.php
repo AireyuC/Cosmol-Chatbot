@@ -13,7 +13,7 @@ class SessionService
      */
     private $repository;
     private const MAX_ATTEMPTS = 200; // Maximo de intentos fallidos antes de bloquear al usuario
-    private const INACTIVE_TIMEOUT_SECONDS = 60; // 60 segundos de inactividad antes de cerrar sesion
+    private const INACTIVE_TIMEOUT_SECONDS = 180; // 180 segundos de inactividad antes de cerrar sesion
     private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos de bloqueo por intentos fallidos
 
     public function __construct(SessionRepositoryInterface $repository)
@@ -33,6 +33,8 @@ class SessionService
         $estado = $session['estado_actual'];
         $codigoSocio = $session['codigo_socio'] ? (int)$session['codigo_socio'] : null;
         $intentos = (int)$session['intentos_fallidos'];
+        $contextData = isset($session['context_data']) ? json_decode($session['context_data'], true) : null;
+        
         $ultimaInteraccion = strtotime($session['ultima_interaccion']);
         $ahora = time();
         $tiempoTranscurrido = $ahora - $ultimaInteraccion;
@@ -54,16 +56,18 @@ class SessionService
         }
 
         // Devolver el estado actual tal cual está (sin cambiarlo aquí, eso lo decide n8n).
-        return $this->buildResponse($estado, $codigoSocio, null, $intentos);
+        return $this->buildResponse($estado, $codigoSocio, null, $intentos, $contextData);
     }
 
-    public function updateSession(string $telefono, ?int $codigoSocio, string $nuevoEstado, int $intentos): bool
+    public function updateSession(string $telefono, ?int $codigoSocio, string $nuevoEstado, int $intentos, ?array $contextData = null): bool
     {
 
         if ($intentos >= self::MAX_ATTEMPTS) {
             $nuevoEstado = 'BLOCKED';
         }
-        return $this->repository->saveSession($telefono, $codigoSocio, $nuevoEstado, $intentos);
+        
+        $contextString = $contextData !== null ? json_encode($contextData) : null;
+        return $this->repository->saveSession($telefono, $codigoSocio, $nuevoEstado, $intentos, $contextString);
     }
     
     public function resetSession(string $telefono): bool
@@ -71,13 +75,14 @@ class SessionService
         return $this->repository->resetSession($telefono);
     }
 
-    private function buildResponse(string $estado, ?int $codigo, ?string $mensaje, int $intentos = 0): array
+    private function buildResponse(string $estado, ?int $codigo, ?string $mensaje, int $intentos = 0, ?array $contextData = null): array
     {
         $response = [
             'status' => 'success',
             'estado_actual' => $estado,
             'codigo_socio' => $codigo,
-            'intentos' => $intentos
+            'intentos' => $intentos,
+            'context_data' => $contextData
         ];
 
         if ($mensaje !== null) {

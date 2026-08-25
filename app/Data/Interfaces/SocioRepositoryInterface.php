@@ -22,4 +22,6 @@ interface SocioRepositoryInterface
      * Busca el historial de facturas pagadas de un socio.
      */
     public function findHistorialByCodigo(string $cod_socio): ?array;
+
+    public function registrarReconexion(string $cod_socio, array $payload): ?array;
 }

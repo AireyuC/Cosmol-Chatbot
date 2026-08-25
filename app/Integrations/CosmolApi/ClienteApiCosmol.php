@@ -57,17 +57,45 @@ class ClienteApiCosmol
     }
 
     /**
-     * @param string $endpoint
+     * Registra una solicitud de reconexión
+     *
+     * @param string $codSocio
+     * @param array $payload
      * @return array|null
      * @throws Exception
      */
-    private function hacerPeticion(string $endpoint): ?array
+    public function registrarReconexion(string $codSocio, array $payload): ?array
+    {
+        $endpoint = "/api-consultas/socios/" . urlencode($codSocio) . "/reconexion";
+        return $this->hacerPeticion($endpoint, 'POST', $payload);
+    }
+
+    /**
+     * @param string $endpoint
+     * @param string $method
+     * @param array|null $body
+     * @return array|null
+     * @throws Exception
+     */
+    private function hacerPeticion(string $endpoint, string $method = 'GET', ?array $body = null): ?array
     {
         $url = rtrim($this->baseUrl, '/') . $endpoint;
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        
+        if (strtoupper($method) === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            if ($body !== null) {
+                $jsonData = json_encode($body);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($jsonData)
+                ]);
+            }
+        }
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS chat_session (
     codigo_socio INT NULL,
     estado_actual VARCHAR(50) DEFAULT 'AWAITING_CODE',
     intentos_fallidos INT DEFAULT 0,
-    ultima_interaccion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ultima_interaccion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    context_data TEXT NULL
 );
 
 

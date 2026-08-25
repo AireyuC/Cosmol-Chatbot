@@ -29,7 +29,7 @@ class SessionRepository implements SessionRepositoryInterface
         return $result ?: null;
     }
 
-    public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos): bool
+    public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos, ?string $contextData = null): bool
     {
         $stmtCheck = $this->db->prepare("SELECT telefono_whatsapp FROM chat_session WHERE telefono_whatsapp = :telefono");
         $stmtCheck->execute(['telefono' => $telefonoWhatsapp]);
@@ -40,11 +40,12 @@ class SessionRepository implements SessionRepositoryInterface
                     SET codigo_socio = :codigo, 
                         estado_actual = :estado, 
                         intentos_fallidos = :intentos,
+                        context_data = :context_data,
                         ultima_interaccion = CURRENT_TIMESTAMP
                     WHERE telefono_whatsapp = :telefono";
         } else {
-            $sql = "INSERT INTO chat_session (telefono_whatsapp, codigo_socio, estado_actual, intentos_fallidos) 
-                    VALUES (:telefono, :codigo, :estado, :intentos)";
+            $sql = "INSERT INTO chat_session (telefono_whatsapp, codigo_socio, estado_actual, intentos_fallidos, context_data) 
+                    VALUES (:telefono, :codigo, :estado, :intentos, :context_data)";
         }
 
         $stmt = $this->db->prepare($sql);
@@ -53,14 +54,15 @@ class SessionRepository implements SessionRepositoryInterface
             'telefono' => $telefonoWhatsapp,
             'codigo' => $codigoSocio,
             'estado' => $estadoActual,
-            'intentos' => $intentosFallidos
+            'intentos' => $intentosFallidos,
+            'context_data' => $contextData
         ]);
     }
 
     public function resetSession(string $telefonoWhatsapp): bool
     {
         $sql = "UPDATE chat_session 
-                SET codigo_socio = NULL, estado_actual = 'AWAITING_CODE', intentos_fallidos = 0 
+                SET codigo_socio = NULL, estado_actual = 'AWAITING_CODE', intentos_fallidos = 0, context_data = NULL 
                 WHERE telefono_whatsapp = :telefono";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['telefono' => $telefonoWhatsapp]);

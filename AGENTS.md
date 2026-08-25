@@ -26,8 +26,12 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 2. **Consultas de Cuenta:** Visualización rápida de historial de facturas, montos pendientes y estados de cuenta.
 3. **Pagos Integrados:** Redirección simple a la pasarela de Multipago (`https://multipago.com/service/cosmol_payment/first`).
 4. **Registro de Reclamos (Agua turbia, fugas, etc.):**
-   - Uso de formularios (Flows) u opciones interactivas para capturar detalles del problema en un solo paso.
-   - **Manejo de Ubicación:** Se **ignora** la captura de ubicación por GPS desde WhatsApp por el momento. La ubicación para la atención del reclamo se extraerá directamente de los **datos almacenados en la base de datos** (sistema SAI).
+   - Uso de un flujo mixto y conversacional para capturar los detalles del problema.
+   - **Captura Obligatoria de Datos:** Debido a que la base de datos SAI no cuenta con direcciones precisas para todos los socios, el sistema **DEBE requerir y capturar**:
+     1. Ubicación GPS enviada de forma nativa por WhatsApp.
+     2. Fotografía del problema o lugar (adjunto de imagen).
+     3. Descripción en texto o referencias del reclamo.
+   - Estos datos se almacenarán temporalmente/definitivamente para que sistemas de terceros (ej. aplicación de plomeros/técnicos) puedan consumirlos.
 5. **Reconexiones Automáticas:** Evaluación de la antigüedad de la deuda (rechazo si la mora supera los 2 meses) y orden directa al sistema.
 
 ## 4. ESTRUCTURA DE MICROSERVICIOS Y FLUJO
@@ -40,5 +44,5 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 ## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
 - **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + PostgreSQL) y creación de Endpoints PHP simulados (Mocks con ANSI SQL).
 - **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
-- **Sprint 3 (Módulo Reclamos):** Implementación de flujos para quejas técnicas y extracción de datos de ubicación del socio exclusivamente desde la BD.
+- **Sprint 3 (Módulo Reclamos):** Implementación de flujos conversacionales interactivos para quejas técnicas que capturen obligatoriamente: Ubicación por GPS, fotografía y descripción en texto enviadas por el socio; preparando su almacenamiento para sistemas externos.
 - **Sprint 4 (Integración APIs SAI):** Sustitución de las llamadas al PostgreSQL local por las **APIs REST del sistema SAI** (Informix) proporcionadas por el equipo de producción. Validación end-to-end del flujo completo contra datos reales.

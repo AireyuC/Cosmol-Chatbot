@@ -91,6 +91,29 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [ 600, -20 ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Handshake Meta (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [ 0, -200 ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [ 200, -200 ]
     }
   ],
   "pinData": {},
@@ -106,6 +129,9 @@
     },
     "4. ¿Hay que responder?": {
       "main": [ [ { "node": "5. Enviar a Meta", "type": "main", "index": 0 } ] ]
+    },
+    "Handshake Meta (GET)": {
+      "main": [ [ { "node": "Respond to Webhook", "type": "main", "index": 0 } ] ]
     }
   },
   "active": true,

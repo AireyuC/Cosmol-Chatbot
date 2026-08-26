@@ -2,8 +2,7 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:1
     container_name: cosmol_n8n
-    ports:
-      - "5678:5678"
+    restart: unless-stopped
     networks:
       - cosmol_network
     env_file:
@@ -23,19 +22,20 @@ services:
     volumes:
       - .:/app
     healthcheck:
-      test: ["CMD-SHELL", "php -r \"exit(@fsockopen('localhost', 80) ? 0 : 1);\""]
+      test: [ "CMD-SHELL", "php -r \"exit(@fsockopen('localhost', 80) ? 0 : 1);\"" ]
       interval: 10s
       timeout: 5s
       retries: 5
     depends_on:
       db:
         condition: service_healthy
-      
+
   db:
     image: postgres:16-alpine
     container_name: cosmol_postgres
+    restart: unless-stopped
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
@@ -46,10 +46,28 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  caddy:
+    image: caddy:latest
+    container_name: cosmol_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - cosmol_network
+    depends_on:
+      - n8n
 
 networks:
   cosmol_network:
@@ -61,3 +79,7 @@ volumes:
     name: cosmol_n8n_data
   postgres_data:
     name: cosmol_postgres_data
+  caddy_data:
+    name: cosmol_caddy_data
+  caddy_config:
+    name: cosmol_caddy_config

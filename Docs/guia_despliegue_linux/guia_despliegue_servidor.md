@@ -34,32 +34,43 @@ cp .env.example .env
 nano .env
 ```
 
-Dentro del archivo `.env`, configura tus variables reales. 
+Dentro del editor `nano`, configura tus variables reales. Las más importantes para cambiar en producción son:
+
+- `WEBHOOK_URL=https://tu-dominio-cosmol.com/` *(Cambiar el ngrok por el dominio real que usará n8n)*
+- `APP_ENV=production` *(Para optimizar el rendimiento de PHP)*
+- `APP_DEBUG=false` *(Para ocultar errores de código a los usuarios)*
+- `DB_PASSWORD=una_contraseña_muy_segura` *(Cambiar la de desarrollo)*
+- `DB_ROOT_PASSWORD=otra_contraseña_fuerte` *(Cambiar la de desarrollo)*
+- `WHATSAPP_TOKEN=...` *(Asegúrate de que tenga el token permanente de Meta)*
+- `COSMOL_API_URL=...` *(Si la URL del sistema SAI cambia en producción)*
 
 > [!NOTE]
 > Recuerda que **NO** necesitas copiar el archivo `docker-compose.override.yml`. Al no tener este archivo, el puerto `8000` de PHP quedará aislado de forma segura.
 
-## Fase 3: Conectar el Dominio (Proxy Externo)
+## Fase 3: Conectar el Dominio (Caddy SSL)
 
-Como el servidor ya cuenta con un dominio y certificado HTTPS administrado por tu proveedor (o departamento de TI), **no necesitas instalar Nginx ni Certbot**.
+El sistema ahora incluye **Caddy**, un proxy inverso moderno que solicita automáticamente los certificados SSL gratuitos de *Let's Encrypt*.
 
-Lo único que debes hacer es indicar a la persona encargada de la red (o configurar en tu panel de control) que todo el tráfico web entrante a ese dominio debe ser redirigido internamente al **Puerto 5678** (que es donde escucha el contenedor de n8n).
+Lo único que debes hacer es:
+1. En tu proveedor de dominios (GoDaddy, Cloudflare, etc.), crea un **Récord A** para tu dominio (ej. `api.cosmol.com.bo`) que apunte a la **IP Pública** de este servidor.
+2. Abre los puertos **80 y 443** en el Firewall de tu servidor o panel de la nube.
+3. Edita el archivo `.env` y asegúrate de que la variable `DOMAIN_NAME` tenga exactamente tu dominio (sin `http://`).
 
 ## Fase 4: ¡Encender los Motores!
 
-Ya con el entorno listo, enciende los contenedores de Docker. (Asegúrate de estar en la carpeta de tu proyecto `Cosmol-Chatbot`):
+Ya con el entorno listo y el dominio apuntando, enciende los contenedores de Docker:
 
 ```bash
 docker compose up -d
 ```
 
 > [!TIP]
-> **Verificación:** Ejecuta `docker ps`. Deberías ver tus 3 contenedores (`cosmol_n8n`, `cosmol_postgres` y `cosmol_backend`) corriendo, pero notarás que `cosmol_backend` **no expone** el puerto 8000 hacia `0.0.0.0`, logrando nuestra meta de seguridad y aislamiento.
+> **Verificación SSL:** Ejecuta `docker compose logs -f caddy`. Deberías ver cómo Caddy contacta a Let's Encrypt y obtiene el certificado en unos pocos segundos. A partir de ahora, n8n estará disponible de forma 100% segura en `https://tu-dominio-cosmol.com`.
 
 ## Fase 5: Conectar con Meta
 
 1. Ve a tu panel de **Meta for Developers**.
-2. Cambia la "URL de devolución de llamada" de ngrok a tu dominio oficial provisto por el servidor: `https://tu-dominio-cosmol.com/webhook/whatsapp`
+2. Cambia la "URL de devolución de llamada" de ngrok a tu nuevo dominio HTTPS: `https://tu-dominio-cosmol.com/webhook/whatsapp`
 3. Ingresa cualquier palabra en el Token de Verificación y dale a "Verificar y guardar".
 
-¡Felicidades! 🎉 Tu bot ahora vive en su propio servidor y está listo para recibir mensajes 24/7 sin depender de tu computadora ni de ngrok.
+

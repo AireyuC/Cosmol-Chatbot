@@ -1,0 +1,3 @@
+{$DOMAIN_NAME:chatbot.cosmol.com.bo} {
+    reverse_proxy cosmol_n8n:5678
+}

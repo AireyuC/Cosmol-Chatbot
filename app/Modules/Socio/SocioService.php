@@ -139,6 +139,11 @@ class SocioService
         $deudas = $this->socioRepository->findDeudasByCodigo($cod_socio);
 
         if ($deudas !== null) {
+            // Si la API devuelve un solo registro, viene como array asociativo. Lo envolvemos en una lista.
+            if (isset($deudas['NROFACTURA']) || isset($deudas['MONTOTOTAL'])) {
+                $deudas = [$deudas];
+            }
+
             $totalSuma = 0.0;
             $listaDeudas = [];
 
@@ -194,6 +199,11 @@ class SocioService
         $historial = $this->socioRepository->findHistorialByCodigo($cod_socio);
 
         if ($historial !== null) {
+            // Si la API devuelve un solo registro, viene como array asociativo. Lo envolvemos en una lista.
+            if (isset($historial['MES']) || isset($historial['MONTO'])) {
+                $historial = [$historial];
+            }
+
             $lista = [];
             foreach ($historial as $factura) {
                 $lista[] = [

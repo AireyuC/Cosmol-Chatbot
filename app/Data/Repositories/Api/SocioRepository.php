@@ -44,7 +44,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerSocio($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : null;
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : null;
             }
 
             return null;
@@ -66,7 +66,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerDeudasSocio($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;
@@ -88,7 +88,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerHistorialFacturas($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;
@@ -111,7 +111,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->registrarReconexion($cod_socio, $payload);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;

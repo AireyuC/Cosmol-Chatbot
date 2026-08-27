@@ -80,11 +80,16 @@ class WhatsAppMediaService
             $uploadDir = __DIR__ . '/../../../public/uploads/reclamos';
             
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                @mkdir($uploadDir, 0777, true);
             }
 
             $filePath = $uploadDir . '/' . $fileName;
-            file_put_contents($filePath, $imageBytes);
+            $saved = @file_put_contents($filePath, $imageBytes);
+
+            if ($saved === false) {
+                \App\Core\Logger::error("WhatsAppMediaService: Permiso denegado o error al guardar en {$filePath}");
+                return null;
+            }
 
             // Retornamos la ruta pública
             return "/uploads/reclamos/{$fileName}";

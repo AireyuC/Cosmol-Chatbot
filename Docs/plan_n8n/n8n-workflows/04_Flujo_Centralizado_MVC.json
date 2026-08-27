@@ -10,15 +10,32 @@
       "name": "1. Recibir Webhook Meta",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [ 0, 0 ],
-      "webhookId": "cosmol-webhook-id-post"
+      "position": [
+        0,
+        208
+      ],
+      "webhookId": "cosmol-webhook-id-post",
+      "id": "1617d261-56bf-44c3-9f26-bb8937fc1177"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
-            { "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}", "operator": { "type": "array", "operation": "notEmpty", "singleValue": true } }
+            {
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "id": "a00d7d21-70d0-40a4-a084-4f401f584e0e"
+            }
           ],
           "combinator": "and"
         },
@@ -27,40 +44,56 @@
       "name": "2. ¿Es un mensaje válido?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [ 200, 0 ]
+      "position": [
+        208,
+        208
+      ],
+      "id": "cd000ad7-76c1-4060-bd17-d2f095e54523"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://backend:80/api/webhook_whatsapp.php",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  telefono: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  tipo_mensaje: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type,\n  contenido: (function(msg){\n    if(msg.type==='text') return msg.text?.body || '';\n    if(msg.type==='interactive') return msg.interactive?.list_reply?.id || msg.interactive?.button_reply?.id || '';\n    if(msg.type==='location') return JSON.stringify(msg.location);\n    if(msg.type==='image') return msg.image?.id || '';\n    return '';\n  })($('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0])\n}) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-Internal-Token", "value": "c4b9d031e13f41249e0c90494fbdb96a2982d6b3fcb5962b9a715a6b0c2a71d0" }
+            {
+              "name": "X-Internal-Token",
+              "value": "c4b9d031e13f41249e0c90494fbdb96a2982d6b3fcb5962b9a715a6b0c2a71d0"
+            }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  telefono: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  tipo_mensaje: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type,\n  contenido: (function(msg){\n    if(msg.type==='text') return msg.text?.body || '';\n    if(msg.type==='interactive') return msg.interactive?.list_reply?.id || msg.interactive?.button_reply?.id || '';\n    if(msg.type==='location') return JSON.stringify(msg.location);\n    if(msg.type==='image') return msg.image?.id || '';\n    return '';\n  })($('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0])\n}) }}",
         "options": {
-          "response": { "response": { "ignoreResponseCode": true } }
+          "response": {
+            "response": {}
+          }
         }
       },
       "name": "3. Procesar en PHP (Cerebro)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [ 400, -20 ]
+      "position": [
+        400,
+        192
+      ],
+      "id": "8acc2afb-690a-49b3-9266-7f215d46fc6d"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://graph.facebook.com/v25.0/1127747783746878/messages",
+        "url": "https://graph.facebook.com/v25.0/1257228694141168/messages",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpMultipleHeadersAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -71,17 +104,37 @@
       "name": "5. Enviar a Meta",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [ 800, -20 ],
+      "position": [
+        800,
+        192
+      ],
+      "id": "dd0e0a28-e327-49f4-b8e1-cf2f605f142f",
       "credentials": {
-        "httpMultipleHeadersAuth": { "id": "7gdJ773rWTCIY1il", "name": "Multiple Headers Auth account" }
+        "httpMultipleHeadersAuth": {
+          "id": "NLmPF0csahvYQHLM",
+          "name": "Multiple Headers Auth account"
+        }
       }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
-            { "leftValue": "={{ $json.whatsapp_payload }}", "operator": { "type": "object", "operation": "notEmpty", "singleValue": true } }
+            {
+              "leftValue": "={{ $json.whatsapp_payload }}",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "id": "53e60126-e286-4173-a0e3-262df566d01a"
+            }
           ],
           "combinator": "and"
         },
@@ -90,11 +143,14 @@
       "name": "4. ¿Hay que responder?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [ 600, -20 ]
+      "position": [
+        608,
+        192
+      ],
+      "id": "66708220-59c5-4b95-b391-aaf96d1f3353"
     },
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "whatsapp",
         "responseMode": "responseNode",
         "options": {}
@@ -102,7 +158,12 @@
       "name": "Handshake Meta (GET)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [ 0, -200 ]
+      "position": [
+        0,
+        0
+      ],
+      "id": "72e49020-2883-4d16-80be-0a29a6640825",
+      "webhookId": "28bfadd0-6931-4084-8e17-545527c242d0"
     },
     {
       "parameters": {
@@ -113,27 +174,79 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [ 200, -200 ]
+      "position": [
+        208,
+        0
+      ],
+      "id": "6be09500-1e90-4037-89c7-f1e5ab4e5e0d"
     }
   ],
   "pinData": {},
   "connections": {
     "1. Recibir Webhook Meta": {
-      "main": [ [ { "node": "2. ¿Es un mensaje válido?", "type": "main", "index": 0 } ] ]
+      "main": [
+        [
+          {
+            "node": "2. ¿Es un mensaje válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "2. ¿Es un mensaje válido?": {
-      "main": [ [ { "node": "3. Procesar en PHP (Cerebro)", "type": "main", "index": 0 } ] ]
+      "main": [
+        [
+          {
+            "node": "3. Procesar en PHP (Cerebro)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "3. Procesar en PHP (Cerebro)": {
-      "main": [ [ { "node": "4. ¿Hay que responder?", "type": "main", "index": 0 } ] ]
+      "main": [
+        [
+          {
+            "node": "4. ¿Hay que responder?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "4. ¿Hay que responder?": {
-      "main": [ [ { "node": "5. Enviar a Meta", "type": "main", "index": 0 } ] ]
+      "main": [
+        [
+          {
+            "node": "5. Enviar a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Handshake Meta (GET)": {
-      "main": [ [ { "node": "Respond to Webhook", "type": "main", "index": 0 } ] ]
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3f0a7e8e-48cf-4749-86b7-c4d8a578b0f9",
+  "meta": {
+    "instanceId": "b3d76ea7f06c9bf45afe60f928a4e7482efb5fe550b45933341e5eaabf578a84"
+  },
+  "id": "CvcOSV2uyZ2BKRLK",
+  "tags": []
 }

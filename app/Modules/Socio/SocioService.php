@@ -206,10 +206,15 @@ class SocioService
 
             $lista = [];
             foreach ($historial as $factura) {
+                // Filtrar facturas impagas (ESTADO = 0 o FECHA es nula)
+                if ((isset($factura['ESTADO']) && (string)$factura['ESTADO'] === '0') || empty($factura['FECHA'])) {
+                    continue;
+                }
+
                 $lista[] = [
                     'periodo' => ($factura['MES'] ?? '') . '/' . ($factura['ANIO'] ?? ''),
                     'monto' => isset($factura['MONTO']) ? (float)$factura['MONTO'] : 0.0,
-                    'fecha' => $factura['FECHA'] ?? 'N/A'
+                    'fecha' => $factura['FECHA']
                 ];
             }
 

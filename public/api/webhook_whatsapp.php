@@ -16,6 +16,7 @@ use App\Modules\Socio\SocioService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaFactura;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
+use App\Presentacion\PlantillasWhatsApp\PlantillaReclamos;
 
 /**
  * Controlador Central para el Chatbot de WhatsApp.
@@ -54,11 +55,11 @@ class WebhookWhatsAppEndpoint extends Controller
             $socioRepo = new SocioRepository($clienteApi);
             $socioService = new SocioService($socioRepo);
 
-            // Obtener el estado actual y procesar Timeouts automáticos
             $sessionResult = $sessionService->processSessionState((string)$telefono, '');
             $estadoActual = $sessionResult['estado_actual'];
             $intentos = $sessionResult['intentos'];
             $codigoSocio = $sessionResult['codigo_socio'];
+            $contextData = $sessionResult['context_data'] ?? [];
 
             // Variable para almacenar el JSON visual final que enviaremos a n8n
             $whatsappPayload = null;
@@ -141,15 +142,115 @@ class WebhookWhatsAppEndpoint extends Controller
                     } elseif ($contenido === 'MENU_PRINCIPAL_VOLVER') {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio);
                     } elseif ($contenido === 'MENU_CAMBIAR_CODIGO') {
-                        
                         $sessionService->resetSession($telefono);
                         $whatsappPayload = PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
+                    } elseif ($contenido === 'MENU_RECLAMOS') {
+                        $whatsappPayload = PlantillaReclamos::menuReclamos();
+                    } elseif ($contenido === 'MENU_HISTORIAL') {
+                        $historialResult = $socioService->obtenerHistorial((string)$codigoSocio);
+                        if ($historialResult['status'] === 'success') {
+                            $whatsappPayload = PlantillaFactura::historialFacturas(
+                                (string)$codigoSocio,
+                                $historialResult['facturas'],
+                                $historialResult['cantidad']
+                            );
+                        } else {
+                            $whatsappPayload = PlantillaSistema::textoSimple("Ocurrió un error al obtener el historial de facturas.");
+                        }
+                    } elseif ($contenido === 'MENU_RECONEXION') {
+                        $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
+                        $whatsappPayload = PlantillaSocio::solicitarGpsReconexion();
+                    } elseif ($contenido === 'MENU_OFICINAS') {
+                        $whatsappPayload = PlantillaSocio::menuPrincipal(
+                            (string)$codigoSocio, 
+                            '', 
+                            false, 
+                            "🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:"
+                        );
+                    } elseif (in_array($contenido, [
+                        'RECLAMO_AGUA_TURBIA',
+                        'RECLAMO_FUGA',
+                        'RECLAMO_REBALSE',
+                        'RECLAMO_TRANCADO',
+                        'RECLAMO_ESTADO'
+                    ])) {
+                        $whatsappPayload = PlantillaReclamos::menuReclamos("🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:");
                     } else {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
                     }
                 } else {
                     // Si escribe texto en lugar de usar botones del menú
                     $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
+                }
+            } 
+            elseif ($estadoActual === 'AWAITING_RECONEXION_GPS') {
+                if ($tipoMensaje === 'location' && !empty($contenido)) {
+                    // $contenido es un JSON con lat y long
+                    $loc = json_decode($contenido, true);
+                    $lat = $loc['latitude'] ?? '';
+                    $lng = $loc['longitude'] ?? '';
+                    
+                    $contextData['coordenadas_gps'] = "{$lat}, {$lng}";
+                    $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_TYPE', 0, $contextData);
+                    
+                    $whatsappPayload = PlantillaSocio::menuTipoReconexion();
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECONEXION_TYPE') {
+                if ($tipoMensaje === 'interactive' && strpos((string)$contenido, 'RECONEXION_TIPO_') === 0) {
+                    $tipoId = (int)str_replace('RECONEXION_TIPO_', '', $contenido);
+                    $contextData['id_tipo_reconexion'] = $tipoId;
+                    
+                    $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_PHOTO', 0, $contextData);
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("📸 *Fotografía requerida*\n\nPor favor, envíe una foto del medidor o del lugar donde se requiere la reconexión usando el icono de la cámara o galería de WhatsApp.");
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Opción inválida. Por favor, seleccione una opción de la lista enviada. 👇");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECONEXION_PHOTO') {
+                if ($tipoMensaje === 'image' && !empty($contenido)) {
+                    // $contenido contiene el media_id enviado por WhatsApp
+                    require_once __DIR__ . '/../../app/Integrations/WhatsApp/WhatsAppMediaService.php';
+                    $mediaService = new \App\Integrations\WhatsApp\WhatsAppMediaService();
+                    $fotoUrl = $mediaService->descargarYGuardar((string)$contenido, (string)$codigoSocio);
+                    
+                    $contextData['foto_url'] = $fotoUrl; // Guardar URL local en contexto
+                    
+                    $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
+                    $whatsappPayload = PlantillaSocio::solicitarGlosaReconexion();
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, adjunte una imagen 📸.");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECONEXION_GLOSA') {
+                if ($tipoMensaje === 'text') {
+                    $glosa = trim((string)$contenido);
+                    
+                    $gps = $contextData['coordenadas_gps'] ?? '';
+                    $tipoId = $contextData['id_tipo_reconexion'] ?? 1;
+                    $fotoUrl = $contextData['foto_url'] ?? '';
+                    
+                    $resultadoReconexion = $socioService->solicitarReconexion((string)$codigoSocio, $gps, $tipoId, $glosa, $fotoUrl);
+                    
+                    if ($resultadoReconexion['status'] === 'success') {
+                        $ticket = $resultadoReconexion['id_reconexion'];
+                        $msg = "✅ *Solicitud de Reconexión registrada exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
+                    } else {
+                        $msg = "❌ Ocurrió un error al procesar su solicitud de reconexión. Por favor, intente más tarde.";
+                    }
+                    
+                    // Volver al menú principal y limpiar el context_data (enviamos null o array vacio)
+                    $sessionService->updateSession($telefono, $codigoSocio, 'MAIN_MENU', 0, []);
+                    
+                    // Respondemos con el mensaje y también le devolvemos el menú principal 
+                    // Como n8n actualmente solo acepta un payload, enviaremos primero un texto 
+                    // o podemos anexar el menú
+                    $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msg);
+
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, escriba una descripción o glosa en texto.");
                 }
             }
 

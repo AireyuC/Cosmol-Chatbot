@@ -8,9 +8,7 @@ interface SessionRepositoryInterface
 {
     public function getSession(string $telefonoWhatsapp): ?array;
 
-
-    public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos): bool;
-
+    public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos, ?string $contextData = null): bool;
 
     public function resetSession(string $telefonoWhatsapp): bool;
 }

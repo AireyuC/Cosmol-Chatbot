@@ -35,7 +35,7 @@
         "url": "http://backend:80/api/webhook_whatsapp.php",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  telefono: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  tipo_mensaje: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type,\n  contenido: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type === 'text' ? $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].text?.body : ($('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive?.list_reply?.id || $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].interactive?.button_reply?.id || '')\n}) }}",
+        "jsonBody": "={{ JSON.stringify({\n  telefono: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].from,\n  tipo_mensaje: $('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0].type,\n  contenido: (function(msg){\n    if(msg.type==='text') return msg.text?.body || '';\n    if(msg.type==='interactive') return msg.interactive?.list_reply?.id || msg.interactive?.button_reply?.id || '';\n    if(msg.type==='location') return JSON.stringify(msg.location);\n    if(msg.type==='image') return msg.image?.id || '';\n    return '';\n  })($('2. ¿Es un mensaje válido?').item.json.body.entry[0].changes[0].value.messages[0])\n}) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

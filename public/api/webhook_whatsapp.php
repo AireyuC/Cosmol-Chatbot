@@ -158,8 +158,17 @@ class WebhookWhatsAppEndpoint extends Controller
                             $whatsappPayload = PlantillaSistema::textoSimple("Ocurrió un error al obtener el historial de facturas.");
                         }
                     } elseif ($contenido === 'MENU_RECONEXION') {
-                        $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
-                        $whatsappPayload = PlantillaSocio::solicitarGpsReconexion();
+                        $deudasResult = $socioService->obtenerDeudas((string)$codigoSocio);
+                        $cantidadDeudas = $deudasResult['status'] === 'success' ? $deudasResult['cantidad_facturas'] : 0;
+
+                        if ($cantidadDeudas > 2) {
+                            $msgRechazo = "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud.";
+                            // Se mantiene en MAIN_MENU pero enviamos el mensaje de rechazo
+                            $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msgRechazo);
+                        } else {
+                            $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
+                            $whatsappPayload = PlantillaSocio::solicitarGpsReconexion();
+                        }
                     } elseif ($contenido === 'MENU_OFICINAS') {
                         $whatsappPayload = PlantillaSocio::menuPrincipal(
                             (string)$codigoSocio, 

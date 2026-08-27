@@ -72,6 +72,12 @@ class PlantillaSocio
             'description' => 'Ingresar un código diferente'
         ];
 
+        $rows[] = [
+            'id' => 'MENU_CERRAR_SESION',
+            'title' => 'Cerrar Sesión',
+            'description' => 'Finalizar la atención y salir'
+        ];
+
         return [
             'type' => 'interactive',
             'interactive' => [

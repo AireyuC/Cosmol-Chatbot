@@ -144,6 +144,9 @@ class WebhookWhatsAppEndpoint extends Controller
                     } elseif ($contenido === 'MENU_CAMBIAR_CODIGO') {
                         $sessionService->resetSession($telefono);
                         $whatsappPayload = PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
+                    } elseif ($contenido === 'MENU_CERRAR_SESION') {
+                        $sessionService->resetSession($telefono);
+                        $whatsappPayload = PlantillaSistema::textoSimple("¡Gracias por utilizar nuestro servicio! 👋\n\nTu sesión ha sido cerrada correctamente. Si necesitas algo más en el futuro, simplemente escríbenos 'Hola'.\n\n¡Que tengas un excelente día!");
                     } elseif ($contenido === 'MENU_RECLAMOS') {
                         $whatsappPayload = PlantillaReclamos::menuReclamos();
                     } elseif ($contenido === 'MENU_HISTORIAL') {

@@ -57,6 +57,20 @@ class ClienteApiCosmol
     }
 
     /**
+     * Registra un reclamo para un socio
+     * 
+     * @param string $codSocio
+     * @param array $payload
+     * @return array|null
+     * @throws Exception
+     */
+    public function registrarReclamo(string $codSocio, array $payload): ?array
+    {
+        $endpoint = "/api-consultas/socios/" . urlencode($codSocio) . "/reclamos";
+        return $this->hacerPeticion($endpoint, 'POST', $payload);
+    }
+
+    /**
      * Registra una solicitud de reconexión
      *
      * @param string $codSocio

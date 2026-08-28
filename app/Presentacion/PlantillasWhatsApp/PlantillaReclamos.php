@@ -69,4 +69,37 @@ class PlantillaReclamos
             ]
         ];
     }
+
+    public static function solicitarGpsReclamo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) o el signo más (➕) y seleccionando *Ubicación*.",
+                'preview_url' => false
+            ]
+        ];
+    }
+
+    public static function solicitarFotoReclamo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "📸 Excelente. Ahora, por favor envía una *fotografía* clara del problema o daño.",
+                'preview_url' => false
+            ]
+        ];
+    }
+
+    public static function solicitarGlosaReclamo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "✍️ Por último, escribe un mensaje de texto con una breve descripción del problema o detalles adicionales (ej. 'El agua sale color café' o 'La fuga está en la acera frente al árbol').",
+                'preview_url' => false
+            ]
+        ];
+    }
 }

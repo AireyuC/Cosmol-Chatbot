@@ -179,14 +179,25 @@ class WebhookWhatsAppEndpoint extends Controller
                             false, 
                             "🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:"
                         );
-                    } elseif (in_array($contenido, [
-                        'RECLAMO_AGUA_TURBIA',
-                        'RECLAMO_FUGA',
-                        'RECLAMO_REBALSE',
-                        'RECLAMO_TRANCADO',
-                        'RECLAMO_ESTADO'
-                    ])) {
-                        $whatsappPayload = PlantillaReclamos::menuReclamos("🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:");
+                    } elseif ($contenido === 'RECLAMO_ESTADO') {
+                        $whatsappPayload = PlantillaReclamos::menuReclamos("🏗️ La consulta de estado está en construcción. Seleccione otra opción:");
+                    } elseif (strpos($contenido, 'RECLAMO_') === 0) {
+                        $mapaReclamos = [
+                            'RECLAMO_AGUA_TURBIA' => ['id_tipo' => 2, 'desc' => 'Agua turbia'],
+                            'RECLAMO_FUGA' => ['id_tipo' => 2, 'desc' => 'Fuga de agua'],
+                            'RECLAMO_REBALSE' => ['id_tipo' => 3, 'desc' => 'Rebalse alcantarillado'],
+                            'RECLAMO_TRANCADO' => ['id_tipo' => 3, 'desc' => 'Alcantarilla trancada']
+                        ];
+                        
+                        if (isset($mapaReclamos[$contenido])) {
+                            $contextData['id_tipo_reclamo'] = $mapaReclamos[$contenido]['id_tipo'];
+                            $contextData['descripcion_reclamo'] = $mapaReclamos[$contenido]['desc'];
+                            
+                            $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECLAMO_GPS', 0, $contextData);
+                            $whatsappPayload = PlantillaReclamos::solicitarGpsReclamo();
+                        } else {
+                            $whatsappPayload = PlantillaReclamos::menuReclamos();
+                        }
                     } else {
                         $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', true);
                     }
@@ -226,7 +237,7 @@ class WebhookWhatsAppEndpoint extends Controller
                     // $contenido contiene el media_id enviado por WhatsApp
                     require_once __DIR__ . '/../../app/Integrations/WhatsApp/WhatsAppMediaService.php';
                     $mediaService = new \App\Integrations\WhatsApp\WhatsAppMediaService();
-                    $fotoUrl = $mediaService->descargarYGuardar((string)$contenido, (string)$codigoSocio);
+                    $fotoUrl = $mediaService->descargarYGuardar((string)$contenido, (string)$codigoSocio, 'reconexiones');
                     
                     $contextData['foto_url'] = $fotoUrl; // Guardar URL local en contexto
                     
@@ -259,6 +270,59 @@ class WebhookWhatsAppEndpoint extends Controller
                     // Respondemos con el mensaje y también le devolvemos el menú principal 
                     // Como n8n actualmente solo acepta un payload, enviaremos primero un texto 
                     // o podemos anexar el menú
+                    $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msg);
+
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, escriba una descripción o glosa en texto.");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECLAMO_GPS') {
+                if ($tipoMensaje === 'location' && !empty($contenido)) {
+                    $loc = json_decode($contenido, true);
+                    $lat = $loc['latitude'] ?? '';
+                    $lng = $loc['longitude'] ?? '';
+                    
+                    $contextData['coordenadas_gps'] = "{$lat}, {$lng}";
+                    $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
+                    
+                    $whatsappPayload = PlantillaReclamos::solicitarFotoReclamo();
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECLAMO_PHOTO') {
+                if ($tipoMensaje === 'image' && !empty($contenido)) {
+                    require_once __DIR__ . '/../../app/Integrations/WhatsApp/WhatsAppMediaService.php';
+                    $mediaService = new \App\Integrations\WhatsApp\WhatsAppMediaService();
+                    // Importante: le pasamos 'reclamos' al servicio
+                    $fotoUrl = $mediaService->descargarYGuardar((string)$contenido, (string)$codigoSocio, 'reclamos');
+                    
+                    $contextData['foto_url'] = $fotoUrl; // Se guarda localmente como evidencia
+                    
+                    $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECLAMO_GLOSA', 0, $contextData);
+                    $whatsappPayload = PlantillaReclamos::solicitarGlosaReclamo();
+                } else {
+                    $whatsappPayload = PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, adjunte una imagen 📸.");
+                }
+            }
+            elseif ($estadoActual === 'AWAITING_RECLAMO_GLOSA') {
+                if ($tipoMensaje === 'text') {
+                    $glosa = trim((string)$contenido);
+                    
+                    $gps = $contextData['coordenadas_gps'] ?? '';
+                    $tipoId = $contextData['id_tipo_reclamo'] ?? 2;
+                    $desc = $contextData['descripcion_reclamo'] ?? 'Reclamo';
+                    
+                    $resultadoReclamo = $socioService->registrarReclamo((string)$codigoSocio, $tipoId, $desc, $glosa, $gps);
+                    
+                    if ($resultadoReclamo['status'] === 'success') {
+                        $ticket = $resultadoReclamo['id_reclamo'];
+                        $msg = "✅ *Reclamo registrado exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
+                    } else {
+                        $msg = "❌ Ocurrió un error al procesar su reclamo. Por favor, intente más tarde.";
+                    }
+                    
+                    $sessionService->updateSession($telefono, $codigoSocio, 'MAIN_MENU', 0, []);
                     $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msg);
 
                 } else {

@@ -12,9 +12,9 @@ class SessionService
      * @var SessionRepositoryInterface
      */
     private $repository;
-    private const MAX_ATTEMPTS = 200; // Maximo de intentos fallidos antes de bloquear al usuario
+    private const MAX_ATTEMPTS = 3; // Maximo de intentos fallidos antes de bloquear al usuario
     private const INACTIVE_TIMEOUT_SECONDS = 180; // 180 segundos de inactividad antes de cerrar sesion
-    private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos de bloqueo por intentos fallidos
+    private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos de bl oqueo por intentos fallidos
 
     public function __construct(SessionRepositoryInterface $repository)
     {

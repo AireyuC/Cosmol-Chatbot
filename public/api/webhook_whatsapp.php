@@ -60,14 +60,19 @@ class WebhookWhatsAppEndpoint extends Controller
             $intentos = $sessionResult['intentos'];
             $codigoSocio = $sessionResult['codigo_socio'];
             $contextData = $sessionResult['context_data'] ?? [];
+            $sysMessage = $sessionResult['message'] ?? null;
 
             // Variable para almacenar el JSON visual final que enviaremos a n8n
             $whatsappPayload = null;
 
-
-            if ($estadoActual === 'BLOCKED') {
+            if ($sysMessage) {
+                // Si el SessionService genera un mensaje de sistema (ej. "Sesión expirada por inactividad"),
+                // se lo enviamos al cliente e ignoramos la entrada actual para obligarlo a empezar limpio.
+                $whatsappPayload = PlantillaSistema::textoSimple($sysMessage);
+            }
+            elseif ($estadoActual === 'BLOCKED') {
                 // Si sigue bloqueado (processSessionState ya evalúa el timeout de 5 min)
-                // Si el timeout hubiera pasado, processSessionState devolvería AWAITING_CODE.
+                // Si el timeout hubiera pasado, processSessionState devolvería AWAITING_CODE y un sysMessage.
                 // El usuario solicitó: "el bot no le contestara hasta que acabe los 5 minutos"
                 $whatsappPayload = null;
             } 

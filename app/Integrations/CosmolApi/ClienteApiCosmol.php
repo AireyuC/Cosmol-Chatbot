@@ -85,6 +85,19 @@ class ClienteApiCosmol
     }
 
     /**
+     * Obtiene el historial de reconexiones de un socio consultando /api-consultas/socios/{cod}/reconexiones
+     *
+     * @param string $codSocio
+     * @return array|null
+     * @throws Exception
+     */
+    public function obtenerHistorialReconexiones(string $codSocio): ?array
+    {
+        $endpoint = "/api-consultas/socios/" . urlencode($codSocio) . "/reconexiones";
+        return $this->hacerPeticion($endpoint);
+    }
+
+    /**
      * @param string $endpoint
      * @param string $method
      * @param array|null $body

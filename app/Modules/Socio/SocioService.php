@@ -233,6 +233,33 @@ class SocioService
     }
 
     /**
+     * Valida si el socio ya tiene una solicitud de reconexión PENDIENTE.
+     *
+     * @param string $cod_socio El código fijo.
+     * @return bool True si tiene una reconexión pendiente, False si no o en caso de error.
+     */
+    public function tieneReconexionPendiente(string $cod_socio): bool
+    {
+        $cod_socio = trim($cod_socio);
+
+        if (empty($cod_socio)) {
+            return false;
+        }
+
+        $historial = $this->socioRepository->obtenerHistorialReconexiones($cod_socio);
+
+        if ($historial !== null) {
+            foreach ($historial as $tramite) {
+                if (isset($tramite['estado']) && strtoupper(trim((string)$tramite['estado'])) === 'PENDIENTE') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Registra una solicitud de reconexión.
      *
      * @param string $cod_socio El código fijo.

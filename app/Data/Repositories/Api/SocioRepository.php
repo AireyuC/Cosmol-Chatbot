@@ -143,4 +143,34 @@ class SocioRepository implements SocioRepositoryInterface
             return null;
         }
     }
+
+    /**
+     * Obtiene el historial de reconexiones de un socio.
+     *
+     * @param string $cod_socio El código fijo del socio.
+     * @return array|null
+     */
+    public function obtenerHistorialReconexiones(string $cod_socio): ?array
+    {
+        try {
+            $respuesta = $this->clienteApi->obtenerHistorialReconexiones($cod_socio);
+
+            if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
+                // If 'datos' exists and is an array, trim its contents
+                if (isset($respuesta['datos']) && is_array($respuesta['datos'])) {
+                    // Check if it's a list of objects or a single object
+                    if (isset($respuesta['datos'][0])) {
+                        return array_map([$this, 'trimDatos'], $respuesta['datos']);
+                    } else {
+                        return $this->trimDatos($respuesta['datos']);
+                    }
+                }
+                return []; // Return empty array if no 'datos' but status is success
+            }
+            return null;
+        } catch (Exception $e) {
+            \App\Core\Logger::error("RepositorioSocioApi::obtenerHistorialReconexiones error", ['exception' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

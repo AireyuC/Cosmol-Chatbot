@@ -24,4 +24,6 @@ interface SocioRepositoryInterface
     public function findHistorialByCodigo(string $cod_socio): ?array;
 
     public function registrarReconexion(string $cod_socio, array $payload): ?array;
+
+    public function obtenerHistorialReconexiones(string $cod_socio): ?array;
 }

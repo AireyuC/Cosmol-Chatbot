@@ -161,16 +161,22 @@ class WebhookWhatsAppEndpoint extends Controller
                             $whatsappPayload = PlantillaSistema::textoSimple("Ocurrió un error al obtener el historial de facturas.");
                         }
                     } elseif ($contenido === 'MENU_RECONEXION') {
-                        $deudasResult = $socioService->obtenerDeudas((string)$codigoSocio);
-                        $cantidadDeudas = $deudasResult['status'] === 'success' ? $deudasResult['cantidad_facturas'] : 0;
-
-                        if ($cantidadDeudas > 2) {
-                            $msgRechazo = "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud.";
-                            // Se mantiene en MAIN_MENU pero enviamos el mensaje de rechazo
+                        // 1. Validar si ya tiene una reconexión pendiente
+                        if ($socioService->tieneReconexionPendiente((string)$codigoSocio)) {
+                            $msgRechazo = "❌ Actualmente ya tiene una solicitud de reconexión *PENDIENTE*.\nNuestros técnicos atenderán su solicitud pronto. Por favor, espere.";
                             $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msgRechazo);
                         } else {
-                            $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
-                            $whatsappPayload = PlantillaSocio::solicitarGpsReconexion();
+                            // 2. Validar si tiene demasiadas deudas
+                            $deudasResult = $socioService->obtenerDeudas((string)$codigoSocio);
+                            $cantidadDeudas = $deudasResult['status'] === 'success' ? $deudasResult['cantidad_facturas'] : 0;
+    
+                            if ($cantidadDeudas > 2) {
+                                $msgRechazo = "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud.";
+                                $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msgRechazo);
+                            } else {
+                                $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
+                                $whatsappPayload = PlantillaSocio::solicitarGpsReconexion();
+                            }
                         }
                     } elseif ($contenido === 'MENU_OFICINAS') {
                         $whatsappPayload = PlantillaSocio::menuPrincipal(

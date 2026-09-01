@@ -139,6 +139,11 @@ class SocioService
         $deudas = $this->socioRepository->findDeudasByCodigo($cod_socio);
 
         if ($deudas !== null) {
+            // Si la API devuelve un solo registro, viene como array asociativo. Lo envolvemos en una lista.
+            if (isset($deudas['NROFACTURA']) || isset($deudas['MONTOTOTAL'])) {
+                $deudas = [$deudas];
+            }
+
             $totalSuma = 0.0;
             $listaDeudas = [];
 
@@ -194,12 +199,22 @@ class SocioService
         $historial = $this->socioRepository->findHistorialByCodigo($cod_socio);
 
         if ($historial !== null) {
+            // Si la API devuelve un solo registro, viene como array asociativo. Lo envolvemos en una lista.
+            if (isset($historial['MES']) || isset($historial['MONTO'])) {
+                $historial = [$historial];
+            }
+
             $lista = [];
             foreach ($historial as $factura) {
+                // Filtrar facturas impagas (ESTADO = 0 o FECHA es nula)
+                if ((isset($factura['ESTADO']) && (string)$factura['ESTADO'] === '0') || empty($factura['FECHA'])) {
+                    continue;
+                }
+
                 $lista[] = [
                     'periodo' => ($factura['MES'] ?? '') . '/' . ($factura['ANIO'] ?? ''),
                     'monto' => isset($factura['MONTO']) ? (float)$factura['MONTO'] : 0.0,
-                    'fecha' => $factura['FECHA'] ?? 'N/A'
+                    'fecha' => $factura['FECHA']
                 ];
             }
 
@@ -278,6 +293,70 @@ class SocioService
             return [
                 'status' => 'error',
                 'message' => 'Ocurrió un error al registrar la solicitud de reconexión.'
+            ];
+        }
+    }
+
+    /**
+     * Registra una solicitud de reclamo.
+     *
+     * @param string $cod_socio El código fijo.
+     * @param int $idTipoReclamo El ID del tipo de reclamo.
+     * @param string $descripcion Descripción corta del tipo.
+     * @param string $glosa Descripción extendida dada por el cliente.
+     * @param string $coordenadasGps Coordenadas recibidas por WhatsApp.
+     * @return array Arreglo estandarizado con el resultado.
+     */
+    public function registrarReclamo(string $cod_socio, int $idTipoReclamo, string $descripcion, string $glosa, string $coordenadasGps): array
+    {
+        $cod_socio = trim($cod_socio);
+
+        if (empty($cod_socio)) {
+            return [
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
+            ];
+        }
+
+        // Obtener datos del socio para extraer la ubicación
+        $socioData = $this->socioRepository->findByCodigo($cod_socio);
+
+        if (!$socioData) {
+            return [
+                'status' => 'error',
+                'message' => 'No se pudo obtener información del socio para registrar el reclamo.'
+            ];
+        }
+
+        $zona = $socioData['ZONA'] ?? '';
+        $ruta = $socioData['RUTA'] ?? '';
+        $nroc = $socioData['NROC'] ?? '';
+        $nroi = $socioData['NROI'] ?? '';
+        $ubicacion = "{$zona}.{$ruta}.{$nroc}.{$nroi}";
+
+        $payload = [
+            'usuario_registro' => 2,
+            'id_tipo_reclamo' => $idTipoReclamo,
+            'descripcion' => $descripcion,
+            'ubicacion' => $ubicacion,
+            'zona' => (int)$zona,
+            'ruta' => (int)$ruta,
+            'glosa' => $glosa,
+            'coordenadas_gps' => $coordenadasGps
+        ];
+
+        $respuesta = $this->socioRepository->registrarReclamo($cod_socio, $payload);
+
+        if ($respuesta !== null) {
+            return [
+                'status' => 'success',
+                'id_reclamo' => $respuesta['id_reclamo'] ?? '',
+                'estado' => $respuesta['estado'] ?? ''
+            ];
+        } else {
+            return [
+                'status' => 'error',
+                'message' => 'Ocurrió un error al registrar el reclamo.'
             ];
         }
     }

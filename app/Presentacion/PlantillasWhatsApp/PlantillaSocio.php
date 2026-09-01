@@ -72,6 +72,12 @@ class PlantillaSocio
             'description' => 'Ingresar un código diferente'
         ];
 
+        $rows[] = [
+            'id' => 'MENU_CERRAR_SESION',
+            'title' => 'Cerrar Sesión',
+            'description' => 'Finalizar la atención y salir'
+        ];
+
         return [
             'type' => 'interactive',
             'interactive' => [
@@ -101,7 +107,7 @@ class PlantillaSocio
 
     public static function redireccionAgente(): array
     {
-        $numeroAgente = "59170003204";
+        $numeroAgente = "59161555507";
         $mensaje = "Para contactarte con nuestro equipo de Atención al Cliente, registrar un reclamo o solicitar un servicio, por favor haz clic en el siguiente enlace:\n\nhttps://wa.me/" . $numeroAgente . "\n\nSerás atendido por un agente de COSMOL a la brevedad posible.";
 
         return [

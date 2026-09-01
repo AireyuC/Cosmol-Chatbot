@@ -32,7 +32,8 @@ class PlantillaFactura
             $contador = 1;
             foreach ($facturas as $f) {
                 $montoF = number_format($f['monto'], 2, ',', '.');
-                $fechaF = date('d/m/Y', strtotime($f['fecha']));
+                $timestamp = strtotime($f['fecha']);
+                $fechaF = $timestamp !== false ? date('d/m/Y', $timestamp) : $f['fecha'];
                 $mensajeTexto .= "$contador. Periodo: {$f['periodo']} - Monto: $montoF Bs. (Pagado el $fechaF)\n";
                 $contador++;
             }

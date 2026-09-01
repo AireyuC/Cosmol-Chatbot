@@ -74,20 +74,30 @@ class WhatsAppMediaService
             }
 
             // 3. Guardar en disco
-            $fileName = "reclamo_{$codigoSocio}_" . time() . "_{$mediaId}.{$extension}";
-            // Usamos __DIR__ para ubicar public relativo a este archivo
-            // app/Integrations/WhatsApp -> public/uploads/reclamos
-            $uploadDir = __DIR__ . '/../../../public/uploads/reclamos';
+            // Evitar carpetas extrañas
+            $carpetaDestino = ($tipoTramite === 'reclamos') ? 'reclamos' : 'reconexiones';
+            
+            // Usar un prefijo de archivo para saber qué es
+            $prefijoArchivo = ($tipoTramite === 'reclamos') ? 'reclamo' : 'reconexion';
+            
+            $fileName = "{$prefijoArchivo}_{$codigoSocio}_" . time() . "_{$mediaId}.{$extension}";
+            
+            $uploadDir = __DIR__ . '/../../../public/uploads/' . $carpetaDestino;
             
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                @mkdir($uploadDir, 0777, true);
             }
 
             $filePath = $uploadDir . '/' . $fileName;
-            file_put_contents($filePath, $imageBytes);
+            $saved = @file_put_contents($filePath, $imageBytes);
+
+            if ($saved === false) {
+                \App\Core\Logger::error("WhatsAppMediaService: Permiso denegado o error al guardar en {$filePath}");
+                return null;
+            }
 
             // Retornamos la ruta pública
-            return "/uploads/reclamos/{$fileName}";
+            return "/uploads/{$carpetaDestino}/{$fileName}";
 
         } catch (Exception $e) {
             \App\Core\Logger::error("WhatsAppMediaService::descargarYGuardar error", ['exception' => $e->getMessage()]);

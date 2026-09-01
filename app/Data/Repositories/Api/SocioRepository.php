@@ -44,7 +44,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerSocio($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : null;
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : null;
             }
 
             return null;
@@ -66,7 +66,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerDeudasSocio($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;
@@ -88,7 +88,7 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->obtenerHistorialFacturas($cod_socio);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;
@@ -111,12 +111,35 @@ class SocioRepository implements SocioRepositoryInterface
             $respuesta = $this->clienteApi->registrarReconexion($cod_socio, $payload);
 
             if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
-                return isset($respuesta['datos']) ? $this->trimDatos($respuesta['datos']) : [];
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
             }
 
             return null;
         } catch (Exception $e) {
             \App\Core\Logger::error("RepositorioSocioApi::registrarReconexion error", ['exception' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Registra un reclamo de un socio.
+     *
+     * @param string $cod_socio El código fijo del socio.
+     * @param array $payload Los datos del formulario de reclamo.
+     * @return array|null Retorna la respuesta de la API o null si falla.
+     */
+    public function registrarReclamo(string $cod_socio, array $payload): ?array
+    {
+        try {
+            $respuesta = $this->clienteApi->registrarReclamo($cod_socio, $payload);
+
+            if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
+                return (isset($respuesta['datos']) && is_array($respuesta['datos'])) ? $this->trimDatos($respuesta['datos']) : [];
+            }
+
+            return null;
+        } catch (Exception $e) {
+            \App\Core\Logger::error("RepositorioSocioApi::registrarReclamo error", ['exception' => $e->getMessage()]);
             return null;
         }
     }

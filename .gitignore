@@ -26,3 +26,6 @@ node_modules/
 
 # Ignorar el archivo de override de Docker (solo para desarrollo local)
 docker-compose.override.yml
+
+# Ignorar archivos subidos por los usuarios (fotos de reclamos, etc)
+/public/uploads/

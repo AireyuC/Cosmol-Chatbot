@@ -310,7 +310,7 @@ class WebhookWhatsAppEndpoint extends Controller
                     $glosa = trim((string)$contenido);
                     
                     $gps = $contextData['coordenadas_gps'] ?? '';
-                    $tipoId = $contextData['id_tipo_reclamo'] ?? 2;
+                    $tipoId = (int)($contextData['id_tipo_reclamo'] ?? 2);
                     $desc = $contextData['descripcion_reclamo'] ?? 'Reclamo';
                     
                     $resultadoReclamo = $socioService->registrarReclamo((string)$codigoSocio, $tipoId, $desc, $glosa, $gps);
@@ -338,9 +338,11 @@ class WebhookWhatsAppEndpoint extends Controller
                 'whatsapp_payload' => $whatsappPayload
             ], 200);
 
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             \App\Core\Logger::error('Error en WebhookWhatsAppEndpoint', [
                 'exception' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'telefono' => $telefono ?? null
             ]);
             

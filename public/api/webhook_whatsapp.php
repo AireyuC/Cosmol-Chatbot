@@ -323,8 +323,9 @@ class WebhookWhatsAppEndpoint extends Controller
                     $gps = $contextData['coordenadas_gps'] ?? '';
                     $tipoId = (int)($contextData['id_tipo_reclamo'] ?? 2);
                     $desc = $contextData['descripcion_reclamo'] ?? 'Reclamo';
+                    $fotoUrl = $contextData['foto_url'] ?? '';
                     
-                    $resultadoReclamo = $socioService->registrarReclamo((string)$codigoSocio, $tipoId, $desc, $glosa, $gps);
+                    $resultadoReclamo = $socioService->registrarReclamo((string)$codigoSocio, $tipoId, $desc, $glosa, $gps, $fotoUrl);
                     
                     if ($resultadoReclamo['status'] === 'success') {
                         $ticket = $resultadoReclamo['id_reclamo'];

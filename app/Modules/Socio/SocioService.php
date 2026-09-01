@@ -332,9 +332,10 @@ class SocioService
      * @param string $descripcion Descripción corta del tipo.
      * @param string $glosa Descripción extendida dada por el cliente.
      * @param string $coordenadasGps Coordenadas recibidas por WhatsApp.
+     * @param string $fotoUrl URL o ruta de la foto guardada localmente.
      * @return array Arreglo estandarizado con el resultado.
      */
-    public function registrarReclamo(string $cod_socio, int $idTipoReclamo, string $descripcion, string $glosa, string $coordenadasGps): array
+    public function registrarReclamo(string $cod_socio, int $idTipoReclamo, string $descripcion, string $glosa, string $coordenadasGps, string $fotoUrl = ''): array
     {
         $cod_socio = trim($cod_socio);
 
@@ -369,7 +370,8 @@ class SocioService
             'zona' => (int)$zona,
             'ruta' => (int)$ruta,
             'glosa' => $glosa,
-            'coordenadas_gps' => $coordenadasGps
+            'coordenadas_gps' => $coordenadasGps,
+            'foto' => $fotoUrl
         ];
 
         $respuesta = $this->socioRepository->registrarReclamo($cod_socio, $payload);

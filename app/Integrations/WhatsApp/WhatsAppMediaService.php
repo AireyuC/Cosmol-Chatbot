@@ -28,7 +28,7 @@ class WhatsAppMediaService
      * @param string $codigoSocio Código del socio para nombrar el archivo
      * @return string|null La URL pública relativa de la imagen, o null si falla.
      */
-    public function descargarYGuardar(string $mediaId, string $codigoSocio): ?string
+    public function descargarYGuardar(string $mediaId, string $codigoSocio, string $tipoTramite = 'reconexiones'): ?string
     {
         if (!$this->token) {
             \App\Core\Logger::error("WhatsAppMediaService: WHATSAPP_TOKEN no está configurado.");

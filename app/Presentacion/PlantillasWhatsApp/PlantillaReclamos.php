@@ -75,7 +75,7 @@ class PlantillaReclamos
         return [
             'type' => 'text',
             'text' => [
-                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) o el signo más (➕) y seleccionando *Ubicación*.",
+                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) y selecciona *Ubicación*.",
                 'preview_url' => false
             ]
         ];
@@ -97,7 +97,7 @@ class PlantillaReclamos
         return [
             'type' => 'text',
             'text' => [
-                'body' => "✍️ Por último, escribe un mensaje de texto con una breve descripción del problema o detalles adicionales (ej. 'El agua sale color café' o 'La fuga está en la acera frente al árbol').",
+                'body' => "✍️ Por último, escribe un mensaje de texto con una breve descripción del problema o detalles adicionales \n\n (ej. 'El agua sale color café' o 'La fuga está en la acera').",
                 'preview_url' => false
             ]
         ];

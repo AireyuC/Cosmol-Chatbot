@@ -176,7 +176,7 @@ class WebhookWhatsAppEndpoint extends Controller
                             $cantidadDeudas = $deudasResult['status'] === 'success' ? $deudasResult['cantidad_facturas'] : 0;
     
                             if ($cantidadDeudas > 2) {
-                                $msgRechazo = "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud.";
+                                $msgRechazo = "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud. \nPuede efectuar su deuda en *Consultar Deuda* en el siguiente menú.";
                                 $whatsappPayload = PlantillaSocio::menuPrincipal((string)$codigoSocio, '', false, $msgRechazo);
                             } else {
                                 $sessionService->updateSession($telefono, $codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
@@ -184,11 +184,19 @@ class WebhookWhatsAppEndpoint extends Controller
                             }
                         }
                     } elseif ($contenido === 'MENU_OFICINAS') {
+                        $infoOficinas = "📍 *Oficina Central COSMOL R.L. Montero*\n\n" .
+                                      "🕒 *Horarios de Atención:*\n" .
+                                      "Lunes a Viernes:\n" .
+                                      "Mañanas: 08:00 AM a 12:00 PM\n" .
+                                      "Tardes: 14:00 PM a 18:00 PM\n\n" .
+                                      "🗺️ *Ubicación:*\n" .
+                                      "Calle Isaias Parada, entre calle Santa Cruz y calle Ballivian.\n\n" .
+                                      "📍 *Ver en Google Maps:*\n" .
+                                      "https://maps.app.goo.gl/eGbuK1Sh5XfbfTr27";
+
                         $whatsappPayload = PlantillaSocio::menuPrincipal(
-                            (string)$codigoSocio, 
-                            '', 
-                            false, 
-                            "🏗️ Esta opción está a la espera de formularios. Por favor seleccione otra opción:"
+                            (string)$codigoSocio, '', false, 
+                            $infoOficinas
                         );
                     } elseif ($contenido === 'RECLAMO_ESTADO') {
                         $whatsappPayload = PlantillaReclamos::menuReclamos("🏗️ La consulta de estado está en construcción. Seleccione otra opción:");

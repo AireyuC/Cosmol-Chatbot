@@ -153,7 +153,7 @@ class PlantillaSocio
                     'text' => 'Tipo de Reconexión'
                 ],
                 'body' => [
-                    'text' => 'Ubicación recibida correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:'
+                    'text' => "Ubicación recibida correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:"
                 ],
                 'footer' => [
                     'text' => 'Paso 2 de 3'

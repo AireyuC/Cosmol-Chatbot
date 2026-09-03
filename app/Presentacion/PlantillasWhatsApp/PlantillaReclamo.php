@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
-/** Genera los payloads JSON de WhatsApp relacionados al módulo de Reclamos */
-class PlantillaReclamos
+/**
+ * Genera los payloads JSON de WhatsApp relacionados al módulo de Reclamos.
+ */
+class PlantillaReclamo
 {
+    /**
+     * Menú interactivo con lista de tipos de reclamos.
+     */
     public static function menuReclamos(?string $mensajePersonalizado = null): array
     {
         $mensaje = $mensajePersonalizado ?? 'Por favor, selecciona el tipo de reclamo o emergencia que deseas reportar:';
@@ -70,6 +75,9 @@ class PlantillaReclamos
         ];
     }
 
+    /**
+     * Solicita la ubicación GPS para enviar al técnico.
+     */
     public static function solicitarGpsReclamo(): array
     {
         return [
@@ -81,6 +89,9 @@ class PlantillaReclamos
         ];
     }
 
+    /**
+     * Solicita una fotografía del daño o problema.
+     */
     public static function solicitarFotoReclamo(): array
     {
         return [
@@ -92,6 +103,9 @@ class PlantillaReclamos
         ];
     }
 
+    /**
+     * Solicita una glosa descriptiva del reclamo.
+     */
     public static function solicitarGlosaReclamo(): array
     {
         return [
@@ -101,5 +115,13 @@ class PlantillaReclamos
                 'preview_url' => false
             ]
         ];
+    }
+
+    /**
+     * Mensaje de confirmación al registrar el ticket de reclamo.
+     */
+    public static function confirmacionExitosa(string $ticket): string
+    {
+        return "✅ *Reclamo registrado exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
     }
 }

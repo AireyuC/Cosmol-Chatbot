@@ -132,74 +132,28 @@ class PlantillaSocio
         ];
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::solicitarGps()
+     */
     public static function solicitarGpsReconexion(): array
     {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📍 *Solicitud de Reconexión*\n\nPor favor, adjunte su ubicación actual mediante la función de *Enviar Ubicación* de WhatsApp para que nuestros técnicos puedan llegar.\n(No escriba texto, use el icono de adjuntar 📎 o ➕)."
-            ]
-        ];
+        return PlantillaReconexion::solicitarGps();
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::menuTipo()
+     */
     public static function menuTipoReconexion(): array
     {
-        return [
-            'type' => 'interactive',
-            'interactive' => [
-                'type' => 'list',
-                'header' => [
-                    'type' => 'text',
-                    'text' => 'Tipo de Reconexión'
-                ],
-                'body' => [
-                    'text' => "Ubicación recibida correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:"
-                ],
-                'footer' => [
-                    'text' => 'Paso 2 de 3'
-                ],
-                'action' => [
-                    'button' => 'Seleccionar Tipo',
-                    'sections' => [
-                        [
-                            'title' => 'Opciones',
-                            'rows' => [
-                                [
-                                    'id' => 'RECONEXION_TIPO_1',
-                                    'title' => 'Corte normal',
-                                    'description' => 'Sin retiro de medidor'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_2',
-                                    'title' => 'Con medidor',
-                                    'description' => 'Retiro de medidor'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_3',
-                                    'title' => 'Con material',
-                                    'description' => 'Falta de accesorios'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_4',
-                                    'title' => 'Otros',
-                                    'description' => 'Otro motivo'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ];
+        return PlantillaReconexion::menuTipo();
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::solicitarGlosa()
+     */
     public static function solicitarGlosaReconexion(): array
     {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📝 *Último paso*\n\nPor favor escriba una breve observación o referencia para ayudar a los técnicos a encontrar el lugar (Ej: 'Casa de rejas negras' o 'Ninguna')."
-            ]
-        ];
+        return PlantillaReconexion::solicitarGlosa();
     }
 
     public static function mensajeTextoSimple(string $mensaje): array

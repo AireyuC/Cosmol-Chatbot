@@ -67,4 +67,14 @@ class SocioRepository implements SocioRepositoryInterface
     {
         return null;
     }
+
+    /**
+     * Stub: Historial para entorno mock local.
+     * @param string $cod_socio
+     * @return array|null
+     */
+    public function findHistorialByCodigo(string $cod_socio): ?array
+    {
+        return null;
+    }
 }

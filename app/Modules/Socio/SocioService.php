@@ -235,6 +235,7 @@ class SocioService
     /**
      * Valida si el socio ya tiene una solicitud de reconexión PENDIENTE.
      *
+     * @deprecated Trasladado a App\Modules\Reconexion\ReconexionService::tieneReconexionPendiente()
      * @param string $cod_socio El código fijo.
      * @return bool True si tiene una reconexión pendiente, False si no o en caso de error.
      */
@@ -262,6 +263,7 @@ class SocioService
     /**
      * Registra una solicitud de reconexión.
      *
+     * @deprecated Trasladado a App\Modules\Reconexion\ReconexionService::solicitarReconexion()
      * @param string $cod_socio El código fijo.
      * @param string $coordenadasGps Coordenadas recibidas por WhatsApp.
      * @param int $idTipoReconexion 1=sin medidor, 2=con medidor, 3=con material, 4=otros.
@@ -327,6 +329,7 @@ class SocioService
     /**
      * Registra una solicitud de reclamo.
      *
+     * @deprecated Trasladado a App\Modules\Reclamo\ReclamoService::registrarReclamo()
      * @param string $cod_socio El código fijo.
      * @param int $idTipoReclamo El ID del tipo de reclamo.
      * @param string $descripcion Descripción corta del tipo.

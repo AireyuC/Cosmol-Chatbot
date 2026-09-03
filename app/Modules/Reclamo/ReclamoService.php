@@ -6,85 +6,98 @@ namespace App\Modules\Reclamo;
 
 use App\Data\Interfaces\ReclamoRepositoryInterface;
 use App\Data\Interfaces\SocioRepositoryInterface;
-use Exception;
 
-class ReclamoService {
-    private $reclamoRepo;
-    private $socioRepo;
-
-    // Constante con los tipos de reclamos permitidos para evitar basura en la BD
-    const TIPOS_VALIDOS = ['AGUA_TURBIA', 'FUGA', 'CORTE_INJUSTIFICADO', 'BAJA_PRESION'];
+/**
+ * Servicio de Negocio para la gestión de Reclamos.
+ */
+class ReclamoService
+{
+    /**
+     * @var ReclamoRepositoryInterface
+     */
+    private $reclamoRepository;
 
     /**
-     * Inyección de ambos repositorios.
-     * Fíjate que pedimos las "Interfaces", no la clase de MySQL directamente.
+     * @var SocioRepositoryInterface
      */
+    private $socioRepository;
+
     public function __construct(
-        ReclamoRepositoryInterface $reclamoRepo,
-        SocioRepositoryInterface $socioRepo
+        ReclamoRepositoryInterface $reclamoRepository,
+        SocioRepositoryInterface $socioRepository
     ) {
-        $this->reclamoRepo = $reclamoRepo;
-        $this->socioRepo = $socioRepo;
+        $this->reclamoRepository = $reclamoRepository;
+        $this->socioRepository = $socioRepository;
     }
 
     /**
-     * Registra un nuevo reclamo validando todo previamente.
-     * 
-     * @param string $codigoSocio
-     * @param string $tipoReclamo
-     * @param string $descripcion
-     * @return array Respuesta con formato {success, message, data}
+     * Registra un reclamo técnico o comercial en el sistema de Informix.
+     *
+     * @param string $codigoSocio Código del socio asociado
+     * @param int $idTipoReclamo ID numérico del reclamo (ej. 2 para agua, 3 para alcantarillado)
+     * @param string $descripcion Descripción corta del motivo
+     * @param string $glosa Glosa o texto detallado enviado por el usuario
+     * @param string $coordenadasGps Coordenadas latitud, longitud
+     * @param string $fotoUrl URL de la foto almacenada en uploads
+     * @return array
      */
-    public function registrarReclamo(string $codigoSocio, string $tipoReclamo, string $descripcion): array {
-        
-        // 1. Validar si el tipo de reclamo existe en nuestra lista
-        if (!in_array(strtoupper($tipoReclamo), self::TIPOS_VALIDOS)) {
+    public function registrarReclamo(
+        string $codigoSocio,
+        int $idTipoReclamo,
+        string $descripcion,
+        string $glosa = '',
+        string $coordenadasGps = '',
+        string $fotoUrl = ''
+    ): array {
+        $codigoSocio = trim($codigoSocio);
+
+        if (empty($codigoSocio)) {
             return [
-                'success' => false,
-                'message' => "El tipo de reclamo '{$tipoReclamo}' no es válido.",
-                'data' => null
+                'status' => 'error',
+                'message' => 'El código de socio es requerido.'
             ];
         }
 
-        // 2. Buscar al socio en la base de datos (Usando el repo de la Fase 2)
-        $socio = $this->socioRepo->findByCodigo($codigoSocio);
+        // Obtener datos del socio para extraer la ubicación técnica (ZONA.RUTA.NROC.NROI)
+        $socioData = $this->socioRepository->findByCodigo($codigoSocio);
 
-        if (!$socio) {
+        if (!$socioData) {
             return [
-                'success' => false,
-                'message' => "No se encontró ningún socio con el código fijo proporcionado.",
-                'data' => null
+                'status' => 'error',
+                'message' => 'No se pudo obtener información del socio para registrar el reclamo.'
             ];
         }
 
-        // 3. La dirección se extrae de la BD (sin GPS). La devuelve SocioRepository::findByCodigo().
-        $direccionSocio = $socio['direccion'] ?? 'Sin dirección registrada';
+        $zona = $socioData['ZONA'] ?? '';
+        $ruta = $socioData['RUTA'] ?? '';
+        $nroc = $socioData['NROC'] ?? '';
+        $nroi = $socioData['NROI'] ?? '';
+        $ubicacion = "{$zona}.{$ruta}.{$nroc}.{$nroi}";
 
-        // 4. Armamos el array de datos para enviarlo al repositorio de reclamos
-        $datosReclamo = [
-            'codigo_socio' => $codigoSocio,
-            'tipo_reclamo' => strtoupper($tipoReclamo),
-            'descripcion'  => $descripcion,
-            'direccion'    => $direccionSocio
+        $payload = [
+            'usuario_registro' => 2,
+            'id_tipo_reclamo' => $idTipoReclamo,
+            'descripcion' => $descripcion,
+            'ubicacion' => $ubicacion,
+            'zona' => (int)$zona,
+            'ruta' => (int)$ruta,
+            'glosa' => $glosa,
+            'coordenadas_gps' => $coordenadasGps,
+            'foto' => $fotoUrl
         ];
 
-        try {
-            // 5. Guardamos en la BD y obtenemos el ticket ID
-            $ticketId = $this->reclamoRepo->createReclamo($datosReclamo);
+        $respuesta = $this->reclamoRepository->registrarReclamo($codigoSocio, $payload);
 
+        if ($respuesta !== null) {
             return [
-                'success' => true,
-                'message' => "Reclamo registrado correctamente con el ticket #{$ticketId}.",
-                'data' => ['ticket_id' => $ticketId]
+                'status' => 'success',
+                'id_reclamo' => $respuesta['id_reclamo'] ?? '',
+                'estado' => $respuesta['estado'] ?? ''
             ];
-
-        } catch (Exception $e) {
-            // Si algo falla a nivel de base de datos (ej. se cayó el servidor)
-            error_log("Error en ReclamoService::registrarReclamo: " . $e->getMessage());
+        } else {
             return [
-                'success' => false,
-                'message' => "Error interno al registrar el reclamo.",
-                'data' => null
+                'status' => 'error',
+                'message' => 'Ocurrió un error al registrar el reclamo.'
             ];
         }
     }

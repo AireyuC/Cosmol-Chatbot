@@ -62,6 +62,7 @@ services:
       - DOMAIN_NAME=${DOMAIN_NAME}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./public/uploads:/var/www/html/uploads
       - caddy_data:/data
       - caddy_config:/config
     networks:

@@ -1,3 +1,12 @@
 {$DOMAIN_NAME:chatbot.cosmol.com.bo} {
-    reverse_proxy cosmol_n8n:5678
+    # Servir imágenes estáticas desde /uploads
+    handle_path /uploads/* {
+        root * /var/www/html/uploads
+        file_server
+    }
+
+    # Todo lo demás va hacia n8n
+    handle {
+        reverse_proxy cosmol_n8n:5678
+    }
 }

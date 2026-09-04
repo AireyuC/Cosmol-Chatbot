@@ -6,6 +6,7 @@ namespace App\Presentacion\Flows;
 
 use App\Modules\Session\SessionService;
 use App\Modules\Reclamo\ReclamoService;
+use App\Modules\Audit\ConsultaAuditService;
 use App\Integrations\WhatsApp\WhatsAppMediaService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaReclamo;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
@@ -30,14 +31,21 @@ class ReclamoFlowHandler
      */
     private $mediaService;
 
+    /**
+     * @var ConsultaAuditService|null
+     */
+    private $auditService;
+
     public function __construct(
         SessionService $sessionService,
         ReclamoService $reclamoService,
-        WhatsAppMediaService $mediaService
+        WhatsAppMediaService $mediaService,
+        ?ConsultaAuditService $auditService = null
     ) {
         $this->sessionService = $sessionService;
         $this->reclamoService = $reclamoService;
         $this->mediaService = $mediaService;
+        $this->auditService = $auditService;
     }
 
     /**
@@ -60,6 +68,7 @@ class ReclamoFlowHandler
         array $contextData
     ): array {
         $codigoSocioStr = (string)$codigoSocio;
+        $nombreSocio = $contextData['nombre_socio'] ?? 'Socio';
 
         switch ($estadoActual) {
             case 'AWAITING_RECLAMO_GPS':
@@ -105,12 +114,17 @@ class ReclamoFlowHandler
                     if (isset($resultado['status']) && $resultado['status'] === 'success') {
                         $ticket = (string)($resultado['id_reclamo'] ?? '');
                         $mensaje = PlantillaReclamo::confirmacionExitosa($ticket);
+
+                        // Registrar auditoría de reclamo en COSMOL-Reportes
+                        if ($this->auditService !== null) {
+                            $this->auditService->registrarReclamo((int)$codigoSocio, $nombreSocio);
+                        }
                     } else {
                         $mensaje = "❌ Ocurrió un error al procesar su reclamo. Por favor, intente más tarde.";
                     }
 
-                    // Regresar a MAIN_MENU y limpiar context_data
-                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, []);
+                    // Regresar a MAIN_MENU preservando nombre_socio en context_data
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, ['nombre_socio' => $nombreSocio]);
                     return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
                 }
                 return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, escriba una descripción o glosa en texto.");

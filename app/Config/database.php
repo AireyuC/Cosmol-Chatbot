@@ -23,3 +23,7 @@ define('API_INTERNAL_TOKEN', getenv('API_INTERNAL_TOKEN') ?: '');
 // Seguridad — Origen permitido para CORS (Fase 3)
 define('ALLOWED_ORIGIN', getenv('ALLOWED_ORIGIN') ?: '');
 
+// Integración COSMOL-Reportes (Métricas de Consultas de WhatsApp)
+define('REPORTES_API_URL', getenv('REPORTES_API_URL') ?: '');
+define('REPORTES_API_TOKEN', getenv('REPORTES_API_TOKEN') ?: '');
+

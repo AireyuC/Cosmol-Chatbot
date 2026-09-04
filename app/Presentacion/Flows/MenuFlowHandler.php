@@ -7,6 +7,7 @@ namespace App\Presentacion\Flows;
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
 use App\Modules\Reconexion\ReconexionService;
+use App\Modules\Audit\ConsultaAuditService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaFactura;
 use App\Presentacion\PlantillasWhatsApp\PlantillaReclamo;
@@ -33,14 +34,21 @@ class MenuFlowHandler
      */
     private $reconexionService;
 
+    /**
+     * @var ConsultaAuditService|null
+     */
+    private $auditService;
+
     public function __construct(
         SessionService $sessionService,
         SocioService $socioService,
-        ReconexionService $reconexionService
+        ReconexionService $reconexionService,
+        ?ConsultaAuditService $auditService = null
     ) {
         $this->sessionService = $sessionService;
         $this->socioService = $socioService;
         $this->reconexionService = $reconexionService;
+        $this->auditService = $auditService;
     }
 
     /**
@@ -56,6 +64,7 @@ class MenuFlowHandler
     public function handle(string $telefono, string $tipoMensaje, $contenido, $codigoSocio, array $contextData): array
     {
         $codigoSocioStr = (string)$codigoSocio;
+        $nombreSocio = $contextData['nombre_socio'] ?? 'Socio';
 
         if ($tipoMensaje !== 'interactive') {
             // Si el socio escribe texto plano en lugar de tocar una opción del menú
@@ -68,6 +77,10 @@ class MenuFlowHandler
         if (strpos($accion, 'MENU_PAGAR_') === 0) {
             $partes = explode('_', $accion);
             $cod = $partes[2] ?? $codigoSocioStr;
+
+            if ($this->auditService !== null) {
+                $this->auditService->registrarConsultaDeuda((int)$cod, $nombreSocio);
+            }
 
             $deudasResult = $this->socioService->obtenerDeudas($cod);
             if (isset($deudasResult['status']) && $deudasResult['status'] === 'success') {
@@ -83,6 +96,9 @@ class MenuFlowHandler
 
         // 2. Redirección con Agente Humano
         if ($accion === 'MENU_AGENTE') {
+            if ($this->auditService !== null) {
+                $this->auditService->registrarDerivacionAgente((int)$codigoSocio, $nombreSocio);
+            }
             return PlantillaSocio::redireccionAgente();
         }
 
@@ -110,6 +126,10 @@ class MenuFlowHandler
 
         // 7. Historial de facturas pagadas
         if ($accion === 'MENU_HISTORIAL') {
+            if ($this->auditService !== null) {
+                $this->auditService->registrarConsultaHistorial((int)$codigoSocio, $nombreSocio);
+            }
+
             $historialResult = $this->socioService->obtenerHistorial($codigoSocioStr);
             if (isset($historialResult['status']) && $historialResult['status'] === 'success') {
                 return PlantillaFactura::historialFacturas(
@@ -138,13 +158,18 @@ class MenuFlowHandler
                 return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
             }
 
-            // Iniciar flujo de reconexión
-            $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GPS', 0, []);
+            // Iniciar flujo de reconexión preservando nombre_socio en contextData
+            $contextReconexion = ['nombre_socio' => $nombreSocio];
+            $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GPS', 0, $contextReconexion);
             return PlantillaReconexion::solicitarGps();
         }
 
         // 9. Información de Oficinas y Horarios
         if ($accion === 'MENU_OFICINAS') {
+            if ($this->auditService !== null) {
+                $this->auditService->registrarConsultaOficinas((int)$codigoSocio, $nombreSocio);
+            }
+
             $infoOficinas = "📍 *Oficina Central COSMOL R.L. Montero*\n\n" .
                             "🕒 *Horarios de Atención:*\n" .
                             "Lunes a Viernes:\n" .
@@ -175,6 +200,7 @@ class MenuFlowHandler
             if (isset($mapaReclamos[$accion])) {
                 $contextData['id_tipo_reclamo'] = $mapaReclamos[$accion]['id_tipo'];
                 $contextData['descripcion_reclamo'] = $mapaReclamos[$accion]['desc'];
+                $contextData['nombre_socio'] = $nombreSocio;
 
                 $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_GPS', 0, $contextData);
                 return PlantillaReclamo::solicitarGpsReclamo();

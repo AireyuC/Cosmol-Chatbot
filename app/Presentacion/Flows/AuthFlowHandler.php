@@ -6,6 +6,7 @@ namespace App\Presentacion\Flows;
 
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
+use App\Modules\Audit\ConsultaAuditService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
 
@@ -24,10 +25,19 @@ class AuthFlowHandler
      */
     private $socioService;
 
-    public function __construct(SessionService $sessionService, SocioService $socioService)
-    {
+    /**
+     * @var ConsultaAuditService|null
+     */
+    private $auditService;
+
+    public function __construct(
+        SessionService $sessionService,
+        SocioService $socioService,
+        ?ConsultaAuditService $auditService = null
+    ) {
         $this->sessionService = $sessionService;
         $this->socioService = $socioService;
+        $this->auditService = $auditService;
     }
 
     /**
@@ -54,9 +64,17 @@ class AuthFlowHandler
             }
 
             if ($esCodigoValido) {
-                // Socio válido -> Actualizar estado a MAIN_MENU
-                $this->sessionService->updateSession($telefono, (int)$codigoIngresado, 'MAIN_MENU', 0);
                 $nombreSocio = $validacion['datos_socio']['nombre'] ?? 'Socio';
+                $contextData = ['nombre_socio' => $nombreSocio];
+
+                // Socio válido -> Actualizar estado a MAIN_MENU y guardar nombre en sesión
+                $this->sessionService->updateSession($telefono, (int)$codigoIngresado, 'MAIN_MENU', 0, $contextData);
+
+                // Registrar auditoría hacia COSMOL-Reportes
+                if ($this->auditService !== null) {
+                    $this->auditService->registrarAcceso((int)$codigoIngresado, $nombreSocio);
+                }
+
                 return PlantillaSocio::menuPrincipal($codigoIngresado, $nombreSocio);
             }
 

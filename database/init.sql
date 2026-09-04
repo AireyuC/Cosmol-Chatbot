@@ -42,6 +42,22 @@ CREATE TABLE IF NOT EXISTS chat_session (
     context_data TEXT NULL
 );
 
+-- Buffer local de consultas hacia COSMOL-Reportes (Cola de resiliencia ante caídas)
+CREATE TABLE IF NOT EXISTS cola_reportes (
+    id SERIAL PRIMARY KEY,
+    codigo_socio INT NOT NULL,
+    nombres VARCHAR(200) NOT NULL,
+    id_tipo INT NOT NULL,
+    tipo_consulta VARCHAR(100) NOT NULL,
+    fecha_consulta DATE NOT NULL DEFAULT CURRENT_DATE,
+    hora_consulta TIME NOT NULL DEFAULT CURRENT_TIME,
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    intentos INT NOT NULL DEFAULT 0,
+    ultimo_error TEXT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 INSERT INTO socio (codigo_socio, ci, nombre, apellido, telefono, direccion, estado_conexion) 
 VALUES (267657, '1234567', 'Juan', 'Pérez', '59170000000', 'Av. Prueba 123', TRUE);

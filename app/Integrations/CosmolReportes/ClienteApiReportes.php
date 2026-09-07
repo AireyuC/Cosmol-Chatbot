@@ -41,12 +41,21 @@ class ClienteApiReportes
             return false;
         }
 
-        $url = rtrim($this->baseUrl, '/') . '/consultas';
+        $baseUrl = rtrim($this->baseUrl, '/');
+        if (substr($baseUrl, -14) === '/api/consultas' || substr($baseUrl, -10) === '/consultas') {
+            $url = $baseUrl;
+        } elseif (substr($baseUrl, -4) === '/api') {
+            $url = $baseUrl . '/consultas';
+        } else {
+            $url = $baseUrl . '/api/consultas';
+        }
+
         $jsonData = json_encode($payload);
 
         $headers = [
             'Content-Type: application/json',
-            'Content-Length: ' . strlen($jsonData)
+            'Content-Length: ' . strlen($jsonData),
+            'ngrok-skip-browser-warning: true'
         ];
 
         if (!empty($this->token)) {

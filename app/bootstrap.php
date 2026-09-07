@@ -27,10 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-use App\Core\Auth;
-Auth::validateInternalToken();
-
-// Solo las peticiones autenticadas incrementan el rate limiter.
-use App\Core\RateLimiter;
-RateLimiter::check();
+if (php_sapi_name() !== 'cli') {
+    \App\Core\Auth::validateInternalToken();
+    \App\Core\RateLimiter::check();
+}
 

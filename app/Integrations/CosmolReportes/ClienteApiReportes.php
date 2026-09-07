@@ -67,8 +67,8 @@ class ClienteApiReportes
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 2);       // Timeout ultracorto para no bloquear WhatsApp
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);       // Margen adecuado para túneles ngrok
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

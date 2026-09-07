@@ -17,4 +17,12 @@ interface ReclamoRepositoryInterface
      * @return array|null
      */
     public function registrarReclamo(string $codigoSocio, array $payload): ?array;
+
+    /**
+     * Obtiene el historial o reclamos registrados por el socio.
+     *
+     * @param string $codigoSocio
+     * @return array|null
+     */
+    public function obtenerHistorialReclamos(string $codigoSocio): ?array;
 }

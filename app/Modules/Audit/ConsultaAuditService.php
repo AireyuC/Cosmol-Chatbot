@@ -20,6 +20,7 @@ class ConsultaAuditService
     const TIPO_SOLICITUD_RECONEXION = 5;
     const TIPO_INFO_OFICINAS       = 6;
     const TIPO_DERIVACION_AGENTE   = 7;
+    const TIPO_ESTADO_SOLICITUDES  = 8;
 
     /**
      * @var ClienteApiReportes
@@ -98,6 +99,11 @@ class ConsultaAuditService
     public function registrarDerivacionAgente(int $codigoSocio, string $nombres): void
     {
         $this->registrar($codigoSocio, $nombres, self::TIPO_DERIVACION_AGENTE, 'Derivación a Agente');
+    }
+
+    public function registrarConsultaEstado(int $codigoSocio, string $nombres): void
+    {
+        $this->registrar($codigoSocio, $nombres, self::TIPO_ESTADO_SOLICITUDES, 'Estado de Solicitudes');
     }
 
     /**

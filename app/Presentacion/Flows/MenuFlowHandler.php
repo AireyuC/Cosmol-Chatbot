@@ -7,6 +7,7 @@ namespace App\Presentacion\Flows;
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
 use App\Modules\Reconexion\ReconexionService;
+use App\Modules\Reclamo\ReclamoService;
 use App\Modules\Audit\ConsultaAuditService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaFactura;
@@ -35,6 +36,11 @@ class MenuFlowHandler
     private $reconexionService;
 
     /**
+     * @var ReclamoService
+     */
+    private $reclamoService;
+
+    /**
      * @var ConsultaAuditService|null
      */
     private $auditService;
@@ -43,11 +49,13 @@ class MenuFlowHandler
         SessionService $sessionService,
         SocioService $socioService,
         ReconexionService $reconexionService,
+        ReclamoService $reclamoService,
         ?ConsultaAuditService $auditService = null
     ) {
         $this->sessionService = $sessionService;
         $this->socioService = $socioService;
         $this->reconexionService = $reconexionService;
+        $this->reclamoService = $reclamoService;
         $this->auditService = $auditService;
     }
 
@@ -183,9 +191,16 @@ class MenuFlowHandler
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $infoOficinas);
         }
 
-        // 10. Consulta de estado de reclamos
-        if ($accion === 'RECLAMO_ESTADO') {
-            return PlantillaReclamo::menuReclamos("🏗️ La consulta de estado está en construcción. Seleccione otra opción:");
+        // 10. Consulta de estado de solicitudes y reclamos
+        if ($accion === 'MENU_ESTADO_TRAMITES' || $accion === 'RECLAMO_ESTADO') {
+            if ($this->auditService !== null) {
+                $this->auditService->registrarConsultaEstado((int)$codigoSocio, $nombreSocio);
+            }
+
+            $reclamos = $this->reclamoService->obtenerHistorialReclamos($codigoSocioStr);
+            $reconexiones = $this->reconexionService->obtenerHistorialReconexiones($codigoSocioStr);
+
+            return PlantillaSocio::estadoSolicitudes($codigoSocioStr, $nombreSocio, $reclamos, $reconexiones);
         }
 
         // 11. Selección de tipo de reclamo específico

@@ -65,10 +65,53 @@ Utilizado cuando el usuario selecciona la opción "Pagar Deuda" en el menú inte
   ```
   *(El campo `mensaje_texto` es inyectado directamente por el Nodo 9 de n8n en el mensaje final de WhatsApp junto con el link de pago).*
 
+### C. Consulta de Estado de Solicitudes y Reclamos
+
+Utilizado cuando el usuario selecciona la opción "Estado de Solicitudes" en el Menú Principal.
+
+- **Servicios Internos:** `ReclamoService`, `ReconexionService`
+- **Controlador Frontal (n8n):** `http://backend:80/api/webhook_whatsapp.php`
+- **Acción Recibida:** `MENU_ESTADO_TRAMITES` (o alias legacy `RECLAMO_ESTADO`)
+- **APIs Externas Consultadas:**
+  1. `GET /api-consultas/socios/{cod_socio}/reclamos`
+  2. `GET /api-consultas/socios/{cod_socio}/reconexiones`
+- **Respuesta de la API Informix (Ejemplo Reclamos):**
+  ```json
+  {
+    "estado": "exito",
+    "mensaje": "Historial de reclamos recuperado con éxito",
+    "datos": [
+      {
+        "id_reclamo": "6",
+        "descripcion": "Fuga de agua",
+        "estado": "PENDIENTE",
+        "fecha_registro": "2026-09-01 12:58:56.334214"
+      }
+    ]
+  }
+  ```
+- **Respuesta de la API Informix (Ejemplo Reconexiones):**
+  ```json
+  {
+    "estado": "exito",
+    "mensaje": "Historial de reconexiones recuperado con éxito",
+    "datos": [
+      {
+        "id_reconexion": "24",
+        "id_tipo_reconexion": 1,
+        "estado": "PENDIENTE",
+        "fecha_registro": "2026-09-03 15:52:29.523723"
+      }
+    ]
+  }
+  ```
+- **Procesamiento en PHP:** La clase `PlantillaSocio::estadoSolicitudes()` consolida ambos historiales en una tarjeta visual para WhatsApp con badges de estado (🟡 PENDIENTE, 🟢 CONCLUIDO, etc.) y la retorna dentro del Menú Principal.
+
 ## 4. Estructura de Clases Creadas
 
-Siguiendo principios de Código Limpio, la integración se dividió en las siguientes capas:
+Siguiendo principios de Código Limpio y Arquitectura en Capas:
 
-- **Integración (`app/Integrations/CosmolApi/ClienteApiCosmol.php`):** Contiene la lógica pura de conexión (cURL, timeouts, validación JSON).
-- **Repositorio (`app/Data/Repositories/Api/RepositorioSocioApi.php`):** Implementa `SocioRepositoryInterface` pero obtiene los datos desde la API (a través de `ClienteApiCosmol`) en lugar de MySQL/Informix.
-- **Servicio (`app/Modules/Socio/SocioService.php`):** Ejecuta las reglas de negocio. Aquí se calculan las sumas, se limpian los espacios sobrantes de los nombres entregados por la API y se redactan los mensajes pre-formateados para WhatsApp.
+- **Integración (`app/Integrations/CosmolApi/ClienteApiCosmol.php`):** Contiene la lógica pura de conexión HTTP cURL con la API externa de COSMOL.
+- **Repositorios (`app/Data/Repositories/Api/`):** Implementan las interfaces del dominio (`SocioRepositoryInterface`, `ReclamoRepositoryInterface`, `ReconexionRepositoryInterface`) comunicándose con `ClienteApiCosmol`.
+- **Servicios (`app/Modules/`):** Ejecutan las reglas de negocio (`SocioService`, `ReclamoService`, `ReconexionService`).
+- **Presentación y Flujos (`app/Presentacion/`):** Handlers de sesión y generadores de payloads WhatsApp compatibles con Meta Cloud API.

@@ -98,6 +98,19 @@ class ClienteApiCosmol
     }
 
     /**
+     * Obtiene el historial de reclamos de un socio consultando /api-consultas/socios/{cod}/reclamos
+     *
+     * @param string $codSocio
+     * @return array|null
+     * @throws Exception
+     */
+    public function obtenerHistorialReclamos(string $codSocio): ?array
+    {
+        $endpoint = "/api-consultas/socios/" . urlencode($codSocio) . "/reclamos";
+        return $this->hacerPeticion($endpoint);
+    }
+
+    /**
      * @param string $endpoint
      * @param string $method
      * @param array|null $body

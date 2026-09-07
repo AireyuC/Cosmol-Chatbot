@@ -126,4 +126,22 @@ class ReconexionService
             ];
         }
     }
+
+    /**
+     * Obtiene el listado de solicitudes de reconexión del socio.
+     *
+     * @param string $codigoSocio
+     * @return array Lista de reconexiones o array vacío
+     */
+    public function obtenerHistorialReconexiones(string $codigoSocio): array
+    {
+        $codigoSocio = trim($codigoSocio);
+        if (empty($codigoSocio)) {
+            return [];
+        }
+
+        $historial = $this->reconexionRepository->obtenerHistorialReconexiones($codigoSocio);
+        return is_array($historial) ? $historial : [];
+    }
 }
+

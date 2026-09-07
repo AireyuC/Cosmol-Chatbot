@@ -69,6 +69,7 @@ En la base de datos de `COSMOL-Reportes`, la tabla `tipo_consulta` debe contar c
 | **5** | Solicitud de Reconexión | Finalización de ticket de trámite de reconexión | Al enviar GPS + Tipo + Foto + Glosa |
 | **6** | Información de Oficinas | Consulta de dirección central y horarios | Al pulsar "Oficinas y Horarios" |
 | **7** | Derivación a Agente | Solicitud de contacto con un operador humano | Al pulsar "Hablar con un Agente" |
+| **8** | Estado de Solicitudes | Consulta de estado de reclamos y reconexiones | Al pulsar "Estado de Solicitudes" |
 
 ### Script SQL para `COSMOL-Reportes` (Ejecutar en la BD `cosmol_reportes`):
 
@@ -81,13 +82,15 @@ INSERT INTO tipo_consulta (id_tipo, nombre, descripcion) VALUES
 (4, 'Registro de Reclamo', 'Ticket de reclamo por agua o alcantarillado registrado'),
 (5, 'Solicitud de Reconexión', 'Ticket de trámite de reconexión registrado'),
 (6, 'Información de Oficinas', 'Consulta de ubicación de oficina central y horarios de atención'),
-(7, 'Derivación a Agente', 'Solicitud de atención con un operador humano')
+(7, 'Derivación a Agente', 'Solicitud de atención con un operador humano'),
+(8, 'Estado de Solicitudes', 'Consulta de estado de reclamos y reconexiones')
 ON CONFLICT (id_tipo) DO UPDATE 
 SET nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion;
 
 -- Ajustar la secuencia del serial para futuros registros
 SELECT setval('tipo_consulta_id_tipo_seq', (SELECT MAX(id_tipo) FROM tipo_consulta));
 ```
+
 
 ---
 

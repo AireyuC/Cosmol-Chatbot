@@ -63,4 +63,36 @@ class ReclamoRepository implements ReclamoRepositoryInterface
             return null;
         }
     }
+
+    /**
+     * Obtiene el historial de reclamos de un socio.
+     *
+     * @param string $codigoSocio
+     * @return array|null
+     */
+    public function obtenerHistorialReclamos(string $codigoSocio): ?array
+    {
+        try {
+            $respuesta = $this->clienteApi->obtenerHistorialReclamos($codigoSocio);
+
+            if (isset($respuesta['estado']) && $respuesta['estado'] === 'exito') {
+                if (isset($respuesta['datos']) && is_array($respuesta['datos'])) {
+                    if (isset($respuesta['datos'][0])) {
+                        return array_map([$this, 'trimDatos'], $respuesta['datos']);
+                    } else {
+                        return $this->trimDatos($respuesta['datos']);
+                    }
+                }
+                return [];
+            }
+            return null;
+        } catch (Exception $e) {
+            Logger::error("ReclamoRepository::obtenerHistorialReclamos error", [
+                'codigo_socio' => $codigoSocio,
+                'exception' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
 }
+

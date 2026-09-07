@@ -55,6 +55,12 @@ class PlantillaSocio
         ];
 
         $rows[] = [
+            'id' => 'MENU_ESTADO_TRAMITES',
+            'title' => 'Estado de Solicitudes',
+            'description' => 'Reclamos y reconexiones'
+        ];
+
+        $rows[] = [
             'id' => 'MENU_OFICINAS',
             'title' => 'Oficinas y horarios',
             'description' => 'Información de atención'
@@ -156,6 +162,92 @@ class PlantillaSocio
         return PlantillaReconexion::solicitarGlosa();
     }
 
+    /**
+     * Muestra el resumen de estado de reclamos y solicitudes de reconexión del socio.
+     */
+    public static function estadoSolicitudes(string $codSocio, string $nombreSocio, array $reclamos, array $reconexiones): array
+    {
+        $nombre = trim($nombreSocio);
+        $headerNombre = !empty($nombre) ? " - {$nombre}" : "";
+        $texto = "📋 *Estado de Solicitudes y Reclamos*\n";
+        $texto .= "Socio: *{$codSocio}{$headerNombre}*\n\n";
+
+        // 1. Reclamos Técnicos
+        $texto .= "🔧 *Reclamos Técnicos:*\n";
+        if (!empty($reclamos)) {
+            $ultimosReclamos = array_slice($reclamos, -3);
+            $ultimosReclamos = array_reverse($ultimosReclamos);
+            foreach ($ultimosReclamos as $rec) {
+                $id = $rec['id_reclamo'] ?? '?';
+                $desc = trim((string)($rec['descripcion'] ?? 'Reclamo'));
+                $estado = strtoupper(trim((string)($rec['estado'] ?? 'PENDIENTE')));
+                $emojiEstado = '🟡';
+                if (in_array($estado, ['CONCLUIDO', 'ATENDIDO', 'FINALIZADO'])) {
+                    $emojiEstado = '🟢';
+                } elseif (in_array($estado, ['EN PROCESO', 'ASIGNADO'])) {
+                    $emojiEstado = '🔵';
+                } elseif (in_array($estado, ['CANCELADO', 'RECHAZADO'])) {
+                    $emojiEstado = '🔴';
+                }
+
+                $fechaStr = '';
+                if (!empty($rec['fecha_registro'])) {
+                    $ts = strtotime($rec['fecha_registro']);
+                    if ($ts !== false) {
+                        $fechaStr = " (" . date('d/m/Y H:i', $ts) . ")";
+                    }
+                }
+
+                $texto .= "• Ticket *#{$id}*: {$desc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
+            }
+        } else {
+            $texto .= "• No tienes reclamos registrados.\n";
+        }
+
+        // 2. Solicitudes de Reconexión
+        $texto .= "\n⚡ *Solicitudes de Reconexión:*\n";
+        if (!empty($reconexiones)) {
+            $mapaTipos = [
+                1 => 'Corte normal',
+                2 => 'Con medidor',
+                3 => 'Con material',
+                4 => 'Otros'
+            ];
+            $ultimasReconexiones = array_slice($reconexiones, -3);
+            $ultimasReconexiones = array_reverse($ultimasReconexiones);
+            foreach ($ultimasReconexiones as $recx) {
+                $id = $recx['id_reconexion'] ?? '?';
+                $idTipo = (int)($recx['id_tipo_reconexion'] ?? 1);
+                $tipoDesc = $mapaTipos[$idTipo] ?? 'Reconexión';
+                $estado = strtoupper(trim((string)($recx['estado'] ?? 'PENDIENTE')));
+                $emojiEstado = '🟡';
+                if (in_array($estado, ['CONCLUIDO', 'ATENDIDO', 'RECONECTADO', 'FINALIZADO'])) {
+                    $emojiEstado = '🟢';
+                } elseif (in_array($estado, ['EN PROCESO', 'ASIGNADO'])) {
+                    $emojiEstado = '🔵';
+                } elseif (in_array($estado, ['CANCELADO', 'RECHAZADO'])) {
+                    $emojiEstado = '🔴';
+                }
+
+                $fechaStr = '';
+                if (!empty($recx['fecha_registro'])) {
+                    $ts = strtotime($recx['fecha_registro']);
+                    if ($ts !== false) {
+                        $fechaStr = " (" . date('d/m/Y H:i', $ts) . ")";
+                    }
+                }
+
+                $texto .= "• Ticket *#{$id}*: {$tipoDesc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
+            }
+        } else {
+            $texto .= "• No tienes solicitudes de reconexión registradas.\n";
+        }
+
+        $texto .= "\n¿Necesitas realizar otra consulta? Por favor, usa el menú 👇";
+
+        return self::menuPrincipal($codSocio, $nombreSocio, false, $texto);
+    }
+
     public static function mensajeTextoSimple(string $mensaje): array
     {
         return [
@@ -166,3 +258,4 @@ class PlantillaSocio
         ];
     }
 }
+

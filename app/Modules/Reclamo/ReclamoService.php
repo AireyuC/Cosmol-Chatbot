@@ -101,4 +101,22 @@ class ReclamoService
             ];
         }
     }
+
+    /**
+     * Obtiene el listado de reclamos del socio.
+     *
+     * @param string $codigoSocio
+     * @return array Lista de reclamos o array vacío
+     */
+    public function obtenerHistorialReclamos(string $codigoSocio): array
+    {
+        $codigoSocio = trim($codigoSocio);
+        if (empty($codigoSocio)) {
+            return [];
+        }
+
+        $historial = $this->reclamoRepository->obtenerHistorialReclamos($codigoSocio);
+        return is_array($historial) ? $historial : [];
+    }
 }
+

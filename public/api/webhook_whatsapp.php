@@ -93,7 +93,7 @@ class WebhookWhatsAppEndpoint extends Controller
                 $authFlow = new AuthFlowHandler($sessionService, $socioService, $auditService);
                 $whatsappPayload = $authFlow->handle((string)$telefono, (string)$tipoMensaje, $contenido, $intentos);
             } elseif ($estadoActual === 'MAIN_MENU') {
-                $menuFlow = new MenuFlowHandler($sessionService, $socioService, $reconexionService, $auditService);
+                $menuFlow = new MenuFlowHandler($sessionService, $socioService, $reconexionService, $reclamoService, $auditService);
                 $whatsappPayload = $menuFlow->handle((string)$telefono, (string)$tipoMensaje, $contenido, $codigoSocio, $contextData);
             } elseif (strpos($estadoActual, 'AWAITING_RECONEXION_') === 0) {
                 $reconexionFlow = new ReconexionFlowHandler($sessionService, $reconexionService, $mediaService, $auditService);

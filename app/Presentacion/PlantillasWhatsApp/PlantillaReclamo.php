@@ -37,11 +37,6 @@ class PlantillaReclamo
                 'description' => 'Reportar obstrucción en la red'
             ],
             [
-                'id' => 'RECLAMO_ESTADO',
-                'title' => 'Consultar estado',
-                'description' => 'Ver estado de un reclamo previo'
-            ],
-            [
                 'id' => 'MENU_PRINCIPAL_VOLVER',
                 'title' => 'Volver',
                 'description' => 'Regresar al menú principal'

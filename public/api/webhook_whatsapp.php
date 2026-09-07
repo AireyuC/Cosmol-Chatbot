@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../app/bootstrap.php';
 
 use App\Core\Controller;
 use App\Core\Logger;
+use App\Core\FeatureFlags;
 use App\Data\Repositories\Postgres\SessionRepository;
 use App\Data\Repositories\Api\SocioRepository;
 use App\Data\Repositories\Api\ReconexionRepository;
@@ -56,6 +57,69 @@ class WebhookWhatsAppEndpoint extends Controller
         try {
             // 1. Inicialización de Repositorios y Servicios Base
             $sessionRepo = new SessionRepository();
+
+            // Mantenimiento Global (Bloqueo total del chatbot con antispam desacoplado)
+            if (FeatureFlags::isMaintenanceMode()) {
+                $session = $sessionRepo->getSession((string)$telefono);
+                $contextData = [];
+                if ($session && !empty($session['context_data'])) {
+                    $decoded = json_decode((string)$session['context_data'], true);
+                    if (is_array($decoded)) {
+                        $contextData = $decoded;
+                    }
+                }
+
+                $mantData = $contextData['mantenimiento'] ?? [
+                    'intentos' => 0,
+                    'ultimo_mensaje' => 0
+                ];
+
+                $maxIntentos = FeatureFlags::getMaintenanceMaxAttempts();
+                $timeoutSegundos = FeatureFlags::getMaintenanceTimeoutSeconds();
+                $timeoutMinutos = FeatureFlags::getMaintenanceTimeoutMinutes();
+
+                $ahora = time();
+                $ultimoMensaje = (int)($mantData['ultimo_mensaje'] ?? 0);
+                $intentos = (int)($mantData['intentos'] ?? 0);
+
+                // Si pasaron más de los minutos configurados de inactividad, se resetean los intentos
+                if (($ahora - $ultimoMensaje) > $timeoutSegundos) {
+                    $intentos = 0;
+                }
+
+                $intentos++;
+                $mantData['intentos'] = $intentos;
+                $mantData['ultimo_mensaje'] = $ahora;
+                $contextData['mantenimiento'] = $mantData;
+
+                // Guardar context_data actualizado SIN tocar codigo_socio ni intentos_fallidos
+                $codigoSocioActual = ($session && !empty($session['codigo_socio'])) ? (int)$session['codigo_socio'] : null;
+                $estadoActual = ($session && !empty($session['estado_actual'])) ? $session['estado_actual'] : 'AWAITING_CODE';
+                $intentosFallidosActuales = ($session && isset($session['intentos_fallidos'])) ? (int)$session['intentos_fallidos'] : 0;
+
+                $sessionRepo->saveSession(
+                    (string)$telefono,
+                    $codigoSocioActual,
+                    $estadoActual,
+                    $intentosFallidosActuales,
+                    json_encode($contextData)
+                );
+
+                // Si excede el máximo de intentos, silencio total ("dejado en visto")
+                if ($intentos > $maxIntentos) {
+                    $whatsappPayload = null;
+                } else {
+                    $whatsappPayload = PlantillaSistema::mantenimientoGlobal($intentos, $maxIntentos, $timeoutMinutos);
+                }
+
+                $this->json([
+                    'status' => 'success',
+                    'modo' => 'mantenimiento',
+                    'whatsapp_payload' => $whatsappPayload
+                ], 200);
+                return;
+            }
+
             $sessionService = new SessionService($sessionRepo);
 
             $clienteApi = new ClienteApiCosmol();

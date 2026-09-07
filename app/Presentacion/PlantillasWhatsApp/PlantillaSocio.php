@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
+use App\Core\FeatureFlags;
+
 class PlantillaSocio
 {
     public static function saludo(): array
@@ -28,7 +30,7 @@ class PlantillaSocio
 
         $rows = [];
         
-        if (!$ocultarPagar) {
+        if (!$ocultarPagar && FeatureFlags::isEnabled('deuda')) {
             $rows[] = [
                 'id' => 'MENU_PAGAR_' . $codSocio,
                 'title' => 'Consultar Deuda',
@@ -36,42 +38,55 @@ class PlantillaSocio
             ];
         }
 
-        $rows[] = [
-            'id' => 'MENU_RECONEXION',
-            'title' => 'Solicitar Reconexión',
-            'description' => 'Solicita reconexión de servicio'
-        ];
+        if (FeatureFlags::isEnabled('reconexion')) {
+            $rows[] = [
+                'id' => 'MENU_RECONEXION',
+                'title' => 'Solicitar Reconexión',
+                'description' => 'Solicita reconexión de servicio'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_HISTORIAL',
-            'title' => 'Historial',
-            'description' => 'Historial de pagos y consumos'
-        ];
+        if (FeatureFlags::isEnabled('historial')) {
+            $rows[] = [
+                'id' => 'MENU_HISTORIAL',
+                'title' => 'Historial',
+                'description' => 'Historial de pagos y consumos'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_RECLAMOS',
-            'title' => 'Reclamos',
-            'description' => 'Reporta emergencias y reclamos'
-        ];
+        if (FeatureFlags::isEnabled('reclamos')) {
+            $rows[] = [
+                'id' => 'MENU_RECLAMOS',
+                'title' => 'Reclamos',
+                'description' => 'Reporta emergencias y reclamos'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_ESTADO_TRAMITES',
-            'title' => 'Estado de Solicitudes',
-            'description' => 'Reclamos y reconexiones'
-        ];
+        if (FeatureFlags::isEnabled('estado_tramites')) {
+            $rows[] = [
+                'id' => 'MENU_ESTADO_TRAMITES',
+                'title' => 'Estado de Solicitudes',
+                'description' => 'Reclamos y reconexiones'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_OFICINAS',
-            'title' => 'Oficinas y horarios',
-            'description' => 'Información de atención'
-        ];
+        if (FeatureFlags::isEnabled('oficinas')) {
+            $rows[] = [
+                'id' => 'MENU_OFICINAS',
+                'title' => 'Oficinas y horarios',
+                'description' => 'Información de atención'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_AGENTE',
-            'title' => 'Hablar con un asesor',
-            'description' => 'Soporte personalizado'
-        ];
+        if (FeatureFlags::isEnabled('agente')) {
+            $rows[] = [
+                'id' => 'MENU_AGENTE',
+                'title' => 'Hablar con un asesor',
+                'description' => 'Soporte personalizado'
+            ];
+        }
 
+        // Opciones del sistema (siempre presentes para garantizar navegación y respetar límites de Meta)
         $rows[] = [
             'id' => 'MENU_CAMBIAR_CODIGO',
             'title' => 'Consultar otro Socio',

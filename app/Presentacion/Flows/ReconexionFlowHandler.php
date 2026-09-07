@@ -8,8 +8,10 @@ use App\Modules\Session\SessionService;
 use App\Modules\Reconexion\ReconexionService;
 use App\Modules\Audit\ConsultaAuditService;
 use App\Integrations\WhatsApp\WhatsAppMediaService;
+use App\Core\FeatureFlags;
 use App\Presentacion\PlantillasWhatsApp\PlantillaReconexion;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
+use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
 
 /**
  * Manejador de la máquina de estados del trámite de Reconexión.
@@ -69,6 +71,12 @@ class ReconexionFlowHandler
     ): array {
         $codigoSocioStr = (string)$codigoSocio;
         $nombreSocio = $contextData['nombre_socio'] ?? 'Socio';
+
+        // Si el módulo fue deshabilitado durante el flujo, abortar de forma segura
+        if (!FeatureFlags::isEnabled('reconexion')) {
+            $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, ['nombre_socio' => $nombreSocio]);
+            return PlantillaSocio::menuPrincipal($codigoSocioStr, $nombreSocio, false, PlantillaSistema::moduloEnMantenimiento("Solicitud de Reconexión"));
+        }
 
         switch ($estadoActual) {
             case 'AWAITING_RECONEXION_GPS':

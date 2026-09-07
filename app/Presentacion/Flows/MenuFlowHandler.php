@@ -9,6 +9,7 @@ use App\Modules\Socio\SocioService;
 use App\Modules\Reconexion\ReconexionService;
 use App\Modules\Reclamo\ReclamoService;
 use App\Modules\Audit\ConsultaAuditService;
+use App\Core\FeatureFlags;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaFactura;
 use App\Presentacion\PlantillasWhatsApp\PlantillaReclamo;
@@ -83,6 +84,10 @@ class MenuFlowHandler
 
         // 1. Pago y Deudas pendientes
         if (strpos($accion, 'MENU_PAGAR_') === 0) {
+            if (!FeatureFlags::isEnabled('deuda')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Consulta de Deuda"));
+            }
+
             $partes = explode('_', $accion);
             $cod = $partes[2] ?? $codigoSocioStr;
 
@@ -104,6 +109,10 @@ class MenuFlowHandler
 
         // 2. Redirección con Agente Humano
         if ($accion === 'MENU_AGENTE') {
+            if (!FeatureFlags::isEnabled('agente')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Atención con un Asesor"));
+            }
+
             if ($this->auditService !== null) {
                 $this->auditService->registrarDerivacionAgente((int)$codigoSocio, $nombreSocio);
             }
@@ -129,11 +138,18 @@ class MenuFlowHandler
 
         // 6. Submenú de Reclamos
         if ($accion === 'MENU_RECLAMOS') {
+            if (!FeatureFlags::isEnabled('reclamos')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Reclamos"));
+            }
             return PlantillaReclamo::menuReclamos();
         }
 
         // 7. Historial de facturas pagadas
         if ($accion === 'MENU_HISTORIAL') {
+            if (!FeatureFlags::isEnabled('historial')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Historial de Facturas"));
+            }
+
             if ($this->auditService !== null) {
                 $this->auditService->registrarConsultaHistorial((int)$codigoSocio, $nombreSocio);
             }
@@ -151,6 +167,10 @@ class MenuFlowHandler
 
         // 8. Solicitud de Reconexión
         if ($accion === 'MENU_RECONEXION') {
+            if (!FeatureFlags::isEnabled('reconexion')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Solicitud de Reconexión"));
+            }
+
             // Validar si ya tiene reconexión pendiente
             if ($this->reconexionService->tieneReconexionPendiente($codigoSocioStr)) {
                 $mensaje = PlantillaReconexion::reconexionPendiente();
@@ -174,6 +194,10 @@ class MenuFlowHandler
 
         // 9. Información de Oficinas y Horarios
         if ($accion === 'MENU_OFICINAS') {
+            if (!FeatureFlags::isEnabled('oficinas')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Información de Oficinas"));
+            }
+
             if ($this->auditService !== null) {
                 $this->auditService->registrarConsultaOficinas((int)$codigoSocio, $nombreSocio);
             }
@@ -193,6 +217,10 @@ class MenuFlowHandler
 
         // 10. Consulta de estado de solicitudes y reclamos
         if ($accion === 'MENU_ESTADO_TRAMITES' || $accion === 'RECLAMO_ESTADO') {
+            if (!FeatureFlags::isEnabled('estado_tramites')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Estado de Solicitudes"));
+            }
+
             if ($this->auditService !== null) {
                 $this->auditService->registrarConsultaEstado((int)$codigoSocio, $nombreSocio);
             }
@@ -205,6 +233,10 @@ class MenuFlowHandler
 
         // 11. Selección de tipo de reclamo específico
         if (strpos($accion, 'RECLAMO_') === 0) {
+            if (!FeatureFlags::isEnabled('reclamos')) {
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Reclamos"));
+            }
+
             $mapaReclamos = [
                 'RECLAMO_AGUA_TURBIA' => ['id_tipo' => 2, 'desc' => 'Agua turbia'],
                 'RECLAMO_FUGA'        => ['id_tipo' => 2, 'desc' => 'Fuga de agua'],
@@ -223,6 +255,7 @@ class MenuFlowHandler
 
             return PlantillaReclamo::menuReclamos();
         }
+
 
         // Opción desconocida
         return PlantillaSocio::menuPrincipal($codigoSocioStr, '', true);

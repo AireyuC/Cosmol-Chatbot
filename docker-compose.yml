@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     networks:
       - cosmol_network
+    environment:
+      - N8N_PROXY_HOPS=1
     env_file:
       - .env
     volumes:

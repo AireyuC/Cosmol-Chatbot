@@ -6,6 +6,8 @@ require_once __DIR__ . '/Core/Autoloader.php';
 
 require_once __DIR__ . '/Config/database.php';
 
+date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/La_Paz');
+
 if (defined('APP_ENV') && APP_ENV === 'development') {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');

@@ -27,6 +27,16 @@ class FeatureFlags
     ];
 
     /**
+     * Evalúa si la sincronización y pusheo de datos a COSMOL-Reportes está habilitada.
+     * Por defecto es true. Si se define en false (ej. durante mantenimiento de Reportes),
+     * el sistema retiene los eventos en el buffer local sin emitir peticiones HTTP hacia afuera.
+     */
+    public static function isReportesSyncEnabled(): bool
+    {
+        return self::getEnvBool('REPORTES_SYNC_ENABLED', true);
+    }
+
+    /**
      * Evalúa si el modo de mantenimiento global está encendido.
      */
     public static function isMaintenanceMode(): bool

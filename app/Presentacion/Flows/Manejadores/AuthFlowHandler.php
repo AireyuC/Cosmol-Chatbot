@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Presentacion\Flows;
+namespace App\Presentacion\Flows\Manejadores;
 
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
@@ -13,31 +13,20 @@ use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
 /**
  * Manejador del flujo de autenticación por Código Fijo (AWAITING_CODE).
  */
-class AuthFlowHandler
+class AuthFlowHandler extends BaseFlowHandler
 {
-    /**
-     * @var SessionService
-     */
-    private $sessionService;
-
     /**
      * @var SocioService
      */
     private $socioService;
-
-    /**
-     * @var ConsultaAuditService|null
-     */
-    private $auditService;
 
     public function __construct(
         SessionService $sessionService,
         SocioService $socioService,
         ?ConsultaAuditService $auditService = null
     ) {
-        $this->sessionService = $sessionService;
+        parent::__construct($sessionService, $auditService);
         $this->socioService = $socioService;
-        $this->auditService = $auditService;
     }
 
     /**

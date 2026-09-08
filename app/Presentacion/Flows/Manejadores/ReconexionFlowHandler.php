@@ -2,56 +2,43 @@
 
 declare(strict_types=1);
 
-namespace App\Presentacion\Flows;
+namespace App\Presentacion\Flows\Manejadores;
 
 use App\Modules\Session\SessionService;
-use App\Modules\Reclamo\ReclamoService;
+use App\Modules\Reconexion\ReconexionService;
 use App\Modules\Audit\ConsultaAuditService;
 use App\Integrations\WhatsApp\WhatsAppMediaService;
 use App\Core\FeatureFlags;
-use App\Presentacion\PlantillasWhatsApp\PlantillaReclamo;
+use App\Presentacion\PlantillasWhatsApp\PlantillaReconexion;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
 
 /**
- * Manejador de la máquina de estados del registro de Reclamos.
+ * Manejador de la máquina de estados del trámite de Reconexión.
  */
-class ReclamoFlowHandler
+class ReconexionFlowHandler extends BaseFlowHandler
 {
     /**
-     * @var SessionService
-     */
-    private $sessionService;
-
-    /**
-     * @var ReclamoService
-     */
-    private $reclamoService;
-
-    /**
+     * @var ReconexionService
      * @var WhatsAppMediaService
      */
+    
+    private $reconexionService;
     private $mediaService;
-
-    /**
-     * @var ConsultaAuditService|null
-     */
-    private $auditService;
 
     public function __construct(
         SessionService $sessionService,
-        ReclamoService $reclamoService,
+        ReconexionService $reconexionService,
         WhatsAppMediaService $mediaService,
         ?ConsultaAuditService $auditService = null
     ) {
-        $this->sessionService = $sessionService;
-        $this->reclamoService = $reclamoService;
+        parent::__construct($sessionService, $auditService);
+        $this->reconexionService = $reconexionService;
         $this->mediaService = $mediaService;
-        $this->auditService = $auditService;
     }
 
     /**
-     * Procesa los estados correspondientes al flujo de reclamos.
+     * Procesa los estados correspondientes al flujo de reconexión.
      *
      * @param string $estadoActual
      * @param string $telefono
@@ -73,62 +60,70 @@ class ReclamoFlowHandler
         $nombreSocio = $contextData['nombre_socio'] ?? 'Socio';
 
         // Si el módulo fue deshabilitado durante el flujo, abortar de forma segura
-        if (!FeatureFlags::isEnabled('reclamos')) {
+        if (!FeatureFlags::isEnabled('reconexion')) {
             $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, ['nombre_socio' => $nombreSocio]);
-            return PlantillaSocio::menuPrincipal($codigoSocioStr, $nombreSocio, false, PlantillaSistema::moduloEnMantenimiento("Reclamos"));
+            return PlantillaSocio::menuPrincipal($codigoSocioStr, $nombreSocio, false, PlantillaSistema::moduloEnMantenimiento("Solicitud de Reconexión"));
         }
 
         switch ($estadoActual) {
-            case 'AWAITING_RECLAMO_GPS':
+            case 'AWAITING_RECONEXION_GPS':
                 if ($tipoMensaje === 'location' && !empty($contenido)) {
                     $ubicacionJson = json_decode((string)$contenido, true);
                     $latitud = $ubicacionJson['latitude'] ?? '';
                     $longitud = $ubicacionJson['longitude'] ?? '';
 
                     $contextData['coordenadas_gps'] = "{$latitud}, {$longitud}";
-                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_TYPE', 0, $contextData);
 
-                    return PlantillaReclamo::solicitarFotoReclamo();
+                    return PlantillaReconexion::menuTipo();
                 }
                 return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
 
-            case 'AWAITING_RECLAMO_PHOTO':
+            case 'AWAITING_RECONEXION_TYPE':
+                if ($tipoMensaje === 'interactive' && strpos((string)$contenido, 'RECONEXION_TIPO_') === 0) {
+                    $idTipo = (int)str_replace('RECONEXION_TIPO_', '', (string)$contenido);
+                    $contextData['id_tipo_reconexion'] = $idTipo;
+
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_PHOTO', 0, $contextData);
+                    return PlantillaReconexion::solicitarFoto();
+                }
+                return PlantillaSocio::mensajeTextoSimple("❌ Opción inválida. Por favor, seleccione una opción de la lista enviada. 👇");
+
+            case 'AWAITING_RECONEXION_PHOTO':
                 if ($tipoMensaje === 'image' && !empty($contenido)) {
-                    $fotoUrl = $this->mediaService->descargarYGuardar((string)$contenido, $codigoSocioStr, 'reclamos');
+                    $fotoUrl = $this->mediaService->descargarYGuardar((string)$contenido, $codigoSocioStr, 'reconexiones');
                     $contextData['foto_url'] = $fotoUrl;
 
-                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_GLOSA', 0, $contextData);
-                    return PlantillaReclamo::solicitarGlosaReclamo();
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
+                    return PlantillaReconexion::solicitarGlosa();
                 }
                 return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, adjunte una imagen 📸.");
 
-            case 'AWAITING_RECLAMO_GLOSA':
+            case 'AWAITING_RECONEXION_GLOSA':
                 if ($tipoMensaje === 'text') {
                     $glosa = trim((string)$contenido);
                     $gps = $contextData['coordenadas_gps'] ?? '';
-                    $tipoId = (int)($contextData['id_tipo_reclamo'] ?? 2);
-                    $descripcion = $contextData['descripcion_reclamo'] ?? 'Reclamo';
+                    $tipoId = (int)($contextData['id_tipo_reconexion'] ?? 1);
                     $fotoUrl = $contextData['foto_url'] ?? '';
 
-                    $resultado = $this->reclamoService->registrarReclamo(
+                    $resultado = $this->reconexionService->solicitarReconexion(
                         $codigoSocioStr,
-                        $tipoId,
-                        $descripcion,
-                        $glosa,
                         $gps,
+                        $tipoId,
+                        $glosa,
                         $fotoUrl
                     );
 
                     if (isset($resultado['status']) && $resultado['status'] === 'success') {
-                        $ticket = (string)($resultado['id_reclamo'] ?? '');
-                        $mensaje = PlantillaReclamo::confirmacionExitosa($ticket);
+                        $ticket = (string)($resultado['id_reconexion'] ?? '');
+                        $mensaje = PlantillaReconexion::confirmacionExitosa($ticket);
 
-                        // Registrar auditoría de reclamo en COSMOL-Reportes
+                        // Registrar auditoría de reconexión en COSMOL-Reportes
                         if ($this->auditService !== null) {
-                            $this->auditService->registrarReclamo((int)$codigoSocio, $nombreSocio);
+                            $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio);
                         }
                     } else {
-                        $mensaje = "❌ Ocurrió un error al procesar su reclamo. Por favor, intente más tarde.";
+                        $mensaje = "❌ Ocurrió un error al procesar su solicitud de reconexión. Por favor, intente más tarde.";
                     }
 
                     // Regresar a MAIN_MENU preservando nombre_socio en context_data

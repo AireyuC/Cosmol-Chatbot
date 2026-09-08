@@ -58,4 +58,46 @@ class ReclamoRepository implements ReclamoRepositoryInterface {
         // fetchAll devuelve todas las filas encontradas como un arreglo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Registra un reclamo en el sistema (cumplimiento de ReclamoRepositoryInterface).
+     *
+     * @param string $codigoSocio
+     * @param array $payload
+     * @return array|null
+     */
+    public function registrarReclamo(string $codigoSocio, array $payload): ?array
+    {
+        try {
+            $data = [
+                'codigo_socio' => $codigoSocio,
+                'tipo_reclamo' => (string)($payload['id_tipo_reclamo'] ?? '2'),
+                'descripcion'  => (string)($payload['descripcion'] ?? 'Reclamo'),
+                'direccion'    => (string)($payload['glosa'] ?? ($payload['ubicacion'] ?? ''))
+            ];
+            $id = $this->createReclamo($data);
+            return [
+                'id_reclamo' => $id,
+                'estado'     => 'PENDIENTE'
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene el historial o reclamos registrados por el socio (cumplimiento de ReclamoRepositoryInterface).
+     *
+     * @param string $codigoSocio
+     * @return array|null
+     */
+    public function obtenerHistorialReclamos(string $codigoSocio): ?array
+    {
+        try {
+            return $this->findByCodigoSocio($codigoSocio);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }
+

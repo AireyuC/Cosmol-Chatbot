@@ -45,8 +45,8 @@ El alcance funcional del sistema comprende las siguientes capacidades:
 - **Autenticación:** Validación de identidad del asociado a partir de su Código Fijo.
 - **Consultas de Cuenta:** Visualización del historial de facturas, montos pendientes y estado de deuda.
 - **Pagos Integrados:** Redirección directa a la pasarela de pagos Multipago (`https://multipago.com/service/cosmol_payment/first`).
-- **Registro de Reclamos:** Captura estructurada de incidencias técnicas (agua turbia, fugas, sin servicio, presión baja) con resolución de ubicación desde los datos del sistema central, sin requerir GPS del usuario.
-- **Reconexiones:** Evaluación de antigüedad de deuda y emisión de órdenes al sistema según las reglas de negocio establecidas.
+- **Registro de Reclamos y Reconexiones:** Captura estructurada y obligatoria de datos: Ubicación GPS nativa de WhatsApp, Fotografía adjunta de la incidencia/medidor, y Glosa o descripción en texto para su despacho técnico.
+- **Reconexiones:** Evaluación de antigüedad de deuda (límite máximo 2 facturas en mora) y emisión de órdenes al sistema según las reglas de negocio establecidas.
 
 > [!IMPORTANT]
 > El sistema es un backend puro orientado a APIs e integraciones. No existe un portal web o aplicación frontend administrativo. La totalidad de la interacción con el usuario final se realiza a través de los flujos y plantillas de WhatsApp gestionadas por el orquestador n8n.
@@ -143,74 +143,41 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
 ### 2.1 Arquitectura de Nodos y Flujos
 
-El flujo de n8n está estructurado en tres capas lógicas independientes y secuenciales:
+El orquestador n8n actúa como un intermediario ágil (*Smart Proxy / Event Forwarder*) entre la API de Meta WhatsApp y el backend PHP:
 
-#### Capa 1 — Ingesta y Filtro
-
+#### Capa 1 — Ingesta y Extracción
 | Nodo | Tipo | Función |
 |---|---|---|
 | **Webhook (POST)** | Trigger | Recibe la totalidad del tráfico entrante de Meta WhatsApp Cloud API |
-| **IF (Filtro de Ruido)** | Condición | Descarta actualizaciones de estado (`delivered`, `read`) y deja pasar únicamente mensajes de texto e interacciones de botones interactivos |
+| **IF (Filtro de Ruido)** | Condición | Descarta actualizaciones de estado (`delivered`, `read`) y deja pasar únicamente mensajes con contenido (`text`, `interactive`, `image`, `location`) |
+| **Code / Set (Normalizador)** | Transformación | Extrae `telefono`, `tipo_mensaje` y `contenido` estandarizados |
 
-Esta capa garantiza que el flujo de enrutamiento solo procese eventos accionables, evitando ejecuciones innecesarias ante confirmaciones de entrega.
-
-#### Capa 2 — Enrutamiento y Lógica de Negocio
-
-El núcleo del flujo es el **Nodo Switch**, que evalúa el contenido del mensaje o el `id` del botón presionado y ramifica la ejecución en tres rutas:
-
-| Ruta | Condición de Activación | Acción |
+#### Capa 2 — Delegación al Backend Central
+| Nodo | Tipo | Función |
 |---|---|---|
-| **Ruta 1 — Autenticación** | El usuario escribe un valor numérico (Código de Socio) | n8n enruta hacia `webhook_whatsapp.php` para validar la identidad y generar la sesión |
-| **Ruta 2 — Menú / Deuda** | El payload del botón es `MENU_PAGAR_...` | n8n enruta hacia `webhook_whatsapp.php` que consulta facturas y entrega el menú correspondiente |
-| **Ruta 3 — Reclamos** | El payload del botón es `BTN_RECLAMO` | n8n captura los datos del problema y delega el registro a `/api/reclamos.php` |
+| **HTTP Request (POST)** | HTTP Client | Envía `telefono`, `tipo_mensaje` y `contenido` a `http://cosmol_php_backend/api/webhook_whatsapp.php` con el header `X-Internal-Token` |
 
-#### Capa 3 — Capa de Presentación (Formateadores)
-
-Para construir mensajes con botones interactivos, n8n utiliza **Nodos Set** que ensamblan el JSON estricto exigido por la API de Meta antes de ejecutar el `HTTP Request` final hacia `https://graph.facebook.com/v20.0/{phone_number_id}/messages`.
-
-A continuación se muestra la estructura del menú principal con tres botones de acción:
-
-```json
-{
-  "messaging_product": "whatsapp",
-  "recipient_type": "individual",
-  "to": "{{Telefono_Destino}}",
-  "type": "interactive",
-  "interactive": {
-    "type": "button",
-    "body": { "text": "¡Hola! Bienvenido a COSMOL. ¿En qué podemos ayudarte hoy?" },
-    "action": {
-      "buttons": [
-        { "type": "reply", "reply": { "id": "BTN_DEUDA",   "title": "Ver Deuda"      } },
-        { "type": "reply", "reply": { "id": "BTN_PAGAR",   "title": "Pagar Servicio" } },
-        { "type": "reply", "reply": { "id": "BTN_RECLAMO", "title": "Reclamos"       } }
-      ]
-    }
-  }
-}
-```
+#### Capa 3 — Despacho a Meta WhatsApp
+| Nodo | Tipo | Función |
+|---|---|---|
+| **IF (Hay Payload?)** | Condición | Verifica si `whatsapp_payload` no es nulo (respeta silencios por bloqueo o antispam de mantenimiento) |
+| **HTTP Request (Meta Graph API)** | HTTP Client | Envía el `whatsapp_payload` directamente a `https://graph.facebook.com/v20.0/{phone_number_id}/messages` |
 
 ---
 
-### 2.2 Gestión de Sesión y Estado
+### 2.2 Gestión de Sesión y Máquina de Estados
 
-n8n es inherentemente *stateless* entre ejecuciones: cada webhook recibido es procesado de forma aislada, sin memoria de la conversación previa. El sistema resuelve esta limitación mediante el mecanismo de **payloads de botones interactivos de Meta**.
+A diferencia de un diseño puramente efímero, el sistema implementa una **Máquina de Estados Finita (FSM)** persistida en la base de datos PostgreSQL (`cosmol_session`) administrada exclusivamente por el backend PHP (`SessionService` y `SessionRepository`).
 
-**Principio de funcionamiento:**
+**Estados Principales:**
+- `AWAITING_CODE`: Esperando que el usuario ingrese su Código de Asociado numérico.
+- `MAIN_MENU`: Socio autenticado; interactuando con las opciones del menú interactivo (listas/botones).
+- `AWAITING_RECLAMO_GPS` → `AWAITING_RECLAMO_PHOTO` → `AWAITING_RECLAMO_GLOSA`: Flujo guiado para captura de reclamos técnicos.
+- `AWAITING_RECONEXION_GPS` → `AWAITING_RECONEXION_TIPO` → `AWAITING_RECONEXION_PHOTO` → `AWAITING_RECONEXION_GLOSA`: Flujo guiado para solicitudes de reconexión.
+- `BLOCKED`: Estado temporal (5 minutos) por exceso de intentos fallidos al ingresar código.
+- `MAINTENANCE`: Modo mantenimiento global configurable vía `.env`, con antispam desacoplado por usuario.
 
-Cuando n8n envía un mensaje con botones al usuario, cada botón lleva un campo `id` (el payload) definido en el Nodo Set de la capa de presentación. Cuando el usuario presiona un botón, Meta devuelve ese `id` oculto en la siguiente petición al webhook. El **Nodo Switch** extrae este identificador y lo usa como señal de estado para determinar el contexto de la conversación y enrutar la ejecución al flujo correspondiente.
-
-**Ejemplo del ciclo completo:**
-
-```
-1. n8n envía menú → usuario ve botones: BTN_DEUDA, BTN_PAGAR, BTN_RECLAMO
-2. Usuario presiona "Reclamos"
-3. Meta envía a n8n: { "button": { "payload": "BTN_RECLAMO", ... } }
-4. Switch evalúa payload === "BTN_RECLAMO" → activa Ruta 3 (Reclamos)
-5. n8n ejecuta la lógica de captura de reclamo
-```
-
-Este mecanismo no requiere almacenamiento de sesión en base de datos ni cookies. El contexto de la conversación está codificado en los propios payloads que Meta devuelve, simplificando la arquitectura y eliminando dependencias de estado externas.
+El backend evalúa el estado actual guardado en la base de datos, procesa el mensaje entrante, actualiza el estado y genera el `whatsapp_payload` exacto listo para Meta.
 
 ---
 
@@ -218,7 +185,7 @@ Este mecanismo no requiere almacenamiento de sesión en base de datos ni cookies
 
 ### 3.1 Patrones de Diseño
 
-El backend adopta una **arquitectura por capas** basada en el patrón **Service-Repository** (Controller → Service → Repository), adaptada a una API consumida exclusivamente por n8n sin frontend HTML.
+El backend adopta una **arquitectura por capas** orientada al dominio (**Controller → Flow Handler → Service → Repository**):
 
 **Estructura de directorios:**
 
@@ -228,39 +195,64 @@ cosmol-chatbot/
 │   ├── Config/
 │   │   └── database.php              ← Constantes de entorno y conexión a BD
 │   ├── Core/
-│   │   ├── Auth.php                  ← Validación del token interno (Fase 1 — Seguridad)
-│   │   ├── Autoloader.php            ← Autocarga de clases PSR-4 (spl_autoload_register)
-│   │   ├── Controller.php            ← Métodos base: json(), getBody(), handleError()
-│   │   ├── Database.php              ← Singleton de conexión PDO (multi-driver)
-│   │   ├── Logger.php                ← Logger estructurado JSON (/var/log/cosmol_api.log)
-│   │   ├── RateLimiter.php           ← Rate limiting por IP (30 req/min)
+│   │   ├── Auth.php                  ← Validación del token interno
+│   │   ├── Autoloader.php            ← Autocarga de clases PSR-4 nativa
+│   │   ├── Controller.php            ← Métodos base (json, getBody, handleError)
+│   │   ├── Database.php              ← Singleton de conexión PDO
+│   │   ├── FeatureFlags.php          ← Feature flags de módulos y modo mantenimiento
+│   │   ├── Logger.php                ← Logger estructurado JSON
+│   │   ├── RateLimiter.php           ← Rate limiting por IP
 │   │   └── Validator.php             ← Validación y sanitización de inputs
 │   ├── Data/
 │   │   ├── Interfaces/
-│   │   │   ├── SocioRepositoryInterface.php
-│   │   │   └── ReclamoRepositoryInterface.php
+│   │   │   ├── ReclamoRepositoryInterface.php
+│   │   │   ├── ReconexionRepositoryInterface.php
+│   │   │   ├── ReportesRepositoryInterface.php
+│   │   │   ├── SessionRepositoryInterface.php
+│   │   │   └── SocioRepositoryInterface.php
 │   │   └── Repositories/
-│   │       ├── Postgres/
-│   │       │   ├── SocioRepository.php
-│   │       │   └── ReclamoRepository.php
-│   │       ├── Api/
-│   │       │   └── RepositorioSocioApi.php
-│   │       └── SAI/                  ← Sprint 4: Repositorios HTTP hacia APIs REST del SAI
+│   │       ├── Api/                  ← Repositorios que consumen APIs REST SAI (Informix)
+│   │       │   ├── ReclamoRepository.php
+│   │       │   ├── ReconexionRepository.php
+│   │       │   └── SocioRepository.php
+│   │       └── Postgres/             ← Repositorios locales (Sesión, buffer de contingencia, mocks)
+│   │           ├── ReclamoRepository.php
+│   │           ├── ReportesBufferRepository.php
+│   │           ├── SessionRepository.php
+│   │           └── SocioRepository.php
 │   ├── Integrations/
-│   │   └── CosmolApi/
-│   │       └── ClienteApiCosmol.php  ← Cliente cURL para la API central de COSMOL
+│   │   ├── CosmolApi/
+│   │   │   └── ClienteApiCosmol.php     ← Cliente HTTP para API central SAI
+│   │   ├── CosmolReportes/
+│   │   │   └── ClienteApiReportes.php    ← Cliente HTTP para COSMOL-Reportes
+│   │   └── WhatsApp/
+│   │       └── WhatsAppMediaService.php  ← Descarga y almacenamiento de multimedia
 │   ├── Modules/
-│   │   ├── Socio/
-│   │   │   └── SocioService.php
-│   │   └── Reclamo/
-│   │       └── ReclamoService.php
-│   └── bootstrap.php                 ← Inicializador global del sistema
+│   │   ├── Audit/
+│   │   │   └── ConsultaAuditService.php  ← Registro de métricas con buffer
+│   │   ├── Facturacion/                 ← Dominio de deudas e historial
+│   │   ├── Reclamo/
+│   │   │   └── ReclamoService.php       ← Dominio de reclamos
+│   │   ├── Reconexion/
+│   │   │   └── ReconexionService.php    ← Dominio de reconexiones y mora
+│   │   ├── Session/
+│   │   │   └── SessionService.php       ← Dominio de sesiones de conversación
+│   │   └── Socio/
+│   │       └── SocioService.php         ← Dominio de validación de identidad
+│   ├── Presentacion/
+│   │   ├── Flows/
+│   │   │   ├── AuthFlowHandler.php       ← Manejador del flujo de autenticación
+│   │   │   ├── MenuFlowHandler.php       ← Manejador del menú principal
+│   │   │   ├── ReclamoFlowHandler.php    ← Manejador del flujo de reclamos
+│   │   │   └── ReconexionFlowHandler.php ← Manejador del flujo de reconexiones
+│   │   └── PlantillasWhatsApp/          ← Formateadores JSON para WhatsApp Cloud API
+│   └── bootstrap.php                    ← Inicializador global del sistema
 ├── public/
 │   └── api/
-│       ├── reclamos.php
-│       └── webhook_whatsapp.php
+│       ├── reclamos.php                 ← [Legacy]
+│       └── webhook_whatsapp.php         ← Controlador Central (Webhook para N8N)
 ├── database/
-│   └── init.sql                      ← Esquema SQL canónico para Docker
+│   └── init.sql                         ← Esquema SQL canónico para PostgreSQL
 ├── docker-compose.yml
 └── .env
 ```
@@ -269,10 +261,11 @@ cosmol-chatbot/
 
 | Capa | Ubicación | Responsabilidad |
 |---|---|---|
-| **Controller (Endpoint)** | `public/api/*.php` | Recibe la petición HTTP de n8n, extrae parámetros, invoca al Service y devuelve el JSON de respuesta |
-| **Service (Negocio)** | `app/Modules/*/` | Contiene las reglas de negocio. Tiene prohibición explícita de acceder a la BD directamente; delega a los Repositories |
-| **Repository (Datos)** | `app/Data/Repositories/` | Obtiene y persiste datos. En desarrollo: SQL a PostgreSQL. En producción: HTTP a las APIs REST del SAI |
-| **Interface (Contrato)** | `app/Data/Interfaces/` | Garantiza que todos los repositorios expongan los mismos métodos, independientemente del motor de datos |
+| **Controller (Endpoint)** | `public/api/webhook_whatsapp.php` | Punto de entrada HTTP desde n8n; orquesta la seguridad, sesión y delega al router de flujos |
+| **Flow Handlers** | `app/Presentacion/Flows/` | Manejan las transiciones de la máquina de estados y coordinan la interacción de WhatsApp |
+| **Service (Negocio)** | `app/Modules/*/` | Contiene las reglas del negocio puro (validaciones, límites de mora, cálculos) |
+| **Repository (Datos)** | `app/Data/Repositories/` | Obtiene y persiste datos (Postgres local o APIs REST de Informix en producción) |
+| **Interface (Contrato)** | `app/Data/Interfaces/` | Contratos de inversión de dependencias para desacoplar el negocio del almacenamiento |
 
 > [!IMPORTANT]
 > El valor arquitectónico clave reside en la **intercambiabilidad de repositorios**: el `SocioService` nunca conoce si está interactuando con PostgreSQL local o con las APIs REST del SAI. Solo habla con `SocioRepositoryInterface`. Este principio permite la migración completa a Informix (Sprint 4) sin modificar una sola línea de la lógica de negocio.

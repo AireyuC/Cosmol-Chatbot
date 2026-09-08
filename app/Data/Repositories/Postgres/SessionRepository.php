@@ -62,7 +62,11 @@ class SessionRepository implements SessionRepositoryInterface
     public function resetSession(string $telefonoWhatsapp): bool
     {
         $sql = "UPDATE chat_session 
-                SET codigo_socio = NULL, estado_actual = 'AWAITING_CODE', intentos_fallidos = 0, context_data = NULL 
+                SET codigo_socio = NULL, 
+                    estado_actual = 'AWAITING_CODE', 
+                    intentos_fallidos = 0, 
+                    context_data = NULL,
+                    ultima_interaccion = CURRENT_TIMESTAMP 
                 WHERE telefono_whatsapp = :telefono";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['telefono' => $telefonoWhatsapp]);

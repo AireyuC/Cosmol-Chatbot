@@ -143,13 +143,18 @@ class WebhookWhatsAppEndpoint extends Controller
             $intentos = (int)($sessionResult['intentos'] ?? 0);
             $codigoSocio = $sessionResult['codigo_socio'] ?? null;
             $contextData = $sessionResult['context_data'] ?? [];
-            $sysMessage = $sessionResult['message'] ?? null;
+            $sysMessage = $sessionResult['mensaje'] ?? ($sessionResult['message'] ?? null);
 
             $whatsappPayload = null;
 
             // 4. Ruteo hacia los Flow Handlers
             if ($sysMessage) {
-                $whatsappPayload = PlantillaSistema::textoSimple($sysMessage);
+                if ($tipoMensaje === 'text' && is_numeric(trim((string)$contenido))) {
+                    $authFlow = new AuthFlowHandler($sessionService, $socioService, $auditService);
+                    $whatsappPayload = $authFlow->handle((string)$telefono, (string)$tipoMensaje, $contenido, $intentos);
+                } else {
+                    $whatsappPayload = PlantillaSistema::textoSimple($sysMessage);
+                }
             } elseif ($estadoActual === 'BLOCKED') {
                 // Silencio durante el bloqueo de 5 minutos
                 $whatsappPayload = null;

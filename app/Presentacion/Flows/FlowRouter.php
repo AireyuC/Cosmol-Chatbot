@@ -64,6 +64,9 @@ class FlowRouter
         array $contextData
     ): ?array {
         if ($sysMessage) {
+            if ($tipoMensaje === 'text' && is_numeric(trim((string)$contenido))) {
+                return $this->authFlow->handle($telefono, $tipoMensaje, $contenido, $intentos);
+            }
             return PlantillaSistema::textoSimple($sysMessage);
         }
 

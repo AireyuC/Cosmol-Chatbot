@@ -27,7 +27,7 @@ class SessionService
         
         if (!$session) {
             $this->repository->saveSession($telefono, null, 'AWAITING_CODE', 0);
-            return $this->buildResponse('AWAITING_CODE', null, null);
+            return $this->buildResponse('AWAITING_CODE', null, 'Hola, bienvenido. Por favor envía tu código de socio válido.');
         }
 
         $estado = $session['estado_actual'];
@@ -41,6 +41,7 @@ class SessionService
 
         if ($estado === 'BLOCKED') {
             if ($tiempoTranscurrido > self::BLOCKED_TIMEOUT_SECONDS) {
+
                 $this->repository->resetSession($telefono);
                 return $this->buildResponse('AWAITING_CODE', null, 'Tu bloqueo ha expirado. Por favor, envía tu código de socio.');
             }
@@ -48,8 +49,8 @@ class SessionService
             return $this->buildResponse('BLOCKED', null, null);
         }
 
-        // Solo expira por inactividad si el usuario se encuentra en una sesión autenticada activa
-        if ($estado !== 'AWAITING_CODE' && $tiempoTranscurrido > self::INACTIVE_TIMEOUT_SECONDS) {
+        if ($tiempoTranscurrido > self::INACTIVE_TIMEOUT_SECONDS) {
+            
             $this->repository->resetSession($telefono);
             return $this->buildResponse('AWAITING_CODE', null, 'Sesión expirada por inactividad. Por favor, envía tu código de socio.');
         }

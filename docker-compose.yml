@@ -64,11 +64,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       - DOMAIN_NAME=${DOMAIN_NAME}
-      - DOMAIN_REPORTES=${DOMAIN_REPORTES:-reportes.cosmol.com.bo}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./public/uploads:/var/www/html/uploads

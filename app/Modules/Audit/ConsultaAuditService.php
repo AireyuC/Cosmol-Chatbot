@@ -134,8 +134,16 @@ class ConsultaAuditService
                 $this->bufferRepository->marcarComoEnviado((int)$item['id']);
                 $sincronizados++;
             } else {
-                $this->bufferRepository->incrementarIntento((int)$item['id'], 'Servidor no disponible al reintentar');
-                break; // Si vuelve a fallar, detenemos la iteración para no generar latencia
+                if ($this->clienteApi->estaServidorOffline()) {
+                    // Servidor de reportes caído/apagado:
+                    // NO se penaliza el registro ni se aumentan intentos; se mantiene PENDIENTE.
+                    // Se detiene la iteración para esperar al siguiente ciclo cuando el servidor reviva.
+                    break;
+                }
+
+                // El servidor sí está en línea pero rechazó este dato específico:
+                $errorMsg = $this->clienteApi->obtenerUltimoError() ?: 'Rechazado por servidor de Reportes';
+                $this->bufferRepository->incrementarIntento((int)$item['id'], $errorMsg);
             }
         }
 

@@ -14,18 +14,29 @@ class ClienteApiReportes
 {
     /**
      * @var string
+     * @var string
+     * @var bool
+     * @var string|null
      */
     private $baseUrl;
-
-    /**
-     * @var string
-     */
     private $token;
+    private $servidorOffline = false;
+    private $ultimoError = null;
 
     public function __construct()
     {
         $this->baseUrl = defined('REPORTES_API_URL') ? (string)REPORTES_API_URL : '';
         $this->token = defined('REPORTES_API_TOKEN') ? (string)REPORTES_API_TOKEN : '';
+    }
+
+    public function estaServidorOffline(): bool
+    {
+        return $this->servidorOffline;
+    }
+
+    public function obtenerUltimoError(): ?string
+    {
+        return $this->ultimoError;
     }
 
     /**

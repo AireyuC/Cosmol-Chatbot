@@ -33,18 +33,9 @@ echo "2. Estado de la cola local (cola_reportes):\n";
 $pendientes = $repo->obtenerPendientes(50);
 echo "   - Registros pendientes en cola: " . count($pendientes) . "\n\n";
 
-echo "3. Enviando prueba directa hacia ngrok / COSMOL-Reportes...\n";
-$payloadPrueba = [
-    'codigo_socio'   => 267657,
-    'nombres'        => 'Prueba Diagnóstico CLI',
-    'id_tipo'        => 3,
-    'tipo_consulta'  => 'Historial de Facturas',
-    'fecha_consulta' => date('Y-m-d'),
-    'hora_consulta'  => date('H:i:s')
-];
 
 $inicio = microtime(true);
-$exito = $cliente->enviarConsulta($payloadPrueba);
+
 $duracion = round((microtime(true) - $inicio) * 1000, 2);
 
 if ($exito) {

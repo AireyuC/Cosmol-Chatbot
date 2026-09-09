@@ -123,6 +123,7 @@ class ReportesBufferRepository implements ReportesRepositoryInterface
         try {
             $sql = "UPDATE cola_reportes 
                     SET intentos = intentos + 1, 
+                        estado = CASE WHEN intentos + 1 >= 5 THEN 'FALLIDO' ELSE estado END,
                         ultimo_error = :error, 
                         actualizado_en = CURRENT_TIMESTAMP 
                     WHERE id = :id";

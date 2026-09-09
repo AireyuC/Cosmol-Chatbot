@@ -13,6 +13,7 @@ define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8');
 // Entorno de la Aplicación
 define('APP_ENV', getenv('APP_ENV') ?: 'development');
 define('APP_DEBUG', filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BOOLEAN));
+define('APP_TIMEZONE', getenv('GENERIC_TIMEZONE') ?: (getenv('APP_TIMEZONE') ?: 'America/La_Paz'));
 
 // API Externa
 define('COSMOL_API_URL', getenv('COSMOL_API_URL') ?: '');

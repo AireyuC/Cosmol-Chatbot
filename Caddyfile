@@ -10,3 +10,8 @@
         reverse_proxy cosmol_n8n:5678
     }
 }
+
+# Subdominio COSMOL-Reportes (Dashboard Administrativo)
+{$DOMAIN_REPORTES:reportes.cosmol.com.bo} {
+    reverse_proxy host.docker.internal:8081
+}

@@ -205,9 +205,13 @@ class PlantillaSocio
                     $emojiEstado = '🔴';
                 }
 
-                $rawFecha = $rec['fecha_registro'] ?? ($rec['fecha_creacion'] ?? '');
-                $fechaFormateada = self::formatearFechaLocal($rawFecha);
-                $fechaStr = !empty($fechaFormateada) ? " ({$fechaFormateada})" : '';
+                $fechaStr = '';
+                if (!empty($rec['fecha_registro'])) {
+                    $ts = strtotime($rec['fecha_registro']);
+                    if ($ts !== false) {
+                        $fechaStr = " (" . date('d/m/Y H:i', $ts) . ")";
+                    }
+                }
 
                 $texto .= "• Ticket *#{$id}*: {$desc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
             }
@@ -240,9 +244,13 @@ class PlantillaSocio
                     $emojiEstado = '🔴';
                 }
 
-                $rawFecha = $recx['fecha_registro'] ?? ($recx['fecha_creacion'] ?? '');
-                $fechaFormateada = self::formatearFechaLocal($rawFecha);
-                $fechaStr = !empty($fechaFormateada) ? " ({$fechaFormateada})" : '';
+                $fechaStr = '';
+                if (!empty($recx['fecha_registro'])) {
+                    $ts = strtotime($recx['fecha_registro']);
+                    if ($ts !== false) {
+                        $fechaStr = " (" . date('d/m/Y H:i', $ts) . ")";
+                    }
+                }
 
                 $texto .= "• Ticket *#{$id}*: {$tipoDesc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
             }
@@ -263,31 +271,6 @@ class PlantillaSocio
                 'body' => $mensaje
             ]
         ];
-    }
-
-    /**
-     * Convierte y formatea una marca de tiempo (habitualmente en UTC o devuelta por la API/BD)
-     * a la hora local oficial de Bolivia (America/La_Paz, UTC-4).
-     *
-     * @param string|null $fechaStr
-     * @param string $formato
-     * @return string
-     */
-    public static function formatearFechaLocal(?string $fechaStr, string $formato = 'd/m/Y H:i'): string
-    {
-        if (empty($fechaStr)) {
-            return '';
-        }
-
-        try {
-            // Si la cadena no especifica timezone (ej. "2026-09-10 23:14:59"), asume UTC como origen.
-            // Si ya contiene offset explícito (Z, +00:00, -04:00), DateTime respetará automáticamente la zona indicada.
-            $dt = new \DateTime($fechaStr, new \DateTimeZone('UTC'));
-            $dt->setTimezone(new \DateTimeZone('America/La_Paz'));
-            return $dt->format($formato);
-        } catch (\Exception $e) {
-            return $fechaStr;
-        }
     }
 }
 

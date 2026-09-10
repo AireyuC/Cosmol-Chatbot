@@ -14,9 +14,6 @@ RUN echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.li
 
 RUN touch /var/log/cosmol_api.log && chown www-data:www-data /var/log/cosmol_api.log
 
-# Configurar zona horaria predeterminada de PHP
-RUN echo "date.timezone = America/La_Paz" > /usr/local/etc/php/conf.d/timezone.ini
-
 # Cambiar el DocumentRoot de Apache para que apunte directamente a la carpeta /public
 ENV APACHE_DOCUMENT_ROOT /app/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf

@@ -68,7 +68,7 @@ class InfoAction
                             "🗺️ *Ubicación:*\n" .
                             "Calle Isaias Parada, entre calle Santa Cruz y calle Ballivian.\n\n" .
                             "📍 *Ver en Google Maps:*\n" .
-                            "https://maps.app.goo.gl/eGbuK1Sh5XfbfTr27";
+                            "https://www.google.com/maps?q=-17.338790,-63.256831";
 
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $infoOficinas);
         }

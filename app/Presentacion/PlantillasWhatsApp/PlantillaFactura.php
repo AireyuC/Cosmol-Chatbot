@@ -18,7 +18,7 @@ class PlantillaFactura
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
+            $mensajeTexto .= "\n\n💳 *Canales de pago seguro disponibles:*\n• *Multipago:*\nhttps://multipago.com/service/cosmol_payment/first\n• *Pago al Paso:*\nhttps://red.pagoalpaso247.net/servicio/cosmol\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         } else {
             $mensajeTexto = "El Código Fijo ($codSocio) no tiene deudas pendientes en este momento.\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         }

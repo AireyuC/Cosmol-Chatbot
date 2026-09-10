@@ -24,7 +24,7 @@ Documento base de contexto. El agente DEBE leer este archivo al iniciar cada ses
 ## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
 1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
 2. **Consultas de Cuenta:** Visualización rápida de historial de facturas, montos pendientes y estados de cuenta.
-3. **Pagos Integrados:** Redirección simple a la pasarela de Multipago (`https://multipago.com/service/cosmol_payment/first`).
+3. **Pagos Integrados:** Redirección a las pasarelas de pago disponibles: Multipago (`https://multipago.com/service/cosmol_payment/first`) y Pago al Paso (`https://red.pagoalpaso247.net/servicio/cosmol`).
 4. **Registro de Reclamos (Agua turbia, fugas, etc.):**
    - Uso de un flujo mixto y conversacional para capturar los detalles del problema.
    - **Captura Obligatoria de Datos:** Debido a que la base de datos SAI no cuenta con direcciones precisas para todos los socios, el sistema **DEBE requerir y capturar**:

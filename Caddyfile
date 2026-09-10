@@ -10,3 +10,8 @@
         reverse_proxy cosmol_n8n:5678
     }
 }
+
+# Dashboard COSMOL-Reportes con SSL en puerto 8081
+{$DOMAIN_NAME:chatbot.cosmol.com.bo}:8081 {
+    reverse_proxy host.docker.internal:8082
+}

@@ -64,6 +64,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DOMAIN_NAME=${DOMAIN_NAME}
     volumes:

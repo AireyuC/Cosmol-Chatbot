@@ -1,48 +1,161 @@
-# Documentación Arquitectónica - Chatbot COSMOL
-Documento base de contexto. El agente DEBE leer este archivo al iniciar cada sesión y seguirlo durante todo el desarrollo del proyecto. Es la fuente de verdad del contexto, los objetivos y las reglas de comportamiento, el agente DEBE preguntar antes de ejecutar cualquier accion que no este contemplada en este documento y tambien antes de borrar o modificar cualquier archivo del proyecto.
+# Documentación Arquitectónica — Chatbot COSMOL
 
-## 1. RESUMEN Y OBJETIVOS
-- **Objetivo Principal:** Desarrollar un chatbot automatizado por WhatsApp para atención a los asociados de COSMOL, permitiendo consultas, pagos y registro de reclamos con fricción cero (estilo CRE).
-- **Alcance del Sistema:** Sistema puramente **Backend** (API e integraciones). No habrá aplicación o portal web Frontend administrativo por el momento. Toda la interacción del cliente será a través de las plantillas y flujos de WhatsApp.
+> **AVISO PARA AGENTES DE IA:** Este archivo es la fuente de verdad arquitectónica, técnica y operativa de este repositorio. Léelo completo antes de analizar, generar, modificar o sugerir código.
+> **Regla de Oro:** El agente DEBE consultar y solicitar confirmación explícita al usuario antes de ejecutar cualquier acción que no esté contemplada en este documento, y **SIEMPRE antes de borrar o modificar cualquier archivo del proyecto**.
 
-## 2. ARQUITECTURA Y TECNOLOGÍAS
-- **Canal de Comunicación:** Meta WhatsApp Cloud API.
-  - *Fase de Pruebas:* Se utilizará el numero de prueba que meta nos da para trabajar en sandbox, con esta cuenta podremos hacer pruebas de las funcionalidades. 
-  - *Producción:* Se buscará la verificación empresarial para activar *WhatsApp Flows* de forma oficial.
-- **Orquestador (Middleware):** n8n (Self-Hosted en Node.js).
-- **Backend API:** PHP Puro (Vanilla PHP v7.3). Implementa medidas de seguridad estrictas (Token de Autenticación Interno, CORS restrictivo, Rate Limiting por IP y Validación/Sanitización de inputs) para su comunicación con n8n.
-- **Infraestructura de Despliegue (Docker):** Version (la mas estable para los demas stacks) Se oficializa el uso de **Docker** para contenerizar tanto n8n como la API PHP, garantizando un entorno escalable e idéntico para producción.
-  - **Red Interna (Aislamiento):** Ambos servicios corren bajo una red Docker interna (`cosmol_network`). El backend PHP no expone puertos públicos en producción.
-  - **n8n Local y Puertos:** En desarrollo, n8n se ejecutará de manera local dentro de un contenedor, proporcionándole/exponiendo un puerto específico (ej. `5678`) para acceder a su interfaz gráfica y recibir peticiones del exterior.
-  - **Pruebas (ngrok):** Para recibir los Webhooks de Meta **únicamente durante la fase de desarrollo**, se utilizará **ngrok** de manera temporal. Esto creará un túnel público HTTPS que apuntará al puerto local de n8n. ngrok **no se usará en producción**.
-  - **Producción:** En el despliegue final se sustituirá ngrok por el **dominio o URL propio de la empresa COSMOL** con su respectivo certificado SSL (a través de un proxy inverso como Nginx o Apache), recibiendo las peticiones de Meta directamente al contenedor de n8n.
-  - **API PHP:** Se levantará en su propio contenedor, accesible únicamente por n8n a través de la red interna. Solo expone puerto al host (`8000`) cuando se usa el perfil `dev` en desarrollo local.
-- **Integración con Sistema SAI (Informix):**
-  - **Producción:** No se realizará una conexión directa ni migración a Informix. En su lugar, se consumirán **APIs REST** proporcionadas por el servidor Informix del sistema SAI. La API PHP actuará como intermediaria, haciendo peticiones HTTP a estos endpoints externos.
-  - **Desarrollo Local:** PostgreSQL 16-alpine (imagen `postgres:16-alpine`, actualmente versión 16.15) corriendo en contenedor Docker (servicio `db` del `docker-compose.yml`) utilizando el estándar ANSI SQL como base de datos simulada para pruebas locales (mock del sistema SAI y preparación para futura migración a Informix). Todo el entorno de desarrollo corre exclusivamente en Docker.
+---
 
-## 3. FUNCIONALIDADES PRINCIPALES (FASE 1)
-1. **Autenticación Fricción Cero:** El asociado se valida ingresando únicamente su Código de Asociado / Código Fijo.
-2. **Consultas de Cuenta:** Visualización rápida de historial de facturas, montos pendientes y estados de cuenta.
-3. **Pagos Integrados:** Redirección a las pasarelas de pago disponibles: Multipago (`https://multipago.com/service/cosmol_payment/first`) y Pago al Paso (`https://red.pagoalpaso247.net/servicio/cosmol`).
-4. **Registro de Reclamos (Agua turbia, fugas, etc.):**
-   - Uso de un flujo mixto y conversacional para capturar los detalles del problema.
-   - **Captura Obligatoria de Datos:** Debido a que la base de datos SAI no cuenta con direcciones precisas para todos los socios, el sistema **DEBE requerir y capturar**:
-     1. Ubicación GPS enviada de forma nativa por WhatsApp.
-     2. Fotografía del problema o lugar (adjunto de imagen).
-     3. Descripción en texto o referencias del reclamo.
-   - Estos datos se almacenarán temporalmente/definitivamente para que sistemas de terceros (ej. aplicación de plomeros/técnicos) puedan consumirlos.
-5. **Reconexiones Automáticas:** Evaluación de la antigüedad de la deuda (rechazo si la mora supera los 2 meses) y orden directa al sistema.
+## 1. Descripción del Proyecto y Objetivos
 
-## 4. ESTRUCTURA DE MICROSERVICIOS Y FLUJO
-1. **Webhook:** n8n recibe los mensajes de Meta WhatsApp.
-2. **Decisión Lógica:** n8n evalúa el texto o la plantilla recibida.
-3. **Consulta al Backend:** n8n hace una petición HTTP GET/POST a la API PHP (`/api/webhook_whatsapp.php`).
-4. **Consulta de Datos:** La API PHP hace una petición a las **APIs REST del sistema SAI** (Informix) en producción, o a **PostgreSQL local** (mock con ANSI SQL) en desarrollo, y devuelve la respuesta formateada.
-5. **Respuesta al Cliente:** n8n formatea la respuesta de la base de datos y envía el mensaje de WhatsApp.
+Sistema de atención automatizada al asociado de la **Cooperativa COSMOL R.L.** mediante WhatsApp, diseñado bajo el principio de **fricción cero**: el asociado interactúa y se autentica ingresando únicamente su **Código de Asociado (Código Fijo)**, sin contraseñas ni formularios complejos.
 
-## 5. FASES ÁGILES DE DESARROLLO (SPRINTS)
-- **Sprint 1 (Setup y Mocks):** Configuración de Meta App, levantamiento del entorno Docker (PHP + n8n + PostgreSQL) y creación de Endpoints PHP simulados (Mocks con ANSI SQL).
-- **Sprint 2 (Auth y Menú):** Flujo de bienvenida en n8n, conexión para validar socio y redirección a pasarela de pagos.
-- **Sprint 3 (Módulo Reclamos):** Implementación de flujos conversacionales interactivos para quejas técnicas que capturen obligatoriamente: Ubicación por GPS, fotografía y descripción en texto enviadas por el socio; preparando su almacenamiento para sistemas externos.
-- **Sprint 4 (Integración APIs SAI):** Sustitución de las llamadas al PostgreSQL local por las **APIs REST del sistema SAI** (Informix) proporcionadas por el equipo de producción. Validación end-to-end del flujo completo contra datos reales.
+### 1.1 Alcance del Sistema
+* **Backend Puro e Integraciones:** Este repositorio no contiene frontend administrativo ni portales web para el usuario final. Toda la interacción del socio ocurre a través de los mensajes y menús de WhatsApp orquestados por **n8n** y procesados por el backend en **PHP 7.3**.
+* **Modelo Económico y de Conversación:** Solo se gestionan **conversaciones iniciadas por el usuario** (*User-Initiated* dentro de la ventana de 24 horas de Meta), con costo $0.00 USD para COSMOL. **No se envían notificaciones push ni mensajes masivos iniciados por el sistema** a los socios para evitar cobros por conversación iniciada por negocio (*Business-Initiated*).
+* **Evolución del Desarrollo:** Las fases y módulos centrales (autenticación, consultas de deuda, pagos por enlace, captura de reclamos con georreferenciación y reconexiones) se encuentran completamente operativos en código, adaptándose dinámicamente según las necesidades operativas de la Cooperativa.
+
+---
+
+## 2. Stack Tecnológico — Restricciones Estrictas
+
+| Componente | Tecnología | Notas y Restricciones |
+|---|---|---|
+| **Backend API** | **PHP 7.3 (Vanilla)** | **Estricto.** NUNCA usar sintaxis o funciones exclusivas de PHP 7.4+ u 8.x (ej. constructor property promotion, union types, `match`, `str_contains`, tipos en propiedades de clase, etc.). |
+| **Servidor Web Interno** | Apache | Empaquetado dentro del contenedor de PHP (`php:7.3-apache`). |
+| **Proxy Inverso & SSL** | **Caddy** | Certificados SSL automáticos (HTTPS), enrutamiento de n8n, servicio de `/uploads/*` y reenvío de `COSMOL-Reportes`. |
+| **Orquestador (Middleware)** | **n8n (v1 Self-Hosted)** | Recibe el webhook de Meta, ejecuta confirmaciones de lectura / typing y traslada el payload al backend PHP. |
+| **Base de Datos (Pruebas)** | **PostgreSQL 16-alpine** | Simulación local y de servidor de pruebas (Mock del SAI bajo estándar ANSI SQL). Contenedor `cosmol_postgres`. |
+| **Base de Datos (Producción)** | **APIs REST del Sistema SAI (IBM Informix)** | En expectativa de conexión/migración. El backend está desacoplado mediante repositorios para conectarse vía API o exportar datos directamente. |
+| **Contenedores** | **Docker / docker-compose** | Todo el entorno corre contenerizado en un servidor de pruebas Ubuntu Server. No instalar servicios directamente en el host. |
+
+---
+
+## 3. Infraestructura, Redes y Despliegue
+
+Todo el entorno se encuentra desplegado y corriendo en un servidor de pruebas con **Ubuntu Server**, con IP asignada y el dominio oficial configurado.
+
+### 3.1 Servicios en `docker-compose.yml`
+1. **`caddy` (`cosmol_caddy`):** Puertos expuestos al host: `80`, `443` y `8081`.
+   * Enruta el dominio `https://chatbot.cosmol.com.bo` directamente al contenedor `cosmol_n8n:5678`.
+   * Sirve directamente las imágenes estáticas subidas en `/uploads/*` (`./public/uploads`).
+   * Enruta el puerto `8081` (`https://chatbot.cosmol.com.bo:8081`) hacia el software hermano `COSMOL-Reportes` (`host.docker.internal:8082`).
+2. **`n8n` (`cosmol_n8n`):** Aislado dentro de la red Docker; no expone puertos públicos directos (solo a través de Caddy).
+3. **`backend` (`cosmol_backend`):** PHP 7.3 Apache. Aislado dentro de la red interna. Procesa los eventos en `public/api/webhook_whatsapp.php`.
+4. **`db` (`cosmol_postgres`):** Base de datos PostgreSQL de pruebas. Puerto local expuesto solo para administración (`127.0.0.1:5433:5432`).
+
+### 3.2 Red Interna
+Todos los contenedores se comunican a través del bridge interno `cosmol_internal_network` (`cosmol_network`).
+
+---
+
+## 4. Canal de Comunicación: Meta WhatsApp Cloud API
+
+* **Estado de la Cuenta:** Actualmente operando con número y entorno de pruebas (sandbox), a la espera de la resolución de verificación empresarial oficial por parte de Meta.
+* **Paradigma de Interacción:** Mensajes interactivos nativos generados desde el backend PHP (List Messages con secciones, Quick Reply Buttons, y plantillas de texto formateadas).
+* **WhatsApp Flows:** Pospuesto como una posible evolución futura para interacciones con personal operativo interno; no se utiliza en el flujo del socio.
+* **Nodos Estéticos en n8n (Experiencia Visual):**
+  * **Doble Check Azul:** Envío inmediato de `status: "read"` a Meta al recibir el mensaje.
+  * **Indicador "Escribiendo...":** Envío de `typing_indicator` con `action: "typing_on"`.
+  * **Regla de Resiliencia:** Ambos nodos deben tener **`Continue on Fail: true`** y timeouts de 2-3 segundos en n8n para garantizar que ningún micro-corte o configuración de privacidad del socio interrumpa el flujo del bot.
+
+---
+
+## 5. Reglas de Negocio y Módulos Operativos
+
+### 5.1 Autenticación de Fricción Cero
+* El asociado ingresa su Código Fijo (ej. `10245`).
+* El sistema valida la existencia en base de datos y crea un estado de sesión en memoria/persistencia.
+
+### 5.2 Consultas y Facturación
+* Desglose de meses pendientes, importes de facturas, consumo en metros cúbicos y total a pagar.
+
+### 5.3 Pasarelas de Pago Duales (por URL)
+Debido a políticas institucionales y convenios bancarios, los pagos se canalizan exclusivamente vía enlaces externos seguros:
+1. **Multipago:** `https://multipago.com/service/cosmol_payment/first`
+2. **Pago al Paso:** `https://red.pagoalpaso247.net/servicio/cosmol`
+
+### 5.4 Registro Obligatorio de Reclamos
+Para suplir la falta de direcciones georreferenciadas en sistemas heredados, el bot **exige obligatoriamente tres datos** antes de registrar un reclamo técnico:
+1. **Ubicación GPS:** Enviada nativamente desde WhatsApp (latitud y longitud).
+2. **Fotografía de Evidencia:** Foto del medidor o del problema (almacenada localmente y servida por `/uploads/`).
+3. **Glosa/Descripción:** Detalle en texto con referencias aportadas por el socio.
+
+### 5.5 Reconexiones Automáticas
+* **Regla Estricta:** Si el socio adeuda **más de 2 facturas en mora**, la solicitud de reconexión es **rechazada automáticamente**, indicándole que debe regularizar su deuda antes de solicitar la reconexión.
+* Si cumple la condición (≤ 2 facturas), se registra la orden de reconexión con su respectiva geolocalización.
+
+### 5.6 Guardia de Mantenimiento y Anti-Spam
+* `App\Modules\Session\MaintenanceGuard`: Permite pausar la atención del bot de manera global ante contingencias de red sin apagar los contenedores, respondiendo con un mensaje institucional amigable y previniendo saturación por spam.
+
+---
+
+## 6. Integración de Datos (PostgreSQL Mock vs SAI Informix)
+
+El sistema implementa el **Patrón Repository** con interfaces estrictas en `app/Data/Interfaces/`:
+* **Entorno Actual (Pruebas):** Implementaciones en `app/Data/Repositories/Postgres/` contra la base de datos PostgreSQL (`cosmol_postgres`) usando estándar ANSI SQL.
+* **Integración Futura (SAI Informix):** Implementaciones en `app/Data/Repositories/Api/` para consumir los endpoints REST del SAI una vez provistos por el equipo de sistemas de COSMOL.
+* **Transición Transparente:** La inyección de dependencias en `AppContainer` permite alternar entre PostgreSQL y la API externa mediante variables de entorno en `.env` sin alterar controladores ni plantillas.
+
+---
+
+## 7. Sinergia con el Sistema Hermano "COSMOL-Reportes"
+
+El Chatbot se conecta de forma directa y asíncrona con el sistema **COSMOL-Reportes** para alimentar el módulo de estadísticas y la bandeja de trabajos pendientes de los operadores:
+
+1. **Cliente de Reportes:** `App\Integrations\CosmolReportes\ClienteApiReportes` envía las consultas, reclamos y solicitudes de reconexión registradas por los socios.
+2. **Cola de Resiliencia Local:** Si el sistema de reportes experimenta cortes o mantenimiento, las consultas se encolan en `ReportesBufferRepository` dentro de PostgreSQL.
+3. **Despachador Programado (Flush):** El endpoint `public/api/cron_flush_reportes.php` es ejecutado periódicamente por n8n (Schedule Trigger) para vaciar los registros pendientes hacia la API de Reportes.
+4. **Control Global:** Controlado por el feature flag `REPORTES_SYNC_ENABLED` en `.env`.
+
+---
+
+## 8. Arquitectura del Backend PHP (Estructura de Directorios)
+
+El código fuente en `app/` sigue una arquitectura modular en capas desacopladas:
+
+```
+app/
+├── Config/                   ← Variables de entorno y ajustes de BD/APIs
+├── Core/                     ← Núcleo de la aplicación
+│   ├── AppContainer.php      ← Contenedor de Inversión de Control (IoC/DI)
+│   ├── Controller.php        ← Controlador base (respuestas JSON)
+│   ├── Database.php          ← Conexión PDO singleton (PostgreSQL)
+│   ├── FeatureFlags.php      ← Banderas de activación de características
+│   ├── Logger.php            ← Registro de logs diarios
+│   └── WebhookKernel.php     ← Orquestador y ciclo de vida de la petición
+│
+├── Data/                     ← Capa de Persistencia y Repositorios
+│   ├── Interfaces/           ← Contratos (ISocioRepository, IReclamoRepository, etc.)
+│   └── Repositories/
+│       ├── Postgres/         ← Acceso a PostgreSQL de pruebas (ANSI SQL)
+│       └── Api/              ← Acceso a APIs externas del SAI (Informix)
+│
+├── Modules/                  ← Lógica de Dominio y Servicios de Negocio
+│   ├── Audit/                ← Auditoría y buffer hacia COSMOL-Reportes
+│   ├── Facturacion/          ← Cálculo de facturas y deudas
+│   ├── Reclamo/              ← Procesamiento y validación de reclamos
+│   ├── Reconexion/           ← Evaluación de mora y órdenes de reconexión
+│   ├── Session/              ← Máquina de estados del socio y MaintenanceGuard
+│   └── Socio/                ← Búsqueda y validación de asociados
+│
+├── Presentacion/             ← Generación de Payloads para WhatsApp
+│   ├── Flows/MenuActions/    ← Handlers de cada botón/opción del menú
+│   └── PlantillasWhatsApp/   ← Plantillas JSON conformes a la Graph API de Meta
+│
+└── Integrations/             ← Conectores con sistemas externos
+    └── CosmolReportes/       ← Cliente HTTP hacia la API de COSMOL-Reportes
+```
+
+---
+
+## 9. Reglas Explícitas para el Agente de IA
+
+- ❌ **Prohibido PHP 7.4+ / PHP 8.x:** Bajo ninguna circunstancia uses sintaxis incompatible con PHP 7.3.
+- ❌ **Prohibido frameworks PHP o JS pesados:** El backend es PHP Vanilla estructurado. No sugerir Laravel, Symfony, React o Vue.
+- ❌ **Prohibido saltarse la autorización interna:** Toda petición entrante desde n8n debe validar el header `X-Internal-Token`.
+- ❌ **Prohibido exponer servicios innecesarios:** El backend PHP y la base de datos PostgreSQL no deben exponer puertos públicos al exterior en producción; todo el tráfico web entra exclusivamente por Caddy.
+- ❌ **Prohibido alterar contratos de Meta:** Los payloads generados en `PlantillasWhatsApp` deben respetar estrictamente el formato JSON exigido por la WhatsApp Cloud API.
+- ❌ **Prohibido modificar o borrar archivos sin confirmación:** Si una tarea requiere eliminar código, alterar esquemas de BD o modificar archivos existentes, **pregunta primero al usuario**.
+- ✅ **Consultas preparadas obligatorias:** Todo acceso a base de datos debe usar PDO con *prepared statements*; jamás concatenar variables en sentencias SQL.
+- ✅ **Mantener el desacoplamiento:** Si creas una nueva funcionalidad de datos, crea su interfaz en `app/Data/Interfaces/` y vincúlala a través de `AppContainer`.
+- ✅ **Resiliencia ante fallos de APIs:** Cualquier llamada a `COSMOL-Reportes` o al `SAI` debe implementar timeouts cortos y manejo de excepciones mediante buffers locales para no interrumpir la experiencia del socio.

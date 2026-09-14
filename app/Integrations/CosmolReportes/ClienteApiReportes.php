@@ -49,6 +49,7 @@ class ClienteApiReportes
     {
         if (empty($this->baseUrl)) {
             // Si no está configurada la URL, no intentamos conexión externa
+            $this->ultimoError = 'REPORTES_API_URL no configurada en .env';
             return false;
         }
 
@@ -87,6 +88,8 @@ class ClienteApiReportes
         curl_close($ch);
 
         if ($response === false) {
+            $this->servidorOffline = true;
+            $this->ultimoError = 'Error cURL: ' . $curlError;
             Logger::warning("ClienteApiReportes: Timeout o error de conexión con COSMOL-Reportes", [
                 'error' => $curlError,
                 'url'   => $url
@@ -95,9 +98,13 @@ class ClienteApiReportes
         }
 
         if ($httpCode >= 200 && $httpCode < 300) {
+            $this->servidorOffline = false;
+            $this->ultimoError = null;
             return true;
         }
 
+        $this->servidorOffline = false;
+        $this->ultimoError = "HTTP {$httpCode}: " . mb_substr((string)$response, 0, 250);
         Logger::warning("ClienteApiReportes: COSMOL-Reportes respondió con error HTTP", [
             'http_code' => $httpCode,
             'response'  => $response

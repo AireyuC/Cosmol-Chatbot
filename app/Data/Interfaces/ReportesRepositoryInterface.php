@@ -41,4 +41,12 @@ interface ReportesRepositoryInterface
      * @return bool
      */
     public function incrementarIntento(int $id, string $error): bool;
+
+    /**
+     * Reactiva registros en estado FALLIDO regresándolos a PENDIENTE con 0 intentos.
+     *
+     * @return int Cantidad de registros reactivados
+     */
+    public function reactivarFallidos(): int;
 }
+

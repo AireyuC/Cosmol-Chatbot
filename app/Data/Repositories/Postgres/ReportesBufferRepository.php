@@ -140,4 +140,21 @@ class ReportesBufferRepository implements ReportesRepositoryInterface
             return false;
         }
     }
+
+    public function reactivarFallidos(): int
+    {
+        try {
+            $sql = "UPDATE cola_reportes 
+                    SET estado = 'PENDIENTE', intentos = 0, ultimo_error = NULL, actualizado_en = CURRENT_TIMESTAMP 
+                    WHERE estado = 'FALLIDO'";
+            $filas = $this->db->exec($sql);
+            return $filas !== false ? (int)$filas : 0;
+        } catch (Exception $e) {
+            Logger::error("ReportesBufferRepository::reactivarFallidos error", [
+                'error' => $e->getMessage()
+            ]);
+            return 0;
+        }
+    }
 }
+

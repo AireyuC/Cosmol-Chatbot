@@ -92,5 +92,18 @@ class PlantillaSistema
     {
         return "🔧 El servicio de *{$nombreModulo}* se encuentra temporalmente en mantenimiento por mejoras en el sistema.\n\nPor favor, seleccione otra opción del menú 👇";
     }
+
+    /**
+     * Mensaje de advertencia cuando se excede el límite de códigos de socio distintos consultados hoy desde un mismo número.
+     */
+    public static function advertenciaLimiteCuentasPorTelefono(int $limite = 5): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "⚠️ *Límite diario de cuentas alcanzado*\n\nEstimado asociado, desde este número de WhatsApp ya se han consultado *{$limite} códigos de socio distintos hoy* (límite máximo permitido por día).\n\nSi necesita realizar consultas o trámites para más medidores, por favor intente nuevamente mañana o apersónese a nuestras oficinas de atención al cliente."
+            ]
+        ];
+    }
 }
 

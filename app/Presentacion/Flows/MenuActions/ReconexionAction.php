@@ -32,14 +32,24 @@ class ReconexionAction
      */
     private $facturacionService;
 
+    /**
+     * @var \App\Modules\Audit\ConsultaAuditService|null
+     */
+    // --- CONTROLADORES DE NEGOCIO Y TIEMPO (ADMINISTRACIÓN DESDE CÓDIGO) ---
+    public const MAX_FACTURAS_MORA          = 1;  // Máximo de facturas en mora permitidas (si adeuda > 1 se rechaza)
+    public const MAX_RECONEXIONES_POR_SOCIO = 1;  // Límite diario de solicitudes por código de socio
+    public const COOLDOWN_SECONDS           = 60; // Segundos mínimos entre solicitudes consecutivas
+
     public function __construct(
         SessionService $sessionService,
         ReconexionService $reconexionService,
-        FacturacionService $facturacionService
+        FacturacionService $facturacionService,
+        ?\App\Modules\Audit\ConsultaAuditService $auditService = null
     ) {
         $this->sessionService = $sessionService;
         $this->reconexionService = $reconexionService;
         $this->facturacionService = $facturacionService;
+        $this->auditService = $auditService;
     }
 
     /**
@@ -57,17 +67,32 @@ class ReconexionAction
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Solicitud de Reconexión"));
         }
 
-        // 1. Validar si ya tiene reconexión pendiente
+        // 0. Validar límite diario por código de socio (máximo 1 reconexión por día)
+        if ($this->auditService !== null && !$this->auditService->puedeSolicitarReconexionSocio((int)$codigoSocio)) {
+            $mensaje = PlantillaReconexion::advertenciaLimiteReconexiones();
+            return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
+        }
+
+        // 0.1 Control de Cooldown en segundos (anti-spam / doble toque accidental)
+        if ($this->auditService !== null) {
+            $segundosRestantes = $this->auditService->obtenerSegundosRestantesCooldownReconexion($telefono);
+            if ($segundosRestantes > 0) {
+                $mensaje = PlantillaReconexion::advertenciaCooldownReconexion($segundosRestantes);
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
+            }
+        }
+
+        // 1. Validar si ya tiene reconexión pendiente en el sistema técnico externo
         if ($this->reconexionService->tieneReconexionPendiente($codigoSocioStr)) {
             $mensaje = PlantillaReconexion::reconexionPendiente();
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
         }
 
-        // 2. Validar si supera el límite de mora (más de 2 facturas)
+        // 2. Validar si supera el límite de mora (máximo 1 factura permitida; > 1 rechaza)
         $deudasResult = $this->facturacionService->obtenerDeudas($codigoSocioStr);
         $cantidadDeudas = ($deudasResult['status'] ?? '') === 'success' ? $deudasResult['cantidad_facturas'] : 0;
 
-        if ($cantidadDeudas > 2) {
+        if ($cantidadDeudas > self::MAX_FACTURAS_MORA) {
             $mensaje = PlantillaReconexion::deudaExcedida($cantidadDeudas);
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
         }

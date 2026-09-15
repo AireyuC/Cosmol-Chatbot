@@ -118,9 +118,9 @@ class ReconexionFlowHandler extends BaseFlowHandler
                         $ticket = (string)($resultado['id_reconexion'] ?? '');
                         $mensaje = PlantillaReconexion::confirmacionExitosa($ticket);
 
-                        // Registrar auditoría de reconexión en COSMOL-Reportes
+                        // Registrar auditoría de reconexión en COSMOL-Reportes con telefono
                         if ($this->auditService !== null) {
-                            $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio);
+                            $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio, $telefono);
                         }
                     } else {
                         $mensaje = "❌ Ocurrió un error al procesar su solicitud de reconexión. Por favor, intente más tarde.";

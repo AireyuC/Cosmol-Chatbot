@@ -47,8 +47,10 @@ CREATE TABLE IF NOT EXISTS cola_reportes (
     id SERIAL PRIMARY KEY,
     codigo_socio INT NOT NULL,
     nombres VARCHAR(200) NOT NULL,
+    telefono VARCHAR(30) NULL,
     id_tipo INT NOT NULL,
     tipo_consulta VARCHAR(100) NOT NULL,
+    tipo_ubicacion VARCHAR(20) NULL,
     fecha_consulta DATE NOT NULL DEFAULT CURRENT_DATE,
     hora_consulta TIME NOT NULL DEFAULT CURRENT_TIME,
     estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
@@ -57,3 +59,4 @@ CREATE TABLE IF NOT EXISTS cola_reportes (
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+

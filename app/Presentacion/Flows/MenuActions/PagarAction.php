@@ -42,7 +42,7 @@ class PagarAction
      * @param string $nombreSocio Nombre del socio
      * @return array Payload interactivo de WhatsApp
      */
-    public function execute(string $accion, string $codigoSocioStr, string $nombreSocio): array
+    public function execute(string $accion, string $codigoSocioStr, string $nombreSocio, ?string $telefono = null): array
     {
         if (!FeatureFlags::isEnabled('deuda')) {
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Consulta de Deuda"));
@@ -52,7 +52,7 @@ class PagarAction
         $cod = $partes[2] ?? $codigoSocioStr;
 
         if ($this->auditService !== null) {
-            $this->auditService->registrarConsultaDeuda((int)$cod, $nombreSocio);
+            $this->auditService->registrarConsultaDeuda((int)$cod, $nombreSocio, $telefono);
         }
 
         $deudasResult = $this->facturacionService->obtenerDeudas($cod);

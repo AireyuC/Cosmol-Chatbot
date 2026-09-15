@@ -74,12 +74,12 @@ class MenuFlowHandler
 
         // 1. Deuda y Pago
         if (strpos($accion, 'MENU_PAGAR_') === 0) {
-            return $this->pagarAction->execute($accion, $codigoSocioStr, $nombreSocio);
+            return $this->pagarAction->execute($accion, $codigoSocioStr, $nombreSocio, $telefono);
         }
 
         // 2. Historial de facturas pagadas
         if ($accion === 'MENU_HISTORIAL') {
-            return $this->historialAction->execute($codigoSocio, $codigoSocioStr, $nombreSocio);
+            return $this->historialAction->execute($codigoSocio, $codigoSocioStr, $nombreSocio, $telefono);
         }
 
         // 3. Solicitud de Reconexión
@@ -89,7 +89,7 @@ class MenuFlowHandler
 
         // 4. Consulta de estado de trámites (reclamos y reconexiones)
         if ($accion === 'MENU_ESTADO_TRAMITES' || $accion === 'RECLAMO_ESTADO') {
-            return $this->estadoTramitesAction->execute($codigoSocio, $codigoSocioStr, $nombreSocio);
+            return $this->estadoTramitesAction->execute($codigoSocio, $codigoSocioStr, $nombreSocio, $telefono);
         }
 
         // 5. Reclamos (submenú y tipos específicos)

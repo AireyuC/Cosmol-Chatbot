@@ -57,7 +57,7 @@ class InfoAction
             }
 
             if ($this->auditService !== null) {
-                $this->auditService->registrarConsultaOficinas((int)$codigoSocio, $nombreSocio);
+                $this->auditService->registrarConsultaOficinas((int)$codigoSocio, $nombreSocio, $telefono);
             }
 
             $infoOficinas = "📍 *Oficina Central COSMOL R.L. Montero*\n\n" .
@@ -80,7 +80,7 @@ class InfoAction
             }
 
             if ($this->auditService !== null) {
-                $this->auditService->registrarDerivacionAgente((int)$codigoSocio, $nombreSocio);
+                $this->auditService->registrarDerivacionAgente((int)$codigoSocio, $nombreSocio, $telefono);
             }
 
             return PlantillaSocio::redireccionAgente();

@@ -54,6 +54,11 @@ class SessionService
             return $this->buildResponse('AWAITING_CODE', null, 'Sesión expirada por inactividad. Por favor, envía tu código de socio.');
         }
 
+        // Renovar la última interacción con cada acción/mensaje recibido para reiniciar el cronómetro a cero
+        if ($estado !== 'AWAITING_CODE') {
+            $this->repository->touchSession($telefono);
+        }
+
         // Devolver el estado actual tal cual está (sin cambiarlo aquí, eso lo decide n8n).
         return $this->buildResponse($estado, $codigoSocio, null, $intentos, $contextData);
     }

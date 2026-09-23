@@ -113,6 +113,91 @@ class PlantillaReclamo
     }
 
     /**
+     * Pregunta si el reclamo es en su domicilio registrado o mediante GPS.
+     */
+    public static function preguntaTipoUbicacion(string $direccion = ''): array
+    {
+        $detalleDireccion = !empty($direccion) ? "\n🏠 *Domicilio Registrado:* {$direccion}\n" : '';
+
+        return [
+            'type' => 'interactive',
+            'interactive' => [
+                'type' => 'button',
+                'header' => [
+                    'type' => 'text',
+                    'text' => 'Ubicación del Reclamo'
+                ],
+                'body' => [
+                    'text' => "¿El problema se encuentra en la dirección registrada de su medidor (en su casa) o en otra ubicación?\n{$detalleDireccion}\n⚠️ *Aviso:* Si la falla no está en su domicilio, elija 'Otra Ubic. (GPS)' para que la cuadrilla técnica acuda al punto exacto."
+                ],
+                'footer' => [
+                    'text' => 'COSMOL R.L.'
+                ],
+                'action' => [
+                    'buttons' => [
+                        [
+                            'type' => 'reply',
+                            'reply' => [
+                                'id' => 'RECLAMO_UBICACION_DOMICILIO',
+                                'title' => '🏠 Mi Domicilio'
+                            ]
+                        ],
+                        [
+                            'type' => 'reply',
+                            'reply' => [
+                                'id' => 'RECLAMO_UBICACION_GPS',
+                                'title' => '📍 Otra Ubic. (GPS)'
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Mensaje de advertencia cuando se excede el límite diario de reclamos por código de socio.
+     */
+    public static function advertenciaLimiteReclamos(int $limite = 3): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "⚠️ *Límite diario por asociado alcanzado*\n\nEstimado asociado, esta cuenta ha alcanzado el límite máximo de *{$limite} reclamos por día*.\n\nSus solicitudes previas ya se encuentran en proceso de revisión técnica por las cuadrillas de COSMOL. Si se trata de una emergencia mayor en la red pública, por favor comuníquese directamente con nuestra línea de guardia.",
+                'preview_url' => false
+            ]
+        ];
+    }
+
+    /**
+     * Mensaje de advertencia cuando se excede el límite diario global de reclamos desde un mismo teléfono.
+     */
+    public static function advertenciaLimiteGlobalTelefono(int $limiteGlobal = 6): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "⚠️ *Límite diario por número alcanzado*\n\nEstimado usuario, desde este número de WhatsApp se ha alcanzado el tope máximo de *{$limiteGlobal} reclamos diarios* entre todas las cuentas gestionadas hoy.\n\nLas cuadrillas ya cuentan con sus solicitudes en agenda. Por favor, aguarde la atención de los reportes enviados.",
+                'preview_url' => false
+            ]
+        ];
+    }
+
+    /**
+     * Mensaje de advertencia cuando se intenta enviar reclamos demasiado rápido (cooldown anti-spam en segundos).
+     */
+    public static function advertenciaCooldownReclamo(int $segundosRestantes): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "⏳ *Por favor, aguarde unos instantes*\n\nAcabamos de registrar una solicitud. Para evitar reportes duplicados en nuestro sistema operativo, por favor espere *{$segundosRestantes} segundos* antes de enviar un nuevo reclamo.",
+                'preview_url' => false
+            ]
+        ];
+    }
+
+    /**
      * Mensaje de confirmación al registrar el ticket de reclamo.
      */
     public static function confirmacionExitosa(string $ticket): string
@@ -120,3 +205,4 @@ class PlantillaReclamo
         return "✅ *Reclamo registrado exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
     }
 }
+

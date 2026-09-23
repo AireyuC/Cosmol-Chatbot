@@ -67,4 +67,13 @@ class SessionRepository implements SessionRepositoryInterface
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['telefono' => $telefonoWhatsapp]);
     }
+
+    public function touchSession(string $telefonoWhatsapp): bool
+    {
+        $sql = "UPDATE chat_session 
+                SET ultima_interaccion = CURRENT_TIMESTAMP 
+                WHERE telefono_whatsapp = :telefono";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['telefono' => $telefonoWhatsapp]);
+    }
 }

@@ -118,10 +118,27 @@ class PlantillaReconexion
     }
 
     /**
-     * Mensaje de rechazo cuando el socio tiene más de 2 facturas pendientes.
+     * Mensaje de rechazo cuando el socio tiene más facturas de las permitidas (máximo 1 factura).
      */
     public static function deudaExcedida(int $cantidadDeudas): string
     {
-        return "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} facturas pendientes.\nPor favor, regularice su situación antes de realizar esta solicitud. \nPuede efectuar su deuda en *Consultar Deuda* en el siguiente menú.";
+        return "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} factura(s) pendiente(s).\nPara solicitar reconexión debe contar como máximo con 1 factura pendiente. Por favor, regularice sus pagos antes de realizar esta solicitud.\nPuede efectuar el pago de sus facturas en *Consultar Deuda* desde el menú principal.";
+    }
+
+    /**
+     * Mensaje de advertencia cuando se excede el límite de 1 reconexión por día.
+     */
+    public static function advertenciaLimiteReconexiones(): string
+    {
+        return "⚠️ *Límite diario de reconexiones alcanzado*\n\nEstimado asociado, esta cuenta ya cuenta con *1 solicitud de reconexión registrada hoy* (límite máximo diario permitido).\n\nSu trámite ya ha sido ingresado a nuestro sistema operativo y la cuadrilla técnica lo tiene en agenda. Por favor, espere la atención en el transcurso del día.";
+    }
+
+    /**
+     * Mensaje de advertencia cuando se intenta solicitar reconexiones consecutivas antes de que expire el cooldown en segundos.
+     */
+    public static function advertenciaCooldownReconexion(int $segundosRestantes): string
+    {
+        return "⏳ *Por favor, aguarde unos momentos*\n\nSe acaba de registrar una interacción técnica reciente. Para evitar duplicidades en el sistema de cuadrillas, por favor espere *{$segundosRestantes} segundos* antes de volver a solicitar una reconexión.";
     }
 }
+

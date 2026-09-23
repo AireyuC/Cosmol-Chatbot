@@ -42,14 +42,14 @@ class HistorialAction
      * @param string $nombreSocio
      * @return array Payload interactivo de WhatsApp
      */
-    public function execute($codigoSocio, string $codigoSocioStr, string $nombreSocio): array
+    public function execute($codigoSocio, string $codigoSocioStr, string $nombreSocio, ?string $telefono = null): array
     {
         if (!FeatureFlags::isEnabled('historial')) {
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Historial de Facturas"));
         }
 
         if ($this->auditService !== null) {
-            $this->auditService->registrarConsultaHistorial((int)$codigoSocio, $nombreSocio);
+            $this->auditService->registrarConsultaHistorial((int)$codigoSocio, $nombreSocio, $telefono);
         }
 
         $historialResult = $this->facturacionService->obtenerHistorial($codigoSocioStr);

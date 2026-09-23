@@ -254,8 +254,8 @@ class AppContainer
             $this->menuFlowHandler = new MenuFlowHandler(
                 new PagarAction($this->getFacturacionService(), $this->getAuditService()),
                 new HistorialAction($this->getFacturacionService(), $this->getAuditService()),
-                new ReconexionAction($this->getSessionService(), $this->getReconexionService(), $this->getFacturacionService()),
-                new ReclamoAction($this->getSessionService()),
+                new ReconexionAction($this->getSessionService(), $this->getReconexionService(), $this->getFacturacionService(), $this->getAuditService()),
+                new ReclamoAction($this->getSessionService(), $this->getAuditService(), $this->getSocioRepository()),
                 new EstadoTramitesAction($this->getReclamoService(), $this->getReconexionService(), $this->getAuditService()),
                 new InfoAction($this->getSessionService(), $this->getAuditService())
             );

@@ -25,6 +25,7 @@ services:
       - .env
     volumes:
       - .:/app
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: [ "CMD-SHELL", "php -r \"exit(@fsockopen('localhost', 80) ? 0 : 1);\"" ]
       interval: 10s
@@ -38,6 +39,7 @@ services:
     image: postgres:16-alpine
     container_name: cosmol_postgres
     restart: unless-stopped
+    command: postgres -c timezone=America/La_Paz -c log_timezone=America/La_Paz
     ports:
       - "127.0.0.1:5433:5432"
     environment:
@@ -51,6 +53,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
@@ -64,6 +67,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8081:8081"
+      - "8083:8083"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DOMAIN_NAME=${DOMAIN_NAME}
     volumes:

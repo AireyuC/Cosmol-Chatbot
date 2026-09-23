@@ -66,12 +66,45 @@ class ReclamoFlowHandler extends BaseFlowHandler
         }
 
         switch ($estadoActual) {
+            case 'AWAITING_RECLAMO_TIPO_UBICACION':
+                $opcion = '';
+                if ($tipoMensaje === 'interactive') {
+                    $opcion = (string)$contenido;
+                } elseif ($tipoMensaje === 'text') {
+                    $txt = strtolower(trim((string)$contenido));
+                    if (strpos($txt, 'domicilio') !== false || strpos($txt, 'casa') !== false || $txt === '1') {
+                        $opcion = 'RECLAMO_UBICACION_DOMICILIO';
+                    } elseif (strpos($txt, 'gps') !== false || strpos($txt, 'ubic') !== false || $txt === '2') {
+                        $opcion = 'RECLAMO_UBICACION_GPS';
+                    }
+                }
+
+                if ($opcion === 'RECLAMO_UBICACION_DOMICILIO') {
+                    $contextData['tipo_ubicacion'] = 'DOMICILIO';
+                    $contextData['coordenadas_gps'] = 'DOMICILIO_REGISTRADO';
+                    $dir = $contextData['direccion_registrada'] ?? '';
+                    $aviso = !empty($dir) ? " en su domicilio ({$dir})" : " en su domicilio";
+
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
+                    return PlantillaReclamo::solicitarFotoReclamo("📸 Excelente. Por favor, envíe una *fotografía* clara del problema o medidor{$aviso}.");
+                }
+
+                if ($opcion === 'RECLAMO_UBICACION_GPS') {
+                    $contextData['tipo_ubicacion'] = 'GPS';
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_GPS', 0, $contextData);
+                    return PlantillaReclamo::solicitarGpsReclamo();
+                }
+
+                $dirActual = $contextData['direccion_registrada'] ?? '';
+                return PlantillaReclamo::preguntaTipoUbicacion($dirActual);
+
             case 'AWAITING_RECLAMO_GPS':
                 if ($tipoMensaje === 'location' && !empty($contenido)) {
                     $ubicacionJson = json_decode((string)$contenido, true);
                     $latitud = $ubicacionJson['latitude'] ?? '';
                     $longitud = $ubicacionJson['longitude'] ?? '';
 
+                    $contextData['tipo_ubicacion'] = 'GPS';
                     $contextData['coordenadas_gps'] = "{$latitud}, {$longitud}";
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
 
@@ -96,6 +129,7 @@ class ReclamoFlowHandler extends BaseFlowHandler
                     $tipoId = (int)($contextData['id_tipo_reclamo'] ?? 2);
                     $descripcion = $contextData['descripcion_reclamo'] ?? 'Reclamo';
                     $fotoUrl = $contextData['foto_url'] ?? '';
+                    $tipoUbicacion = $contextData['tipo_ubicacion'] ?? 'GPS';
 
                     $resultado = $this->reclamoService->registrarReclamo(
                         $codigoSocioStr,
@@ -110,9 +144,9 @@ class ReclamoFlowHandler extends BaseFlowHandler
                         $ticket = (string)($resultado['id_reclamo'] ?? '');
                         $mensaje = PlantillaReclamo::confirmacionExitosa($ticket);
 
-                        // Registrar auditoría de reclamo en COSMOL-Reportes
+                        // Registrar auditoría de reclamo en COSMOL-Reportes con telefono y tipo_ubicacion
                         if ($this->auditService !== null) {
-                            $this->auditService->registrarReclamo((int)$codigoSocio, $nombreSocio);
+                            $this->auditService->registrarReclamo((int)$codigoSocio, $nombreSocio, $telefono, $tipoUbicacion);
                         }
                     } else {
                         $mensaje = "❌ Ocurrió un error al procesar su reclamo. Por favor, intente más tarde.";

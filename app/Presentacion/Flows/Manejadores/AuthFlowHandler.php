@@ -20,6 +20,9 @@ class AuthFlowHandler extends BaseFlowHandler
      */
     private $socioService;
 
+    // --- CONTROLADORES DE NEGOCIO (ADMINISTRACIÓN DESDE CÓDIGO) ---
+    public const MAX_SOCIOS_POR_TELEFONO = 5; // Máximo de códigos de socio distintos consultados por teléfono por día
+
     public function __construct(
         SessionService $sessionService,
         SocioService $socioService,
@@ -53,15 +56,20 @@ class AuthFlowHandler extends BaseFlowHandler
             }
 
             if ($esCodigoValido) {
+                // Control diario de cuentas por teléfono (máximo 5 códigos de socio distintos por día)
+                if ($this->auditService !== null && !$this->auditService->puedeConsultarSocioHoy($telefono, (int)$codigoIngresado)) {
+                    return PlantillaSistema::advertenciaLimiteCuentasPorTelefono(self::MAX_SOCIOS_POR_TELEFONO);
+                }
+
                 $nombreSocio = $validacion['datos_socio']['nombre'] ?? 'Socio';
                 $contextData = ['nombre_socio' => $nombreSocio];
 
                 // Socio válido -> Actualizar estado a MAIN_MENU y guardar nombre en sesión
                 $this->sessionService->updateSession($telefono, (int)$codigoIngresado, 'MAIN_MENU', 0, $contextData);
 
-                // Registrar auditoría hacia COSMOL-Reportes
+                // Registrar auditoría hacia COSMOL-Reportes con telefono
                 if ($this->auditService !== null) {
-                    $this->auditService->registrarAcceso((int)$codigoIngresado, $nombreSocio);
+                    $this->auditService->registrarAcceso((int)$codigoIngresado, $nombreSocio, $telefono);
                 }
 
                 return PlantillaSocio::menuPrincipal($codigoIngresado, $nombreSocio);

@@ -49,14 +49,14 @@ class EstadoTramitesAction
      * @param string $nombreSocio
      * @return array Payload interactivo de WhatsApp
      */
-    public function execute($codigoSocio, string $codigoSocioStr, string $nombreSocio): array
+    public function execute($codigoSocio, string $codigoSocioStr, string $nombreSocio, ?string $telefono = null): array
     {
         if (!FeatureFlags::isEnabled('estado_tramites')) {
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Estado de Solicitudes"));
         }
 
         if ($this->auditService !== null) {
-            $this->auditService->registrarConsultaEstado((int)$codigoSocio, $nombreSocio);
+            $this->auditService->registrarConsultaEstado((int)$codigoSocio, $nombreSocio, $telefono);
         }
 
         $reclamos = $this->reclamoService->obtenerHistorialReclamos($codigoSocioStr);

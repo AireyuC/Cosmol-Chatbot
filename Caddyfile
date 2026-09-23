@@ -1,11 +1,24 @@
 {$DOMAIN_NAME:chatbot.cosmol.com.bo} {
-    # Servir imágenes estáticas desde /uploads
+    # 1. Servir imagenes estaticas de WhatsApp
     handle_path /uploads/* {
         root * /var/www/html/uploads
         file_server
     }
 
-    # Todo lo demás va hacia n8n
+    # 2. API de la App de Socios (FastAPI) en el puerto seguro 443
+    handle /api/v1/* {
+        reverse_proxy host.docker.internal:8000
+    }
+
+    # 3. Documentacion interactiva Swagger y OpenAPI
+    handle /docs* {
+        reverse_proxy host.docker.internal:8000
+    }
+    handle /openapi.json {
+        reverse_proxy host.docker.internal:8000
+    }
+
+    # 4. Todo lo demas va hacia n8n (Chatbot WhatsApp)
     handle {
         reverse_proxy cosmol_n8n:5678
     }
@@ -16,23 +29,18 @@
     reverse_proxy host.docker.internal:8082
 }
 
-# Backend COSMOL-App de Socios con SSL en puerto 8083
+# Backend COSMOL-App de Socios (Puerto 8083 de respaldo)
 {$DOMAIN_NAME:chatbot.cosmol.com.bo}:8083 {
-    # 1. Reverse proxy hacia la API FastAPI
     handle /api/* {
         reverse_proxy host.docker.internal:8000
     }
-
-    # 2. Documentacion interactiva Swagger
     handle /docs* {
         reverse_proxy host.docker.internal:8000
     }
     handle /openapi.json {
         reverse_proxy host.docker.internal:8000
     }
-
-    # 3. Verificacion de salud del Gateway
     handle {
-        respond "COSMOL App de Socios API - Operativa en Puerto 8083 con SSL" 200
+        respond "COSMOL App de Socios API - Operativa con SSL" 200
     }
 }

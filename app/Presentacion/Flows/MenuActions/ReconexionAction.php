@@ -7,6 +7,8 @@ namespace App\Presentacion\Flows\MenuActions;
 use App\Modules\Session\SessionService;
 use App\Modules\Reconexion\ReconexionService;
 use App\Modules\Facturacion\FacturacionService;
+use App\Modules\Audit\ConsultaAuditService;
+use App\Data\Interfaces\SocioRepositoryInterface;
 use App\Core\FeatureFlags;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaReconexion;
@@ -33,8 +35,15 @@ class ReconexionAction
     private $facturacionService;
 
     /**
-     * @var \App\Modules\Audit\ConsultaAuditService|null
+     * @var ConsultaAuditService|null
      */
+    private $auditService;
+
+    /**
+     * @var SocioRepositoryInterface|null
+     */
+    private $socioRepository;
+
     // --- CONTROLADORES DE NEGOCIO Y TIEMPO (ADMINISTRACIÓN DESDE CÓDIGO) ---
     public const MAX_FACTURAS_MORA          = 1;  // Máximo de facturas en mora permitidas (si adeuda > 1 se rechaza)
     public const MAX_RECONEXIONES_POR_SOCIO = 1;  // Límite diario de solicitudes por código de socio
@@ -44,12 +53,14 @@ class ReconexionAction
         SessionService $sessionService,
         ReconexionService $reconexionService,
         FacturacionService $facturacionService,
-        ?\App\Modules\Audit\ConsultaAuditService $auditService = null
+        ?ConsultaAuditService $auditService = null,
+        ?SocioRepositoryInterface $socioRepository = null
     ) {
         $this->sessionService = $sessionService;
         $this->reconexionService = $reconexionService;
         $this->facturacionService = $facturacionService;
         $this->auditService = $auditService;
+        $this->socioRepository = $socioRepository;
     }
 
     /**
@@ -97,9 +108,24 @@ class ReconexionAction
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
         }
 
-        // 3. Iniciar flujo de reconexión preservando nombre_socio en contextData
-        $contextReconexion = ['nombre_socio' => $nombreSocio];
-        $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GPS', 0, $contextReconexion);
-        return PlantillaReconexion::solicitarGps();
+        // 3. Obtener dirección registrada del socio en caso de existir
+        $direccion = '';
+        if ($this->socioRepository !== null) {
+            $socio = $this->socioRepository->findByCodigo($codigoSocioStr);
+            if ($socio) {
+                $direccion = $socio['direccion'] ?? ($socio['DIRECCION'] ?? '');
+                if (empty($direccion) && isset($socio['ZONA'])) {
+                    $direccion = "Zona {$socio['ZONA']}, Ruta {$socio['RUTA']}";
+                }
+            }
+        }
+
+        // 4. Iniciar flujo de reconexión solicitando tipo de ubicación (Domicilio vs GPS)
+        $contextReconexion = [
+            'nombre_socio' => $nombreSocio,
+            'direccion_registrada' => $direccion
+        ];
+        $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_TIPO_UBICACION', 0, $contextReconexion);
+        return PlantillaReconexion::preguntaTipoUbicacion($direccion);
     }
 }

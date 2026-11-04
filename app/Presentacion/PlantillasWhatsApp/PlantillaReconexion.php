@@ -10,6 +10,49 @@ namespace App\Presentacion\PlantillasWhatsApp;
 class PlantillaReconexion
 {
     /**
+     * Pregunta si la reconexión es en el domicilio registrado del medidor o mediante GPS.
+     */
+    public static function preguntaTipoUbicacion(string $direccion = ''): array
+    {
+        $detalleDireccion = !empty($direccion) ? "\n🏠 *Domicilio Registrado:* {$direccion}\n" : '';
+
+        return [
+            'type' => 'interactive',
+            'interactive' => [
+                'type' => 'button',
+                'header' => [
+                    'type' => 'text',
+                    'text' => 'Ubicación de Reconexión'
+                ],
+                'body' => [
+                    'text' => "📍 *Solicitud de Reconexión*\n\n¿La reconexión debe realizarse en la dirección registrada de su medidor o en otra ubicación?\n{$detalleDireccion}\nSi el suministro está en otra dirección o no tiene numeración, seleccione 'Otra Ubic. (GPS)'."
+                ],
+                'footer' => [
+                    'text' => 'Paso 1 de 3'
+                ],
+                'action' => [
+                    'buttons' => [
+                        [
+                            'type' => 'reply',
+                            'reply' => [
+                                'id' => 'RECONEXION_UBICACION_DOMICILIO',
+                                'title' => '🏠 Mi Domicilio'
+                            ]
+                        ],
+                        [
+                            'type' => 'reply',
+                            'reply' => [
+                                'id' => 'RECONEXION_UBICACION_GPS',
+                                'title' => '📍 Otra Ubic. (GPS)'
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
      * Solicita al usuario que envíe su ubicación GPS.
      */
     public static function solicitarGps(): array
@@ -36,7 +79,7 @@ class PlantillaReconexion
                     'text' => 'Tipo de Reconexión'
                 ],
                 'body' => [
-                    'text' => "Ubicación recibida correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:"
+                    'text' => "Ubicación registrada correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:"
                 ],
                 'footer' => [
                     'text' => 'Paso 2 de 3'
@@ -76,7 +119,7 @@ class PlantillaReconexion
     }
 
     /**
-     * Solicita la fotografía de evidencia para el trámite de reconexión.
+     * Solicita la fotografía de evidencia para el trámite de reconexión (conservado por compatibilidad).
      */
     public static function solicitarFoto(): array
     {
@@ -96,7 +139,7 @@ class PlantillaReconexion
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📝 *Último paso*\n\nPor favor escriba una breve observación o referencia para ayudar a los técnicos a encontrar el lugar (Ej: 'Casa de rejas negras' o 'Ninguna')."
+                'body' => "📝 *Último paso (3 de 3)*\n\nPor favor escriba una breve observación o referencia para ayudar a los técnicos a encontrar el lugar (Ej: 'Casa de rejas negras' o 'Ninguna')."
             ]
         ];
     }
@@ -141,4 +184,3 @@ class PlantillaReconexion
         return "⏳ *Por favor, aguarde unos momentos*\n\nSe acaba de registrar una interacción técnica reciente. Para evitar duplicidades en el sistema de cuadrillas, por favor espere *{$segundosRestantes} segundos* antes de volver a solicitar una reconexión.";
     }
 }
-

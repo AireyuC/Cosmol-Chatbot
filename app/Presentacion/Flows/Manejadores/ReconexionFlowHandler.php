@@ -20,16 +20,18 @@ class ReconexionFlowHandler extends BaseFlowHandler
 {
     /**
      * @var ReconexionService
-     * @var WhatsAppMediaService
      */
-    
     private $reconexionService;
+
+    /**
+     * @var WhatsAppMediaService|null
+     */
     private $mediaService;
 
     public function __construct(
         SessionService $sessionService,
         ReconexionService $reconexionService,
-        WhatsAppMediaService $mediaService,
+        ?WhatsAppMediaService $mediaService = null,
         ?ConsultaAuditService $auditService = null
     ) {
         parent::__construct($sessionService, $auditService);
@@ -66,12 +68,43 @@ class ReconexionFlowHandler extends BaseFlowHandler
         }
 
         switch ($estadoActual) {
+            case 'AWAITING_RECONEXION_TIPO_UBICACION':
+                $opcion = '';
+                if ($tipoMensaje === 'interactive') {
+                    $opcion = (string)$contenido;
+                } elseif ($tipoMensaje === 'text') {
+                    $txt = strtolower(trim((string)$contenido));
+                    if (strpos($txt, 'domicilio') !== false || strpos($txt, 'casa') !== false || $txt === '1') {
+                        $opcion = 'RECONEXION_UBICACION_DOMICILIO';
+                    } elseif (strpos($txt, 'gps') !== false || strpos($txt, 'ubic') !== false || $txt === '2') {
+                        $opcion = 'RECONEXION_UBICACION_GPS';
+                    }
+                }
+
+                if ($opcion === 'RECONEXION_UBICACION_DOMICILIO') {
+                    $contextData['tipo_ubicacion'] = 'DOMICILIO';
+                    $contextData['coordenadas_gps'] = 'DOMICILIO_REGISTRADO';
+
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_TYPE', 0, $contextData);
+                    return PlantillaReconexion::menuTipo();
+                }
+
+                if ($opcion === 'RECONEXION_UBICACION_GPS') {
+                    $contextData['tipo_ubicacion'] = 'GPS';
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GPS', 0, $contextData);
+                    return PlantillaReconexion::solicitarGps();
+                }
+
+                $dirActual = $contextData['direccion_registrada'] ?? '';
+                return PlantillaReconexion::preguntaTipoUbicacion($dirActual);
+
             case 'AWAITING_RECONEXION_GPS':
                 if ($tipoMensaje === 'location' && !empty($contenido)) {
                     $ubicacionJson = json_decode((string)$contenido, true);
                     $latitud = $ubicacionJson['latitude'] ?? '';
                     $longitud = $ubicacionJson['longitude'] ?? '';
 
+                    $contextData['tipo_ubicacion'] = 'GPS';
                     $contextData['coordenadas_gps'] = "{$latitud}, {$longitud}";
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_TYPE', 0, $contextData);
 
@@ -84,27 +117,24 @@ class ReconexionFlowHandler extends BaseFlowHandler
                     $idTipo = (int)str_replace('RECONEXION_TIPO_', '', (string)$contenido);
                     $contextData['id_tipo_reconexion'] = $idTipo;
 
-                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_PHOTO', 0, $contextData);
-                    return PlantillaReconexion::solicitarFoto();
+                    // Avanza directamente a la glosa de referencia (se omite la solicitud de foto al socio)
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
+                    return PlantillaReconexion::solicitarGlosa();
                 }
                 return PlantillaSocio::mensajeTextoSimple("❌ Opción inválida. Por favor, seleccione una opción de la lista enviada. 👇");
 
             case 'AWAITING_RECONEXION_PHOTO':
-                if ($tipoMensaje === 'image' && !empty($contenido)) {
-                    $fotoUrl = $this->mediaService->descargarYGuardar((string)$contenido, $codigoSocioStr, 'reconexiones');
-                    $contextData['foto_url'] = $fotoUrl;
-
-                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
-                    return PlantillaReconexion::solicitarGlosa();
-                }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, adjunte una imagen 📸.");
+                // En caso de sesiones previas en este estado, avanzamos directamente a la glosa
+                $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
+                return PlantillaReconexion::solicitarGlosa();
 
             case 'AWAITING_RECONEXION_GLOSA':
                 if ($tipoMensaje === 'text') {
                     $glosa = trim((string)$contenido);
                     $gps = $contextData['coordenadas_gps'] ?? '';
                     $tipoId = (int)($contextData['id_tipo_reconexion'] ?? 1);
-                    $fotoUrl = $contextData['foto_url'] ?? '';
+                    $tipoUbicacion = $contextData['tipo_ubicacion'] ?? 'DOMICILIO';
+                    $fotoUrl = ''; // La fotografía es tomada directamente por el técnico operador en su reporte
 
                     $resultado = $this->reconexionService->solicitarReconexion(
                         $codigoSocioStr,
@@ -118,9 +148,9 @@ class ReconexionFlowHandler extends BaseFlowHandler
                         $ticket = (string)($resultado['id_reconexion'] ?? '');
                         $mensaje = PlantillaReconexion::confirmacionExitosa($ticket);
 
-                        // Registrar auditoría de reconexión en COSMOL-Reportes con telefono
+                        // Registrar auditoría de reconexión en COSMOL-Reportes con telefono y tipo_ubicacion
                         if ($this->auditService !== null) {
-                            $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio, $telefono);
+                            $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio, $telefono, $tipoUbicacion);
                         }
                     } else {
                         $mensaje = "❌ Ocurrió un error al procesar su solicitud de reconexión. Por favor, intente más tarde.";

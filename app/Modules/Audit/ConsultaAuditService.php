@@ -107,9 +107,9 @@ class ConsultaAuditService
         $this->registrar($codigoSocio, $nombres, self::TIPO_REGISTRO_RECLAMO, 'Registro de Reclamo', $telefono, $tipoUbicacion);
     }
 
-    public function registrarReconexion(int $codigoSocio, string $nombres, ?string $telefono = null): void
+    public function registrarReconexion(int $codigoSocio, string $nombres, ?string $telefono = null, ?string $tipoUbicacion = null): void
     {
-        $this->registrar($codigoSocio, $nombres, self::TIPO_SOLICITUD_RECONEXION, 'Solicitud de Reconexión', $telefono);
+        $this->registrar($codigoSocio, $nombres, self::TIPO_SOLICITUD_RECONEXION, 'Solicitud de Reconexión', $telefono, $tipoUbicacion);
     }
 
     public function registrarConsultaOficinas(int $codigoSocio, string $nombres, ?string $telefono = null): void

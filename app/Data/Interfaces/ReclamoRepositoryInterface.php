@@ -4,9 +4,25 @@ declare(strict_types=1);
 
 namespace App\Data\Interfaces;
 
-interface ReclamoRepositoryInterface {
-    /** Crea un nuevo registro de reclamo. */
-    public function createReclamo(array $data): int;
+/**
+ * Contrato para el acceso a datos y registro de Reclamos.
+ */
+interface ReclamoRepositoryInterface
+{
+    /**
+     * Registra un reclamo en el sistema.
+     *
+     * @param string $codigoSocio
+     * @param array $payload Datos que incluyen GPS, foto, id_tipo_reclamo, descripcion y glosa
+     * @return array|null
+     */
+    public function registrarReclamo(string $codigoSocio, array $payload): ?array;
 
-    public function findByCodigoSocio(string $codigo): array;
+    /**
+     * Obtiene el historial o reclamos registrados por el socio.
+     *
+     * @param string $codigoSocio
+     * @return array|null
+     */
+    public function obtenerHistorialReclamos(string $codigoSocio): ?array;
 }

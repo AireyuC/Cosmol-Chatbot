@@ -11,4 +11,6 @@ interface SessionRepositoryInterface
     public function saveSession(string $telefonoWhatsapp, ?int $codigoSocio, string $estadoActual, int $intentosFallidos, ?string $contextData = null): bool;
 
     public function resetSession(string $telefonoWhatsapp): bool;
+
+    public function touchSession(string $telefonoWhatsapp): bool;
 }

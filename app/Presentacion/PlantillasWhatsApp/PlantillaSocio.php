@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentacion\PlantillasWhatsApp;
 
+use App\Core\FeatureFlags;
+
 class PlantillaSocio
 {
     public static function saludo(): array
@@ -28,7 +30,7 @@ class PlantillaSocio
 
         $rows = [];
         
-        if (!$ocultarPagar) {
+        if (!$ocultarPagar && FeatureFlags::isEnabled('deuda')) {
             $rows[] = [
                 'id' => 'MENU_PAGAR_' . $codSocio,
                 'title' => 'Consultar Deuda',
@@ -36,36 +38,55 @@ class PlantillaSocio
             ];
         }
 
-        $rows[] = [
-            'id' => 'MENU_RECONEXION',
-            'title' => 'Solicitar Reconexión',
-            'description' => 'Solicita reconexión de servicio'
-        ];
+        if (FeatureFlags::isEnabled('reconexion')) {
+            $rows[] = [
+                'id' => 'MENU_RECONEXION',
+                'title' => 'Solicitar Reconexión',
+                'description' => 'Solicita reconexión de servicio'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_HISTORIAL',
-            'title' => 'Historial',
-            'description' => 'Historial de pagos y consumos'
-        ];
+        if (FeatureFlags::isEnabled('historial')) {
+            $rows[] = [
+                'id' => 'MENU_HISTORIAL',
+                'title' => 'Historial',
+                'description' => 'Historial de pagos y consumos'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_RECLAMOS',
-            'title' => 'Reclamos',
-            'description' => 'Reporta emergencias y reclamos'
-        ];
+        if (FeatureFlags::isEnabled('reclamos')) {
+            $rows[] = [
+                'id' => 'MENU_RECLAMOS',
+                'title' => 'Reclamos',
+                'description' => 'Reporta emergencias y reclamos'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_OFICINAS',
-            'title' => 'Oficinas y horarios',
-            'description' => 'Información de atención'
-        ];
+        if (FeatureFlags::isEnabled('estado_tramites')) {
+            $rows[] = [
+                'id' => 'MENU_ESTADO_TRAMITES',
+                'title' => 'Estado de Solicitudes',
+                'description' => 'Reclamos y reconexiones'
+            ];
+        }
 
-        $rows[] = [
-            'id' => 'MENU_AGENTE',
-            'title' => 'Hablar con un asesor',
-            'description' => 'Soporte personalizado'
-        ];
+        if (FeatureFlags::isEnabled('oficinas')) {
+            $rows[] = [
+                'id' => 'MENU_OFICINAS',
+                'title' => 'Oficinas y horarios',
+                'description' => 'Información de atención'
+            ];
+        }
 
+        if (FeatureFlags::isEnabled('agente')) {
+            $rows[] = [
+                'id' => 'MENU_AGENTE',
+                'title' => 'Hablar con un asesor',
+                'description' => 'Soporte personalizado'
+            ];
+        }
+
+        // Opciones del sistema (siempre presentes para garantizar navegación y respetar límites de Meta)
         $rows[] = [
             'id' => 'MENU_CAMBIAR_CODIGO',
             'title' => 'Consultar otro Socio',
@@ -132,74 +153,106 @@ class PlantillaSocio
         ];
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::solicitarGps()
+     */
     public static function solicitarGpsReconexion(): array
     {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📍 *Solicitud de Reconexión*\n\nPor favor, adjunte su ubicación actual mediante la función de *Enviar Ubicación* de WhatsApp para que nuestros técnicos puedan llegar.\n(No escriba texto, use el icono de adjuntar 📎 o ➕)."
-            ]
-        ];
+        return PlantillaReconexion::solicitarGps();
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::menuTipo()
+     */
     public static function menuTipoReconexion(): array
     {
-        return [
-            'type' => 'interactive',
-            'interactive' => [
-                'type' => 'list',
-                'header' => [
-                    'type' => 'text',
-                    'text' => 'Tipo de Reconexión'
-                ],
-                'body' => [
-                    'text' => 'Ubicación recibida correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:'
-                ],
-                'footer' => [
-                    'text' => 'Paso 2 de 3'
-                ],
-                'action' => [
-                    'button' => 'Seleccionar Tipo',
-                    'sections' => [
-                        [
-                            'title' => 'Opciones',
-                            'rows' => [
-                                [
-                                    'id' => 'RECONEXION_TIPO_1',
-                                    'title' => 'Corte normal',
-                                    'description' => 'Sin retiro de medidor'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_2',
-                                    'title' => 'Con medidor',
-                                    'description' => 'Retiro de medidor'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_3',
-                                    'title' => 'Con material',
-                                    'description' => 'Falta de accesorios'
-                                ],
-                                [
-                                    'id' => 'RECONEXION_TIPO_4',
-                                    'title' => 'Otros',
-                                    'description' => 'Otro motivo'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ];
+        return PlantillaReconexion::menuTipo();
     }
 
+    /**
+     * @deprecated Utilizar PlantillaReconexion::solicitarGlosa()
+     */
     public static function solicitarGlosaReconexion(): array
     {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📝 *Último paso*\n\nPor favor escriba una breve observación o referencia para ayudar a los técnicos a encontrar el lugar (Ej: 'Casa de rejas negras' o 'Ninguna')."
-            ]
-        ];
+        return PlantillaReconexion::solicitarGlosa();
+    }
+
+    /**
+     * Muestra el resumen de estado de reclamos y solicitudes de reconexión del socio.
+     */
+    public static function estadoSolicitudes(string $codSocio, string $nombreSocio, array $reclamos, array $reconexiones): array
+    {
+        $nombre = trim($nombreSocio);
+        $headerNombre = !empty($nombre) ? " - {$nombre}" : "";
+        $texto = "📋 *Estado de Solicitudes y Reclamos*\n";
+        $texto .= "Socio: *{$codSocio}{$headerNombre}*\n\n";
+
+        // 1. Reclamos Técnicos
+        $texto .= "🔧 *Reclamos Técnicos:*\n";
+        if (!empty($reclamos)) {
+            $ultimosReclamos = array_slice($reclamos, -3);
+            $ultimosReclamos = array_reverse($ultimosReclamos);
+            foreach ($ultimosReclamos as $rec) {
+                $id = $rec['id_reclamo'] ?? '?';
+                $desc = trim((string)($rec['descripcion'] ?? 'Reclamo'));
+                $estado = strtoupper(trim((string)($rec['estado'] ?? 'PENDIENTE')));
+                $emojiEstado = '🟡';
+                if (in_array($estado, ['CONCLUIDO', 'ATENDIDO', 'FINALIZADO'])) {
+                    $emojiEstado = '🟢';
+                } elseif (in_array($estado, ['EN PROCESO', 'ASIGNADO'])) {
+                    $emojiEstado = '🔵';
+                } elseif (in_array($estado, ['CANCELADO', 'RECHAZADO'])) {
+                    $emojiEstado = '🔴';
+                }
+
+                $rawFecha = $rec['fecha_registro'] ?? ($rec['fecha_creacion'] ?? '');
+                $fechaFormateada = self::formatearFechaLocal($rawFecha);
+                $fechaStr = !empty($fechaFormateada) ? " ({$fechaFormateada})" : '';
+
+                $texto .= "• Ticket *#{$id}*: {$desc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
+            }
+        } else {
+            $texto .= "• No tienes reclamos registrados.\n";
+        }
+
+        // 2. Solicitudes de Reconexión
+        $texto .= "\n⚡ *Solicitudes de Reconexión:*\n";
+        if (!empty($reconexiones)) {
+            $mapaTipos = [
+                1 => 'Corte normal',
+                2 => 'Con medidor',
+                3 => 'Con material',
+                4 => 'Otros'
+            ];
+            $ultimasReconexiones = array_slice($reconexiones, -3);
+            $ultimasReconexiones = array_reverse($ultimasReconexiones);
+            foreach ($ultimasReconexiones as $recx) {
+                $id = $recx['id_reconexion'] ?? '?';
+                $idTipo = (int)($recx['id_tipo_reconexion'] ?? 1);
+                $tipoDesc = $mapaTipos[$idTipo] ?? 'Reconexión';
+                $estado = strtoupper(trim((string)($recx['estado'] ?? 'PENDIENTE')));
+                $emojiEstado = '🟡';
+                if (in_array($estado, ['CONCLUIDO', 'ATENDIDO', 'RECONECTADO', 'FINALIZADO'])) {
+                    $emojiEstado = '🟢';
+                } elseif (in_array($estado, ['EN PROCESO', 'ASIGNADO'])) {
+                    $emojiEstado = '🔵';
+                } elseif (in_array($estado, ['CANCELADO', 'RECHAZADO'])) {
+                    $emojiEstado = '🔴';
+                }
+
+                $rawFecha = $recx['fecha_registro'] ?? ($recx['fecha_creacion'] ?? '');
+                $fechaFormateada = self::formatearFechaLocal($rawFecha);
+                $fechaStr = !empty($fechaFormateada) ? " ({$fechaFormateada})" : '';
+
+                $texto .= "• Ticket *#{$id}*: {$tipoDesc}\n  Estado: {$emojiEstado} *{$estado}*{$fechaStr}\n";
+            }
+        } else {
+            $texto .= "• No tienes solicitudes de reconexión registradas.\n";
+        }
+
+        $texto .= "\n¿Necesitas realizar otra consulta? Por favor, usa el menú 👇";
+
+        return self::menuPrincipal($codSocio, $nombreSocio, false, $texto);
     }
 
     public static function mensajeTextoSimple(string $mensaje): array
@@ -211,4 +264,30 @@ class PlantillaSocio
             ]
         ];
     }
+
+    /**
+     * Convierte y formatea una marca de tiempo (habitualmente en UTC o devuelta por la API/BD)
+     * a la hora local oficial de Bolivia (America/La_Paz, UTC-4).
+     *
+     * @param string|null $fechaStr
+     * @param string $formato
+     * @return string
+     */
+    public static function formatearFechaLocal(?string $fechaStr, string $formato = 'd/m/Y H:i'): string
+    {
+        if (empty($fechaStr)) {
+            return '';
+        }
+
+        try {
+            // Si la cadena no especifica timezone (ej. "2026-09-10 23:14:59"), asume UTC como origen.
+            // Si ya contiene offset explícito (Z, +00:00, -04:00), DateTime respetará automáticamente la zona indicada.
+            $dt = new \DateTime($fechaStr, new \DateTimeZone('UTC'));
+            $dt->setTimezone(new \DateTimeZone('America/La_Paz'));
+            return $dt->format($formato);
+        } catch (\Exception $e) {
+            return $fechaStr;
+        }
+    }
 }
+

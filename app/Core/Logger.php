@@ -45,6 +45,18 @@ class Logger
     }
 
     /**
+     * Registra una advertencia con su contexto.
+     *
+     * @param string $message Mensaje de advertencia
+     * @param array $context Datos adicionales de contexto
+     * @return void
+     */
+    public static function warning(string $message, array $context = []): void
+    {
+        self::write('WARNING', $message, $context);
+    }
+
+    /**
      * Escribe la entrada formateada como JSON en el archivo de log.
      *
      * @param string $level Nivel del log ('ERROR', 'INFO')

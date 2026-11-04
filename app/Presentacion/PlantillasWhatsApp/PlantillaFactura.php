@@ -18,7 +18,7 @@ class PlantillaFactura
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n💳 *Link de pago seguro:*\nhttps://multipago.com/service/cosmol_payment/first\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
+            $mensajeTexto .= "\n\n💳 *Canales de pago seguro disponibles:*\n• *Multipago:*\nhttps://multipago.com/service/cosmol_payment/first\n• *Pago al Paso:*\nhttps://red.pagoalpaso247.net/servicio/cosmol\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         } else {
             $mensajeTexto = "El Código Fijo ($codSocio) no tiene deudas pendientes en este momento.\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
         }
@@ -32,8 +32,10 @@ class PlantillaFactura
             $contador = 1;
             foreach ($facturas as $f) {
                 $montoF = number_format($f['monto'], 2, ',', '.');
-                $timestamp = strtotime($f['fecha']);
-                $fechaF = $timestamp !== false ? date('d/m/Y', $timestamp) : $f['fecha'];
+                $fechaF = PlantillaSocio::formatearFechaLocal((string)($f['fecha'] ?? ''), 'd/m/Y');
+                if (empty($fechaF)) {
+                    $fechaF = (string)($f['fecha'] ?? '');
+                }
                 $mensajeTexto .= "$contador. Periodo: {$f['periodo']} - Monto: $montoF Bs. (Pagado el $fechaF)\n";
                 $contador++;
             }

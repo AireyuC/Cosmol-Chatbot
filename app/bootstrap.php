@@ -6,6 +6,8 @@ require_once __DIR__ . '/Core/Autoloader.php';
 
 require_once __DIR__ . '/Config/database.php';
 
+date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/La_Paz');
+
 if (defined('APP_ENV') && APP_ENV === 'development') {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -27,10 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-use App\Core\Auth;
-Auth::validateInternalToken();
-
-// Solo las peticiones autenticadas incrementan el rate limiter.
-use App\Core\RateLimiter;
-RateLimiter::check();
+if (php_sapi_name() !== 'cli') {
+    \App\Core\Auth::validateInternalToken();
+    \App\Core\RateLimiter::check();
+}
 

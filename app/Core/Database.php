@@ -32,8 +32,10 @@ class Database{
                 $password = defined('DB_PASSWORD') ? DB_PASSWORD : '';
                 $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8';
 
+                $timezone = defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/La_Paz';
+
                 if ($driver === 'pgsql' || $driver === 'postgres') {
-                    $dsn = "pgsql:host={$host};port={$port};dbname={$dbName};options='--client_encoding=UTF8'";
+                    $dsn = "pgsql:host={$host};port={$port};dbname={$dbName};options='--client_encoding=UTF8 --timezone={$timezone}'";
                 } elseif ($driver === 'informix') {
                     // DSN Básico para Informix (después podrás agregar server, protocol, etc.)
                     $dsn = "informix:host={$host};service={$port};database={$dbName};";

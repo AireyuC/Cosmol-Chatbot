@@ -153,7 +153,7 @@ class ReconexionFlowHandler extends BaseFlowHandler
                             $this->auditService->registrarReconexion((int)$codigoSocio, $nombreSocio, $telefono, $tipoUbicacion);
                         }
                     } else {
-                        $mensaje = "❌ Ocurrió un error al procesar su solicitud de reconexión. Por favor, intente más tarde.";
+                        $mensaje = PlantillaReconexion::errorProcesamiento();
                     }
 
                     // Regresar a MAIN_MENU preservando nombre_socio en context_data

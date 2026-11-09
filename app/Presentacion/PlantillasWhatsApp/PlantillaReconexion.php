@@ -157,7 +157,7 @@ class PlantillaReconexion
      */
     public static function reconexionPendiente(): string
     {
-        return "⏳ *Solicitud en curso*\n\nEstimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.";
+        return "⏳ *Solicitud en curso*\n\nEstimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.\n\n🏢 Si necesitas consultar el estado urgente de tu caso, puedes hablar con un asesor desde el menú o *visitar la Oficina de Reconexiones en nuestras oficinas centrales* (Calle Isaías Parada).";
     }
 
     /**
@@ -165,7 +165,15 @@ class PlantillaReconexion
      */
     public static function deudaExcedida(int $cantidadDeudas): string
     {
-        return "⚠️ *Regularización de cuenta requerida*\n\nEstimado asociado, registramos *{$cantidadDeudas} facturas pendientes* en tu cuenta. Para procesar una orden de reconexión, es necesario tener como máximo 1 factura pendiente.\n\nPor favor, realiza tu pago mediante la opción *Consultar Deuda* del menú principal para que podamos programar tu reconexión a la brevedad. ¡Estamos para servirte! 🤝";
+        return "⚠️ *Regularización de cuenta requerida*\n\nEstimado asociado, registramos *{$cantidadDeudas} facturas pendientes* en tu cuenta. Para procesar una orden de reconexión, es necesario tener como máximo 1 factura pendiente.\n\n💳 Puedes realizar el pago de tus facturas mediante la opción *Consultar Deuda* del menú principal.\n\n🏢 Si quieres una atencion especial, te invitamos a visitar la Oficina de Reconexiones / Comercial en COSMOL R.L. (Calle Isaías Parada). ¡Con gusto te atenderemos! 🤝";
+    }
+
+    /**
+     * Mensaje de error cuando ocurre un inconveniente técnico al procesar el trámite.
+     */
+    public static function errorProcesamiento(): string
+    {
+        return "❌ *Inconveniente al procesar tu solicitud*\n\nLo sentimos, ocurrió un inconveniente al procesar tu solicitud de reconexión de forma automática por este canal.\n\n🏢 Por favor, te invitamos a *visitar la Oficina de Reconexiones en COSMOL R.L.* (Calle Isaías Parada, entre Santa Cruz y Ballivián) para que nuestro personal de atención al cliente registre tu trámite de forma manual e inmediata.\n\n🕒 *Horarios de Atención:*\nLun a Vie: 08:00 - 12:00 | 14:00 - 18:00";
     }
 
     /**

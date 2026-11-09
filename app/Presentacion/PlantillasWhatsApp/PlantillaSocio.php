@@ -13,7 +13,7 @@ class PlantillaSocio
         return [
             'type' => 'text',
             'text' => [
-                'body' => "Bienvenido a COSMOL R.L.\nGracias por comunicarse con nosotros.\nDigite su Código de asociado:"
+                'body' => "👋 ¡Hola! Te damos la bienvenida a *COSMOL R.L.* 💧\n_Tu cooperativa de agua potable y alcantarillado._\n\nPor favor, escribe tu *Código Fijo de Asociado* (ej: 10245) para comenzar a ayudarte:"
             ]
         ];
     }
@@ -23,9 +23,10 @@ class PlantillaSocio
         if ($mensajePersonalizado !== null) {
             $mensaje = $mensajePersonalizado;
         } elseif ($esError) {
-            $mensaje = "Opción inválida. Por favor usa los botones del menú 👇";
+            $mensaje = "🤖 Opción no válida. Por favor, utiliza los botones o el menú interactivo 👇";
         } else {
-            $mensaje = "Su Código Fijo $codSocio ($nombreSocio) ha sido validado.\n\n¿En qué puedo ayudarle? Por favor, haga clic en Mostrar Menú.";
+            $saludoPersonalizado = !empty(trim($nombreSocio)) ? "¡Qué gusto saludarte, *" . trim($nombreSocio) . "*! 👋\n" : "¡Qué gusto saludarte! 👋\n";
+            $mensaje = "{$saludoPersonalizado}📌 Código Fijo: *{$codSocio}*\n\n¿En qué podemos colaborar el día de hoy? Toca el botón *Mostrar Menú* 👇 para elegir una opción:";
         }
 
         $rows = [];
@@ -129,7 +130,7 @@ class PlantillaSocio
     public static function redireccionAgente(): array
     {
         $numeroAgente = "59161555507";
-        $mensaje = "Para contactarte con nuestro equipo de Atención al Cliente, registrar un reclamo o solicitar un servicio, por favor haz clic en el siguiente enlace:\n\nhttps://wa.me/" . $numeroAgente . "\n\nSerás atendido por un agente de COSMOL a la brevedad posible.";
+        $mensaje = "🤝 *Atención Personalizada COSMOL*\n\nNuestro equipo de Atención al Cliente está listo para ayudarte personalmente. Toca el siguiente enlace para iniciar un chat directo con un asesor:\n\n👉 https://wa.me/" . $numeroAgente . "\n\n_Te responderemos a la brevedad posible._";
 
         return [
             'type' => 'interactive',

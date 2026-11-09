@@ -14,7 +14,7 @@ class PlantillaReclamo
      */
     public static function menuReclamos(?string $mensajePersonalizado = null): array
     {
-        $mensaje = $mensajePersonalizado ?? 'Por favor, selecciona el tipo de reclamo o emergencia que deseas reportar:';
+        $mensaje = $mensajePersonalizado ?? "🛠️ *Atención de Reclamos y Emergencias*\n\nPor favor, selecciona en la lista de opciones 👇 el tipo de situación que deseas reportar:";
         $rows = [
             [
                 'id' => 'RECLAMO_AGUA_TURBIA',
@@ -78,7 +78,7 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) y selecciona *Ubicación*.",
+                'body' => "📍 *Ubicación del problema*\n\nPara enviar a la cuadrilla técnica al punto exacto, por favor comparte tu ubicación tocando el ícono de **Adjuntar** (📎 o ➕) y seleccionando **Ubicación**.",
                 'preview_url' => false
             ]
         ];
@@ -92,7 +92,7 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📸 Excelente. Ahora, por favor envía una *fotografía* clara del problema o daño.",
+                'body' => "📸 *Fotografía de evidencia*\n\n¡Muy bien! Ahora envíanos una **fotografía clara** del daño o fuga para que el equipo técnico acuda con las herramientas y repuestos adecuados.",
                 'preview_url' => false
             ]
         ];
@@ -106,7 +106,7 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "✍️ Por último, escribe un mensaje de texto con una breve descripción del problema o detalles adicionales \n\n (ej. 'El agua sale color café' o 'La fuga está en la acera').",
+                'body' => "✍️ *Detalle o referencia del lugar*\n\nPor último, escribe un breve mensaje contándonos qué sucede o danos una referencia (ej: _'Fuga sobre la acera frente al portón blanco'_).",
                 'preview_url' => false
             ]
         ];
@@ -202,7 +202,7 @@ class PlantillaReclamo
      */
     public static function confirmacionExitosa(string $ticket): string
     {
-        return "✅ *Reclamo registrado exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
+        return "✅ *¡Tu reporte ha sido registrado con éxito!*\n🎫 Ticket de seguimiento: *#{$ticket}*\n\nNuestras cuadrillas técnicas ya lo tienen en agenda para su atención oportuna. ¡Muchas gracias por ayudarnos a cuidar el agua en Montero! 💧";
     }
 }
 

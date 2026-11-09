@@ -139,7 +139,7 @@ class PlantillaReconexion
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📝 *Último paso (3 de 3)*\n\nPor favor escriba una breve observación o referencia para ayudar a los técnicos a encontrar el lugar (Ej: 'Casa de rejas negras' o 'Ninguna')."
+                'body' => "📝 *Paso final (3 de 3) — Referencia*\n\nPor favor, escribe una breve indicación o punto de referencia para ayudar al equipo técnico a ubicar rápidamente tu medidor (ej: _'Casa con rejas negras frente a la plaza'_ o escribe _'Ninguna'_)."
             ]
         ];
     }
@@ -149,7 +149,7 @@ class PlantillaReconexion
      */
     public static function confirmacionExitosa(string $ticket): string
     {
-        return "✅ *Solicitud de Reconexión registrada exitosamente.*\nSu número de ticket es: *#{$ticket}*.\n\nNuestros técnicos se pondrán en contacto pronto.";
+        return "✅ *¡Solicitud de reconexión programada!*\n🎫 Ticket de trámite: *#{$ticket}*\n\nLa cuadrilla técnica ha recibido tu solicitud para realizar la reconexión de tu servicio de agua potable. ¡Estaremos atendiéndote a la brevedad posible! 💧";
     }
 
     /**
@@ -157,7 +157,7 @@ class PlantillaReconexion
      */
     public static function reconexionPendiente(): string
     {
-        return "❌ Actualmente ya tiene una solicitud de reconexión *PENDIENTE*.\nNuestros técnicos atenderán su solicitud pronto. Por favor, espere.";
+        return "⏳ *Solicitud en curso*\n\nEstimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.";
     }
 
     /**
@@ -165,7 +165,7 @@ class PlantillaReconexion
      */
     public static function deudaExcedida(int $cantidadDeudas): string
     {
-        return "❌ Lo sentimos, no puede solicitar una reconexión porque tiene {$cantidadDeudas} factura(s) pendiente(s).\nPara solicitar reconexión debe contar como máximo con 1 factura pendiente. Por favor, regularice sus pagos antes de realizar esta solicitud.\nPuede efectuar el pago de sus facturas en *Consultar Deuda* desde el menú principal.";
+        return "⚠️ *Regularización de cuenta requerida*\n\nEstimado asociado, registramos *{$cantidadDeudas} facturas pendientes* en tu cuenta. Para procesar una orden de reconexión, es necesario tener como máximo 1 factura pendiente.\n\nPor favor, realiza tu pago mediante la opción *Consultar Deuda* del menú principal para que podamos programar tu reconexión a la brevedad. ¡Estamos para servirte! 🤝";
     }
 
     /**

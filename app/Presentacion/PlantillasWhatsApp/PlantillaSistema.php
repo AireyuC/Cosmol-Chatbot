@@ -12,7 +12,7 @@ class PlantillaSistema
         return [
             'type' => 'text',
             'text' => [
-                'body' => 'No se encontró un asociado con el código proporcionado. Por favor, verifica el código e inténtalo de nuevo.'
+                'body' => "🔍 No logramos encontrar una cuenta con ese número.\n\nPor favor, revisa tu factura o aviso de cobranza e ingresa nuevamente tu *Código Fijo* (solo números, ej: 10245)."
             ]
         ];
     }
@@ -22,7 +22,7 @@ class PlantillaSistema
         return [
             'type' => 'text',
             'text' => [
-                'body' => 'Has excedido el número máximo de intentos. Tu cuenta está temporalmente bloqueada por 5 minutos. Por favor, intenta más tarde.'
+                'body' => "🔒 *Protección de seguridad temporal*\n\nPor seguridad de nuestros asociados, la atención se ha pausado por *5 minutos* tras varios intentos seguidos.\n\nTe pedimos aguardar este breve momento para volver a intentar. ¡Gracias por tu comprensión! 🤝"
             ]
         ];
     }
@@ -32,7 +32,7 @@ class PlantillaSistema
         return [
             'type' => 'text',
             'text' => [
-                'body' => 'Tu bloqueo ha expirado. Por favor, envía tu código de socio.'
+                'body' => "✅ *¡Ya puedes ingresar de nuevo!*\n\nEl tiempo de espera ha finalizado. Por favor, escribe tu *Código Fijo* para iniciar tu consulta."
             ]
         ];
     }
@@ -42,7 +42,7 @@ class PlantillaSistema
         return [
             'type' => 'text',
             'text' => [
-                'body' => 'Sesión expirada por inactividad. Por favor, envía tu código de socio.'
+                'body' => "⏱️ *Sesión cerrada por inactividad*\n\nPor tu seguridad, cerramos la sesión tras unos minutos sin interacción.\n\nSi deseas realizar otra consulta o trámite, solo escribe nuevamente tu *Código Fijo* y con gusto te atenderemos."
             ]
         ];
     }
@@ -52,7 +52,7 @@ class PlantillaSistema
         return [
             'type' => 'text',
             'text' => [
-                'body' => 'Opción inválida. Por favor usa los botones del menú.'
+                'body' => "🤖 No logré comprender esa opción.\n\nPor favor, utiliza los botones o el menú interactivo que aparece en pantalla 👇"
             ]
         ];
     }

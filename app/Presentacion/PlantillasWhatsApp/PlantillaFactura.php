@@ -10,17 +10,24 @@ class PlantillaFactura
     {
         if ($cantidadFacturas > 0) {
             $totalFormateado = number_format($totalRedondeado, 2, ',', '.');
-            $mensajeTexto = "El Código Fijo ($codSocio) tiene $cantidadFacturas facturas impagas, cuyo monto total es $totalFormateado Bs.\nEl detalle es el siguiente:\n\n";
+            $mensajeTexto = "🧾 *Estado de Cuenta - Facturas Pendientes*\n" .
+                            "📌 Código Fijo: *{$codSocio}*\n" .
+                            "⚠️ Facturas por regularizar: *{$cantidadFacturas}*\n" .
+                            "💰 Total a pagar: *{$totalFormateado} Bs.*\n\n" .
+                            "📋 *Detalle de periodos:*\n";
             $contador = 1;
             foreach ($listaDeudas as $d) {
                 $montoF = number_format($d['monto'], 2, ',', '.');
-                $mensajeTexto .= "$contador. {$d['periodo']}, $montoF Bs. (Pendiente)\n";
+                $mensajeTexto .= "{$contador}. Periodo: {$d['periodo']} — *{$montoF} Bs.* (Pendiente)\n";
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n💳 *Canales de pago seguro disponibles:*\n• *Multipago:*\nhttps://multipago.com/service/cosmol_payment/first\n• *Pago al Paso:*\nhttps://red.pagoalpaso247.net/servicio/cosmol\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
+            $mensajeTexto .= "\n\n💳 *Paga fácil y seguro desde tu celular aquí:*\n" .
+                             "• *Multipago:*\nhttps://multipago.com/service/cosmol_payment/first\n" .
+                             "• *Pago al Paso:*\nhttps://red.pagoalpaso247.net/servicio/cosmol\n\n" .
+                             "¿Deseas realizar otra consulta? Toca el menú 👇";
         } else {
-            $mensajeTexto = "El Código Fijo ($codSocio) no tiene deudas pendientes en este momento.\n\n¿Necesitas algún otro servicio? Por favor, usa el menú 👇";
+            $mensajeTexto = "🎉 *¡Excelentes noticias!* Tu cuenta (*{$codSocio}*) se encuentra *al día* y no registra facturas pendientes de pago. 💧\n\n¡Muchas gracias por tu puntualidad! 🤝\n\n¿En qué más podemos ayudarte? Toca el menú 👇";
         }
         return PlantillaSocio::menuPrincipal($codSocio, '', false, $mensajeTexto, true);
     }
@@ -28,7 +35,8 @@ class PlantillaFactura
     public static function historialFacturas(string $codSocio, array $facturas, int $cantidad): array
     {
         if ($cantidad > 0) {
-            $mensajeTexto = "🧾 *Historial de Facturas (Últimos meses)*\n\n";
+            $mensajeTexto = "🧾 *Historial de Facturas (Últimos periodos)*\n" .
+                            "📌 Código Fijo: *{$codSocio}*\n\n";
             $contador = 1;
             foreach ($facturas as $f) {
                 $montoF = number_format($f['monto'], 2, ',', '.');
@@ -36,13 +44,13 @@ class PlantillaFactura
                 if (empty($fechaF)) {
                     $fechaF = (string)($f['fecha'] ?? '');
                 }
-                $mensajeTexto .= "$contador. Periodo: {$f['periodo']} - Monto: $montoF Bs. (Pagado el $fechaF)\n";
+                $mensajeTexto .= "{$contador}. Periodo: *{$f['periodo']}* — {$montoF} Bs. (Pagado el {$fechaF}) ✅\n";
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n¿Necesitas consultar algo más? Por favor, usa el menú 👇";
+            $mensajeTexto .= "\n\n¿Deseas realizar alguna otra consulta? Toca el menú 👇";
         } else {
-            $mensajeTexto = "El Código Fijo ($codSocio) no tiene un historial de facturas pagadas disponible en este momento.\n\n¿Necesitas consultar algo más? Por favor, usa el menú 👇";
+            $mensajeTexto = "📋 *Historial de Facturación*\n\nEl Código Fijo (*{$codSocio}*) no registra pagos recientes en este momento.\n\n¿Necesitas consultar algo más? Toca el menú 👇";
         }
 
         return PlantillaSocio::menuPrincipal($codSocio, '', false, $mensajeTexto, false);

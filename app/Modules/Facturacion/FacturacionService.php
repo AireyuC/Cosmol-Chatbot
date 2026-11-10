@@ -175,10 +175,14 @@ class FacturacionService
                 // Construcción limpia del periodo (ej. 8/2026)
                 if (isset($factura['periodo']) && !empty($factura['periodo'])) {
                     $periodo = (string)$factura['periodo'];
+                    if (preg_match('/^0?([1-9]|1[0-2])[\/-](\d{4})$/', $periodo, $matches)) {
+                        $periodo = ((int)$matches[1]) . '/' . $matches[2];
+                    }
                 } else {
                     $mes = (string)($factura['MES'] ?? ($factura['NMES'] ?? ''));
                     $anio = (string)($factura['ANIO'] ?? '');
-                    $periodo = (!empty($mes) && !empty($anio)) ? "{$mes}/{$anio}" : ($mes ?: $anio);
+                    $mesInt = is_numeric($mes) ? (string)(int)$mes : $mes;
+                    $periodo = (!empty($mesInt) && !empty($anio)) ? "{$mesInt}/{$anio}" : ($mesInt ?: $anio);
                 }
 
                 $monto = isset($factura['MONTO']) ? (float)$factura['MONTO'] : (float)($factura['monto'] ?? 0.0);

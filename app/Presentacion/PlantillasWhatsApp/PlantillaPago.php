@@ -29,8 +29,11 @@ class PlantillaPago
                     "📌 Código Fijo: *{$codSocio}*\n" .
                     "⚠️ Facturas pendientes: *{$cantidad}*\n" .
                     "💰 Deuda total: *{$totalFormateado} Bs.*\n\n" .
-                    "📌 *Regla de pago:* Por normativa institucional, los pagos deben cubrirse cronológicamente desde la factura más antigua.\n\n" .
-                    "Toca el botón abajo para elegir cuántos periodos deseas cancelar 👇";
+                    "📲 *Canales de pago disponibles:*\n" .
+                    "1. *Directo en WhatsApp (QR Simple):* Toca el botón abajo para elegir cuántos periodos pagar (se aplican cronológicamente desde el más antiguo).\n" .
+                    "2. *Enlace Web (Multipago):* Si prefieres pagar con tarjeta o banca externa en línea, ingresa aquí:\n" .
+                    "👉 https://multipago.com/service/cosmol_payment/first\n\n" .
+                    "Toca el botón abajo para elegir tus periodos a cancelar 👇";
 
         $rows = [];
         $montoAcumulado = 0.0;
@@ -61,12 +64,12 @@ class PlantillaPago
             ];
         }
 
-        // Fila de retorno
+        // Fila de retorno / cancelación
         $rowsNavegacion = [
             [
                 'id' => 'MENU_PRINCIPAL_VOLVER',
-                'title' => 'Volver al Menú',
-                'description' => 'Cancelar y regresar al inicio'
+                'title' => '❌ Cancelar y Volver',
+                'description' => 'Terminar la acción y regresar al menú'
             ]
         ];
 
@@ -129,7 +132,10 @@ class PlantillaPago
                     "1. Realiza una captura de pantalla a este código QR.\n" .
                     "2. Abre tu app bancaria móvil (BCP, BNB, Fie, Ganadero, etc.).\n" .
                     "3. Selecciona la opción *Pago Simple / QR* y escanea la captura.\n\n" .
-                    "_Al ser un módulo Alpha de prueba, puedes presionar el botón abajo para simular la confirmación del pago:_";
+                    "🌐 *Alternativa Web (Multipago):*\n" .
+                    "También puedes pagar este monto en línea en:\n" .
+                    "👉 https://multipago.com/service/cosmol_payment/first\n\n" .
+                    "_Al ser un módulo Alpha de prueba, presiona el botón abajo para simular la confirmación del pago:_";
 
         return [
             'type' => 'interactive',
@@ -160,7 +166,7 @@ class PlantillaPago
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'MENU_PRINCIPAL_VOLVER',
-                                'title' => '🏠 Menú Principal'
+                                'title' => '❌ Cancelar y Volver'
                             ]
                         ]
                     ]

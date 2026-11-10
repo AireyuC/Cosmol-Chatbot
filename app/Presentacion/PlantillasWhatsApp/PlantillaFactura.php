@@ -19,19 +19,38 @@ class PlantillaFactura
                             "📋 *Detalle de periodos:*\n";
             $contador = 1;
             foreach ($listaDeudas as $d) {
-                $montoF = number_format($d['monto'], 2, ',', '.');
+                $montoF = number_format((float)($d['monto'] ?? 0.0), 2, ',', '.');
                 $mensajeTexto .= "{$contador}. Periodo: {$d['periodo']} — *{$montoF} Bs.* (Pendiente)\n";
                 $contador++;
             }
             $mensajeTexto = trim($mensajeTexto);
-            $mensajeTexto .= "\n\n💳 *Paga fácil y seguro desde tu celular aquí:*\n" .
-                             "• *Multipago:*\nhttps://multipago.com/service/cosmol_payment/first\n" .
-                             "• *Pago al Paso:*\nhttps://red.pagoalpaso247.net/servicio/cosmol\n\n" .
-                             "¿Deseas realizar otra consulta? Toca el menú 👇";
+            $mensajeTexto .= "\n\n💳 *Paga en línea a través de la plataforma oficial:*\n" .
+                             "👉 https://multipago.com/service/cosmol_payment/first\n\n" .
+                             "_Puedes realizar el pago seguro con tarjeta de débito/crédito o transferencia bancaria._";
         } else {
-            $mensajeTexto = "🎉 *¡Excelentes noticias!* Tu cuenta (*{$codSocio}*) se encuentra *al día* y no registra facturas pendientes de pago. 💧\n\n¡Muchas gracias por tu puntualidad! 🤝\n\n¿En qué más podemos ayudarte? Toca el menú 👇";
+            $mensajeTexto = "🎉 *¡Excelentes noticias!* Tu cuenta (*{$codSocio}*) se encuentra *al día* y no registra facturas pendientes de pago. 💧\n\n¡Muchas gracias por tu puntualidad! 🤝";
         }
-        return PlantillaSocio::menuPrincipal($codSocio, '', false, $mensajeTexto, true);
+
+        return [
+            'type' => 'interactive',
+            'interactive' => [
+                'type' => 'button',
+                'body' => [
+                    'text' => $mensajeTexto
+                ],
+                'action' => [
+                    'buttons' => [
+                        [
+                            'type' => 'reply',
+                            'reply' => [
+                                'id' => 'MENU_PRINCIPAL_VOLVER',
+                                'title' => '🏠 Menú Principal'
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
     }
 
     /**

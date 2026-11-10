@@ -16,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: cosmol_php_backend
+    container_name: cosmol_backend
     networks:
       - cosmol_network
     environment:

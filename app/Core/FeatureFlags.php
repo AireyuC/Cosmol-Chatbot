@@ -24,7 +24,17 @@ class FeatureFlags
         'estado_solicitudes' => 'FEATURE_ESTADO_TRAMITES',
         'oficinas'         => 'FEATURE_OFICINAS',
         'agente'           => 'FEATURE_AGENTE',
+        'pago_qr'          => 'FEATURE_PAGO_QR',
     ];
+
+    /**
+     * Evalúa si el módulo interactivo de Pago por QR y selección de facturas está habilitado.
+     * Por defecto es true. Si se define en false, el sistema utiliza el flujo clásico por enlace externo.
+     */
+    public static function isPagoQrEnabled(): bool
+    {
+        return self::getEnvBool('FEATURE_PAGO_QR', true);
+    }
 
     /**
      * Evalúa si la sincronización y pusheo de datos a COSMOL-Reportes está habilitada.

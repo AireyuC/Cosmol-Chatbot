@@ -77,6 +77,16 @@ class MenuFlowHandler
             return $this->pagarAction->execute($accion, $codigoSocioStr, $nombreSocio, $telefono);
         }
 
+        // 1.1 Selección interactiva de facturas a pagar
+        if (strpos($accion, 'PAGO_SELEC_') === 0) {
+            return $this->pagarAction->handleSeleccion($accion, $codigoSocioStr, $nombreSocio);
+        }
+
+        // 1.2 Confirmación simulada de pago exitoso (Alpha Mock)
+        if (strpos($accion, 'PAGO_CONFIRMAR_') === 0) {
+            return $this->pagarAction->handleConfirmacion($accion, $codigoSocioStr, $nombreSocio);
+        }
+
         // 2. Historial de facturas pagadas
         if ($accion === 'MENU_HISTORIAL') {
             return $this->historialAction->execute($codigoSocio, $codigoSocioStr, $nombreSocio, $telefono);

@@ -57,7 +57,8 @@ class HistorialAction
             return PlantillaFactura::historialFacturas(
                 $codigoSocioStr,
                 $historialResult['facturas'],
-                $historialResult['cantidad']
+                $historialResult['cantidad'],
+                (int)($historialResult['total_impagas'] ?? 0)
             );
         }
 

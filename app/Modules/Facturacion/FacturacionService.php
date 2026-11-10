@@ -123,7 +123,11 @@ class FacturacionService
     }
 
     /**
-     * Obtiene y estandariza el historial de facturas pagadas.
+     * Obtiene y estandariza el historial de facturas (hasta 12 periodos).
+     * Incluye facturas pagadas, impagas y vencidas según la regla de negocio:
+     * - Las 2 primeras facturas impagas se etiquetan como "Impaga".
+     * - A partir de la 3ª factura impaga, se etiquetan como "Vencida".
+     * - Las facturas canceladas se etiquetan como "Pagada".
      *
      * @param string $cod_socio El código fijo.
      * @return array Arreglo estandarizado con el resultado.
@@ -143,21 +147,47 @@ class FacturacionService
 
         if ($historial !== null) {
             // Si la API devuelve un solo registro, viene como array asociativo. Lo envolvemos en una lista.
-            if (isset($historial['MES']) || isset($historial['MONTO'])) {
+            if (isset($historial['MES']) || isset($historial['MONTO']) || isset($historial['periodo'])) {
                 $historial = [$historial];
             }
 
             $lista = [];
+            $contadorImpagas = 0;
+
             foreach ($historial as $factura) {
-                // Filtrar facturas impagas (ESTADO = 0 o FECHA es nula)
-                if ((isset($factura['ESTADO']) && (string)$factura['ESTADO'] === '0') || empty($factura['FECHA'])) {
-                    continue;
+                // Determinar si está pagada o impaga
+                $esPagada = false;
+                $estadoRaw = isset($factura['ESTADO']) ? (string)$factura['ESTADO'] : (isset($factura['estado']) ? (string)$factura['estado'] : '');
+                $fechaPago = $factura['FECHA'] ?? ($factura['fecha'] ?? null);
+
+                if (($estadoRaw === '1' || strtolower($estadoRaw) === 'pagada') || (!empty($fechaPago) && $estadoRaw !== '0')) {
+                    $esPagada = true;
                 }
 
+                if ($esPagada) {
+                    $estadoLabel = 'Pagada';
+                } else {
+                    $contadorImpagas++;
+                    // Regla de negocio: las dos primeras impagas, las demás vencidas
+                    $estadoLabel = ($contadorImpagas <= 2) ? 'Impaga' : 'Vencida';
+                }
+
+                // Construcción limpia del periodo (ej. 8/2026)
+                if (isset($factura['periodo']) && !empty($factura['periodo'])) {
+                    $periodo = (string)$factura['periodo'];
+                } else {
+                    $mes = (string)($factura['MES'] ?? ($factura['NMES'] ?? ''));
+                    $anio = (string)($factura['ANIO'] ?? '');
+                    $periodo = (!empty($mes) && !empty($anio)) ? "{$mes}/{$anio}" : ($mes ?: $anio);
+                }
+
+                $monto = isset($factura['MONTO']) ? (float)$factura['MONTO'] : (float)($factura['monto'] ?? 0.0);
+
                 $lista[] = [
-                    'periodo' => ($factura['MES'] ?? '') . '/' . ($factura['ANIO'] ?? ''),
-                    'monto' => isset($factura['MONTO']) ? (float)$factura['MONTO'] : 0.0,
-                    'fecha' => $factura['FECHA']
+                    'periodo' => $periodo,
+                    'monto' => $monto,
+                    'estado' => $estadoLabel,
+                    'fecha' => $fechaPago
                 ];
             }
 
@@ -165,6 +195,7 @@ class FacturacionService
                 'status' => 'success',
                 'codigo_socio' => $cod_socio,
                 'cantidad' => count($lista),
+                'total_impagas' => $contadorImpagas,
                 'facturas' => $lista
             ];
         }

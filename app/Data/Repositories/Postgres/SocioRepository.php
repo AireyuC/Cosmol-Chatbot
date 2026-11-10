@@ -56,23 +56,59 @@ class SocioRepository implements SocioRepositoryInterface
     }
 
     /**
-     * Stub: La BD PostgreSQL local de desarrollo no almacena deudas en este repositorio.
-     * Esta funcionalidad se consulta a través del repositorio API (CosmolApi / SAI).
+     * Datos simulados de deudas para desarrollo y pruebas locales.
+     * En producción se consulta a través de Api/SocioRepository (CosmolApi / SAI).
      * @param string $codigo_socio
      * @return array|null
      */
     public function findDeudasByCodigo(string $codigo_socio): ?array
     {
-        return null;
+        return [
+            [
+                'NROFACTURA' => '841021',
+                'NMES' => '06',
+                'ANIO' => '2026',
+                'MONTOTOTAL' => 150.00,
+                'RAZONSOCIAL' => 'Socio Mock Local'
+            ],
+            [
+                'NROFACTURA' => '845210',
+                'NMES' => '07',
+                'ANIO' => '2026',
+                'MONTOTOTAL' => 138.00,
+                'RAZONSOCIAL' => 'Socio Mock Local'
+            ],
+            [
+                'NROFACTURA' => '848934',
+                'NMES' => '08',
+                'ANIO' => '2026',
+                'MONTOTOTAL' => 142.50,
+                'RAZONSOCIAL' => 'Socio Mock Local'
+            ]
+        ];
     }
 
     /**
-     * Stub: Historial para entorno mock local.
+     * Datos simulados de historial de 12 meses para desarrollo y pruebas locales.
+     * En producción se consulta a través de Api/SocioRepository (CosmolApi / SAI).
      * @param string $cod_socio
      * @return array|null
      */
     public function findHistorialByCodigo(string $cod_socio): ?array
     {
-        return null;
+        return [
+            ['MES' => '08', 'ANIO' => '2026', 'MONTO' => 142.50, 'ESTADO' => '0', 'FECHA' => null],
+            ['MES' => '07', 'ANIO' => '2026', 'MONTO' => 138.00, 'ESTADO' => '0', 'FECHA' => null],
+            ['MES' => '06', 'ANIO' => '2026', 'MONTO' => 150.00, 'ESTADO' => '0', 'FECHA' => null],
+            ['MES' => '05', 'ANIO' => '2026', 'MONTO' => 130.00, 'ESTADO' => '1', 'FECHA' => '2026-06-10 11:20:00'],
+            ['MES' => '04', 'ANIO' => '2026', 'MONTO' => 125.00, 'ESTADO' => '1', 'FECHA' => '2026-05-12 15:45:00'],
+            ['MES' => '03', 'ANIO' => '2026', 'MONTO' => 140.00, 'ESTADO' => '1', 'FECHA' => '2026-04-08 09:30:00'],
+            ['MES' => '02', 'ANIO' => '2026', 'MONTO' => 135.00, 'ESTADO' => '1', 'FECHA' => '2026-03-11 16:10:00'],
+            ['MES' => '01', 'ANIO' => '2026', 'MONTO' => 128.00, 'ESTADO' => '1', 'FECHA' => '2026-02-14 10:05:00'],
+            ['MES' => '12', 'ANIO' => '2025', 'MONTO' => 145.00, 'ESTADO' => '1', 'FECHA' => '2026-01-09 14:22:00'],
+            ['MES' => '11', 'ANIO' => '2025', 'MONTO' => 132.00, 'ESTADO' => '1', 'FECHA' => '2025-12-10 12:15:00'],
+            ['MES' => '10', 'ANIO' => '2025', 'MONTO' => 120.00, 'ESTADO' => '1', 'FECHA' => '2025-11-15 17:40:00'],
+            ['MES' => '09', 'ANIO' => '2025', 'MONTO' => 118.00, 'ESTADO' => '1', 'FECHA' => '2025-10-10 10:50:00'],
+        ];
     }
 }

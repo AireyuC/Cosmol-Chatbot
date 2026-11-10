@@ -19,6 +19,7 @@ use App\Data\Repositories\Postgres\ReportesBufferRepository;
 use App\Integrations\CosmolApi\ClienteApiCosmol;
 use App\Integrations\CosmolReportes\ClienteApiReportes;
 use App\Integrations\WhatsApp\WhatsAppMediaService;
+use App\Integrations\WhatsApp\WhatsAppSenderService;
 
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
@@ -55,6 +56,7 @@ class AppContainer
     private $clienteApiCosmol = null;
     private $clienteApiReportes = null;
     private $whatsAppMediaService = null;
+    private $whatsAppSenderService = null;
 
     // Repositorios
     private $sessionRepository = null;
@@ -119,6 +121,14 @@ class AppContainer
         return $this->whatsAppMediaService;
     }
 
+    public function getWhatsAppSenderService(): WhatsAppSenderService
+    {
+        if ($this->whatsAppSenderService === null) {
+            $this->whatsAppSenderService = new WhatsAppSenderService();
+        }
+        return $this->whatsAppSenderService;
+    }
+
     // =========================================================================
     // Repositorios
     // =========================================================================
@@ -170,7 +180,10 @@ class AppContainer
     public function getSessionService(): SessionService
     {
         if ($this->sessionService === null) {
-            $this->sessionService = new SessionService($this->getSessionRepository());
+            $this->sessionService = new SessionService(
+                $this->getSessionRepository(),
+                $this->getWhatsAppSenderService()
+            );
         }
         return $this->sessionService;
     }

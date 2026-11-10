@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS chat_session (
     context_data TEXT NULL
 );
 
+-- Índice optimizado para escaneo ultra rápido de sesiones inactivas (Cron 10 min)
+CREATE INDEX IF NOT EXISTS idx_chat_session_inactividad ON chat_session (estado_actual, ultima_interaccion);
+
 -- Buffer local de consultas hacia COSMOL-Reportes (Cola de resiliencia ante caídas)
 CREATE TABLE IF NOT EXISTS cola_reportes (
     id SERIAL PRIMARY KEY,

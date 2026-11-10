@@ -104,6 +104,10 @@ class AuthFlowHandler extends BaseFlowHandler
             return PlantillaSistema::bloqueado();
         }
 
+        if ($intentos === 1) {
+            return PlantillaSocio::saludo();
+        }
+
         return PlantillaSistema::codigoInvalido();
     }
 }

@@ -62,7 +62,7 @@ class SessionRepository implements SessionRepositoryInterface
     public function resetSession(string $telefonoWhatsapp): bool
     {
         $sql = "UPDATE chat_session 
-                SET codigo_socio = NULL, estado_actual = 'AWAITING_CODE', intentos_fallidos = 0, context_data = NULL 
+                SET codigo_socio = NULL, estado_actual = 'AWAITING_CODE', intentos_fallidos = 0, context_data = NULL, ultima_interaccion = CURRENT_TIMESTAMP 
                 WHERE telefono_whatsapp = :telefono";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['telefono' => $telefonoWhatsapp]);
@@ -75,5 +75,17 @@ class SessionRepository implements SessionRepositoryInterface
                 WHERE telefono_whatsapp = :telefono";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['telefono' => $telefonoWhatsapp]);
+    }
+
+    public function getExpiredSessions(int $inactiveSeconds): array
+    {
+        $sql = "SELECT telefono_whatsapp, codigo_socio, estado_actual, context_data, ultima_interaccion
+                FROM chat_session
+                WHERE estado_actual NOT IN ('AWAITING_CODE', 'BLOCKED')
+                  AND ultima_interaccion < (CURRENT_TIMESTAMP - (:segundos || ' seconds')::INTERVAL)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['segundos' => $inactiveSeconds]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result ?: [];
     }
 }

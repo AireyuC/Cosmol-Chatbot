@@ -1,0 +1,70 @@
+{
+  "name": "COSMOL - Expirador Automático de Sesiones (Cron 10 min)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "name": "Cada 1 Minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "schedule-trigger-expirar-sesiones"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://cosmol_backend:80/api/cron_expire_sessions.php",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $env.API_INTERNAL_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Expirar Sesiones Inactivas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "id": "http-request-expire-sessions"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cada 1 Minuto": {
+      "main": [
+        [
+          {
+            "node": "Expirar Sesiones Inactivas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
+

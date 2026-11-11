@@ -18,7 +18,7 @@ class PlantillaSocio
         ];
     }
 
-    public static function menuPrincipal(string $codSocio, string $nombreSocio = '', bool $esError = false, ?string $mensajePersonalizado = null, bool $ocultarPagar = false): array
+    public static function menuPrincipal(string $codSocio, string $nombreSocio = '', bool $esError = false, ?string $mensajePersonalizado = null, bool $ocultarPagar = false, ?string $accionExcluida = null): array
     {
         if ($mensajePersonalizado !== null) {
             $mensaje = $mensajePersonalizado;
@@ -31,7 +31,7 @@ class PlantillaSocio
 
         $rows = [];
         
-        if (!$ocultarPagar && FeatureFlags::isEnabled('deuda')) {
+        if (!$ocultarPagar && FeatureFlags::isEnabled('deuda') && $accionExcluida !== 'MENU_PAGAR') {
             $rows[] = [
                 'id' => 'MENU_PAGAR_' . $codSocio,
                 'title' => 'Consultar Deuda',
@@ -39,7 +39,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('reconexion')) {
+        if (FeatureFlags::isEnabled('reconexion') && $accionExcluida !== 'MENU_RECONEXION') {
             $rows[] = [
                 'id' => 'MENU_RECONEXION',
                 'title' => 'Solicitar Reconexión',
@@ -47,7 +47,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('historial')) {
+        if (FeatureFlags::isEnabled('historial') && $accionExcluida !== 'MENU_HISTORIAL') {
             $rows[] = [
                 'id' => 'MENU_HISTORIAL',
                 'title' => 'Historial',
@@ -55,7 +55,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('reclamos')) {
+        if (FeatureFlags::isEnabled('reclamos') && $accionExcluida !== 'MENU_RECLAMOS') {
             $rows[] = [
                 'id' => 'MENU_RECLAMOS',
                 'title' => 'Reclamos',
@@ -63,7 +63,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('estado_tramites')) {
+        if (FeatureFlags::isEnabled('estado_tramites') && $accionExcluida !== 'MENU_ESTADO_TRAMITES') {
             $rows[] = [
                 'id' => 'MENU_ESTADO_TRAMITES',
                 'title' => 'Estado de Solicitudes',
@@ -71,7 +71,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('oficinas')) {
+        if (FeatureFlags::isEnabled('oficinas') && $accionExcluida !== 'MENU_OFICINAS') {
             $rows[] = [
                 'id' => 'MENU_OFICINAS',
                 'title' => 'Oficinas y horarios',
@@ -79,7 +79,7 @@ class PlantillaSocio
             ];
         }
 
-        if (FeatureFlags::isEnabled('agente')) {
+        if (FeatureFlags::isEnabled('agente') && $accionExcluida !== 'MENU_AGENTE') {
             $rows[] = [
                 'id' => 'MENU_AGENTE',
                 'title' => 'Hablar con un asesor',
@@ -145,7 +145,7 @@ class PlantillaSocio
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'MENU_PRINCIPAL_VOLVER',
-                                'title' => 'Volver al Menú'
+                                'title' => '📋 Mostrar Menú'
                             ]
                         ]
                     ]

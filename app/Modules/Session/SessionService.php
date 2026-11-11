@@ -111,6 +111,9 @@ class SessionService
             // 1. Despacho proactivo a Meta WhatsApp si el sender está configurado
             $enviado = false;
             if ($this->whatsAppSender !== null) {
+                // Burbuja 1: Recordatorio de entorno en desarrollo
+                $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
+                // Burbuja 2: Notificación de sesión expirada
                 $enviado = $this->whatsAppSender->enviarMensaje($telefono, $plantillaExpiracion);
                 if ($enviado) {
                     $notificadasCount++;

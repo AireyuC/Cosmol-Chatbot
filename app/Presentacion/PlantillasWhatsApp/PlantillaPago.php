@@ -129,12 +129,9 @@ class PlantillaPago
                     "💰 Monto total: *{$montoFormateado} Bs.*\n" .
                     "⏱️ Validez del QR: *15 minutos*\n\n" .
                     "📲 *Instrucciones para pagar:*\n" .
-                    "1. Realiza una captura de pantalla a este código QR.\n" .
-                    "2. Abre tu app bancaria móvil (BCP, BNB, Fie, Ganadero, etc.).\n" .
+                    "1. Realiza una captura de pantalla a este código QR o guarda la imagen.\n" .
+                    "2. Abre tu app bancaria móvil preferida.\n" .
                     "3. Selecciona la opción *Pago Simple / QR* y escanea la captura.\n\n" .
-                    "🌐 *Alternativa Web (Multipago):*\n" .
-                    "También puedes pagar este monto en línea en:\n" .
-                    "👉 https://multipago.com/service/cosmol_payment/first\n\n" .
                     "_Al ser un módulo Alpha de prueba, presiona el botón abajo para simular la confirmación del pago:_";
 
         return [
@@ -219,7 +216,7 @@ class PlantillaPago
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'MENU_PRINCIPAL_VOLVER',
-                                'title' => '🏠 Menú Principal'
+                                'title' => '📋 Mostrar Menú'
                             ]
                         ]
                     ]

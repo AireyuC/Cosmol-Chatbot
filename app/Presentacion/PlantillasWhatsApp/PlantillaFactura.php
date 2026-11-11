@@ -44,7 +44,7 @@ class PlantillaFactura
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'MENU_PRINCIPAL_VOLVER',
-                                'title' => '🏠 Menú Principal'
+                                'title' => '📋 Mostrar Menú'
                             ]
                         ]
                     ]
@@ -101,7 +101,7 @@ class PlantillaFactura
                 'type' => 'reply',
                 'reply' => [
                     'id' => 'MENU_PRINCIPAL_VOLVER',
-                    'title' => '🏠 Menú Principal'
+                    'title' => '📋 Mostrar Menú'
                 ]
             ];
 

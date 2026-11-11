@@ -255,7 +255,8 @@ class AppContainer
             $this->authFlowHandler = new AuthFlowHandler(
                 $this->getSessionService(),
                 $this->getSocioService(),
-                $this->getAuditService()
+                $this->getAuditService(),
+                $this->getWhatsAppSenderService()
             );
         }
         return $this->authFlowHandler;
@@ -270,7 +271,8 @@ class AppContainer
                 new ReconexionAction($this->getSessionService(), $this->getReconexionService(), $this->getFacturacionService(), $this->getAuditService(), $this->getSocioRepository()),
                 new ReclamoAction($this->getSessionService(), $this->getAuditService(), $this->getSocioRepository()),
                 new EstadoTramitesAction($this->getReclamoService(), $this->getReconexionService(), $this->getAuditService()),
-                new InfoAction($this->getSessionService(), $this->getAuditService())
+                new InfoAction($this->getSessionService(), $this->getAuditService(), $this->getWhatsAppSenderService()),
+                $this->getSessionService()
             );
         }
         return $this->menuFlowHandler;

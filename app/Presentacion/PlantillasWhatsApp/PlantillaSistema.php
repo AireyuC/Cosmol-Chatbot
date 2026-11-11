@@ -105,5 +105,21 @@ class PlantillaSistema
             ]
         ];
     }
+
+    /**
+     * Mensaje informativo que advierte que el sistema está en desarrollo y entorno de pruebas.
+     */
+    public static function avisoSistemaEnDesarrollo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "⚠️ *AVISO IMPORTANTE — ENTORNO DE PRUEBAS* ⚠️\n\n" .
+                          "Estimado socio, este canal de atención por WhatsApp se encuentra en *fase de desarrollo y pruebas piloto*.\n\n" .
+                          "Las consultas, solicitudes o trámites simulados realizados en este chat *NO se registrarán ni afectarán el sistema central de COSMOL R.L.*\n\n" .
+                          "Agradecemos tu comprensión y colaboración para evaluar este nuevo servicio digital. 🤝"
+            ]
+        ];
+    }
 }
 

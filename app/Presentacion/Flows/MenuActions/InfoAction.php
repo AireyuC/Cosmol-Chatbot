@@ -6,6 +6,7 @@ namespace App\Presentacion\Flows\MenuActions;
 
 use App\Modules\Session\SessionService;
 use App\Modules\Audit\ConsultaAuditService;
+use App\Integrations\WhatsApp\WhatsAppSenderService;
 use App\Core\FeatureFlags;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
@@ -25,12 +26,19 @@ class InfoAction
      */
     private $auditService;
 
+    /**
+     * @var WhatsAppSenderService|null
+     */
+    private $whatsAppSender;
+
     public function __construct(
         SessionService $sessionService,
-        ?ConsultaAuditService $auditService = null
+        ?ConsultaAuditService $auditService = null,
+        ?WhatsAppSenderService $whatsAppSender = null
     ) {
         $this->sessionService = $sessionService;
         $this->auditService = $auditService;
+        $this->whatsAppSender = $whatsAppSender;
     }
 
     /**
@@ -70,7 +78,7 @@ class InfoAction
                             "📍 *Ver en Google Maps:*\n" .
                             "https://www.google.com/maps?q=-17.338790,-63.256831";
 
-            return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $infoOficinas);
+            return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $infoOficinas, false, 'MENU_OFICINAS');
         }
 
         // 2. Redirección con Asesor Humano
@@ -93,12 +101,18 @@ class InfoAction
 
         // 4. Cambiar código de socio
         if ($accion === 'MENU_CAMBIAR_CODIGO') {
+            if ($this->whatsAppSender !== null) {
+                $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
+            }
             $this->sessionService->resetSession($telefono);
             return PlantillaSistema::textoSimple("Sesión cerrada. Por favor, ingresa tu nuevo código de socio.");
         }
 
         // 5. Cerrar sesión
         if ($accion === 'MENU_CERRAR_SESION') {
+            if ($this->whatsAppSender !== null) {
+                $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
+            }
             $this->sessionService->resetSession($telefono);
             return PlantillaSistema::textoSimple("¡Gracias por utilizar nuestro servicio! 👋\n\nTu sesión ha sido cerrada correctamente. Si necesitas algo más en el futuro, simplemente escríbenos 'Hola'.\n\n¡Que tengas un excelente día!");
         }

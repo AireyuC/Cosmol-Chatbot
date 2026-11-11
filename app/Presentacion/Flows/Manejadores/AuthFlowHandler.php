@@ -7,6 +7,7 @@ namespace App\Presentacion\Flows\Manejadores;
 use App\Modules\Session\SessionService;
 use App\Modules\Socio\SocioService;
 use App\Modules\Audit\ConsultaAuditService;
+use App\Integrations\WhatsApp\WhatsAppSenderService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
 
@@ -20,16 +21,23 @@ class AuthFlowHandler extends BaseFlowHandler
      */
     private $socioService;
 
+    /**
+     * @var WhatsAppSenderService|null
+     */
+    private $whatsAppSender;
+
     // --- CONTROLADORES DE NEGOCIO (ADMINISTRACIÓN DESDE CÓDIGO) ---
     public const MAX_SOCIOS_POR_TELEFONO = 5; // Máximo de códigos de socio distintos consultados por teléfono por día
 
     public function __construct(
         SessionService $sessionService,
         SocioService $socioService,
-        ?ConsultaAuditService $auditService = null
+        ?ConsultaAuditService $auditService = null,
+        ?WhatsAppSenderService $whatsAppSender = null
     ) {
         parent::__construct($sessionService, $auditService);
         $this->socioService = $socioService;
+        $this->whatsAppSender = $whatsAppSender;
     }
 
     /**
@@ -72,6 +80,12 @@ class AuthFlowHandler extends BaseFlowHandler
                     $this->auditService->registrarAcceso((int)$codigoIngresado, $nombreSocio, $telefono);
                 }
 
+                // Burbuja 1: Aviso de entorno en desarrollo (despacho directo a Meta)
+                if ($this->whatsAppSender !== null) {
+                    $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
+                }
+
+                // Burbuja 2: Menú Principal
                 return PlantillaSocio::menuPrincipal($codigoIngresado, $nombreSocio);
             }
 
@@ -79,6 +93,11 @@ class AuthFlowHandler extends BaseFlowHandler
             $intentos++;
 
             if (!is_numeric($codigoIngresado) && $intentos === 1) {
+                // Burbuja 1: Aviso de entorno en desarrollo en la primera interacción
+                if ($this->whatsAppSender !== null) {
+                    $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
+                }
+                // Burbuja 2: Saludo institucional
                 $whatsappPayload = PlantillaSocio::saludo();
             } else {
                 $whatsappPayload = PlantillaSistema::codigoInvalido();

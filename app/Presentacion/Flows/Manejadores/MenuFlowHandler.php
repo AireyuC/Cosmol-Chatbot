@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentacion\Flows\Manejadores;
 
+use App\Modules\Session\SessionService;
 use App\Presentacion\Flows\MenuActions\PagarAction;
 use App\Presentacion\Flows\MenuActions\HistorialAction;
 use App\Presentacion\Flows\MenuActions\ReconexionAction;
@@ -20,19 +21,38 @@ class MenuFlowHandler
 {
     /**
      * @var PagarAction
+     */
+    private $pagarAction;
+
+    /**
      * @var HistorialAction
+     */
+    private $historialAction;
+
+    /**
      * @var ReconexionAction
+     */
+    private $reconexionAction;
+
+    /**
      * @var ReclamoAction
+     */
+    private $reclamoAction;
+
+    /**
      * @var EstadoTramitesAction
+     */
+    private $estadoTramitesAction;
+
+    /**
      * @var InfoAction
      */
-
-    private $pagarAction;
-    private $historialAction;
-    private $reconexionAction;
-    private $reclamoAction;
-    private $estadoTramitesAction;
     private $infoAction;
+
+    /**
+     * @var SessionService|null
+     */
+    private $sessionService;
 
     public function __construct(
         PagarAction $pagarAction,
@@ -40,7 +60,8 @@ class MenuFlowHandler
         ReconexionAction $reconexionAction,
         ReclamoAction $reclamoAction,
         EstadoTramitesAction $estadoTramitesAction,
-        InfoAction $infoAction
+        InfoAction $infoAction,
+        ?SessionService $sessionService = null
     ) {
         $this->pagarAction = $pagarAction;
         $this->historialAction = $historialAction;
@@ -48,6 +69,7 @@ class MenuFlowHandler
         $this->reclamoAction = $reclamoAction;
         $this->estadoTramitesAction = $estadoTramitesAction;
         $this->infoAction = $infoAction;
+        $this->sessionService = $sessionService;
     }
 
     /**
@@ -71,6 +93,55 @@ class MenuFlowHandler
         }
 
         $accion = (string)$contenido;
+
+        // 0. Retorno al Menú Principal con control anti-bucles
+        if ($accion === 'MENU_PRINCIPAL_VOLVER') {
+            $ultimaOpcion = $contextData['ultima_opcion'] ?? null;
+            $contadorExclusion = (int)($contextData['contador_exclusion'] ?? 0);
+
+            if (!empty($ultimaOpcion) && $contadorExclusion === 1) {
+                // 2ª vez: Omitir la opción recién consultada en el menú desplegable
+                $contextData['contador_exclusion'] = 2;
+                if ($this->sessionService !== null) {
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, $contextData);
+                }
+                return PlantillaSocio::menuPrincipal($codigoSocioStr, $nombreSocio, false, null, false, $ultimaOpcion);
+            }
+
+            // 3ª vez o subsecuente: Restablecer menú normal completo
+            $contextData['ultima_opcion'] = null;
+            $contextData['contador_exclusion'] = 0;
+            if ($this->sessionService !== null) {
+                $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, $contextData);
+            }
+            return PlantillaSocio::menuPrincipal($codigoSocioStr, $nombreSocio, false, null, false, null);
+        }
+
+        // Detección de la acción base para registrarla en el historial de navegación
+        $accionBase = null;
+        if (strpos($accion, 'MENU_PAGAR_') === 0 || strpos($accion, 'PAGO_') === 0) {
+            $accionBase = 'MENU_PAGAR';
+        } elseif ($accion === 'MENU_HISTORIAL') {
+            $accionBase = 'MENU_HISTORIAL';
+        } elseif ($accion === 'MENU_RECONEXION') {
+            $accionBase = 'MENU_RECONEXION';
+        } elseif ($accion === 'MENU_ESTADO_TRAMITES' || $accion === 'RECLAMO_ESTADO') {
+            $accionBase = 'MENU_ESTADO_TRAMITES';
+        } elseif ($accion === 'MENU_RECLAMOS' || strpos($accion, 'RECLAMO_') === 0) {
+            $accionBase = 'MENU_RECLAMOS';
+        } elseif ($accion === 'MENU_OFICINAS') {
+            $accionBase = 'MENU_OFICINAS';
+        } elseif ($accion === 'MENU_AGENTE') {
+            $accionBase = 'MENU_AGENTE';
+        }
+
+        if ($accionBase !== null) {
+            $contextData['ultima_opcion'] = $accionBase;
+            $contextData['contador_exclusion'] = 1;
+            if ($this->sessionService !== null) {
+                $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, $contextData);
+            }
+        }
 
         // 1. Deuda y Pago
         if (strpos($accion, 'MENU_PAGAR_') === 0) {
@@ -108,7 +179,7 @@ class MenuFlowHandler
         }
 
         // 6. Información, asesor y control de sesión
-        if (in_array($accion, ['MENU_OFICINAS', 'MENU_AGENTE', 'MENU_CAMBIAR_CODIGO', 'MENU_CERRAR_SESION', 'MENU_PRINCIPAL_VOLVER'], true)) {
+        if (in_array($accion, ['MENU_OFICINAS', 'MENU_AGENTE', 'MENU_CAMBIAR_CODIGO', 'MENU_CERRAR_SESION'], true)) {
             return $this->infoAction->execute($accion, $telefono, $codigoSocio, $codigoSocioStr, $nombreSocio);
         }
 

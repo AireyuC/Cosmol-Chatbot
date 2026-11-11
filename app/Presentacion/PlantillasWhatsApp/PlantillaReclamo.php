@@ -6,35 +6,43 @@ namespace App\Presentacion\PlantillasWhatsApp;
 
 /**
  * Genera los payloads JSON de WhatsApp relacionados al módulo de Reclamos.
+ * Formato unificado por pasos consecutivos con redacción institucional limpia.
  */
 class PlantillaReclamo
 {
     /**
-     * Menú interactivo con lista de tipos de reclamos.
+     * Paso 1 de 4: Menú interactivo con lista de tipos de reclamos y anticipación de pasos.
      */
     public static function menuReclamos(?string $mensajePersonalizado = null): array
     {
-        $mensaje = $mensajePersonalizado ?? "🛠️ *Atención de Reclamos y Emergencias*\n\nPor favor, selecciona en la lista de opciones 👇 el tipo de situación que deseas reportar:";
+        $mensaje = $mensajePersonalizado ?? "*Atención de Reclamos (Paso 1 de 4)*\n\n" .
+                                            "Para registrar y derivar tu reporte a la cuadrilla técnica completaremos 4 pasos sencillos:\n" .
+                                            "1. Tipo de reclamo\n" .
+                                            "2. Confirmación de ubicación\n" .
+                                            "3. Fotografía de evidencia\n" .
+                                            "4. Detalle y referencias\n\n" .
+                                            "Por favor, selecciona en la lista de opciones el tipo de situación que deseas reportar:";
+
         $rows = [
             [
                 'id' => 'RECLAMO_AGUA_TURBIA',
                 'title' => 'Agua Turbia',
-                'description' => 'Reportar agua con sedimentos o color'
+                'description' => 'Sedimentos o color en el suministro'
             ],
             [
                 'id' => 'RECLAMO_FUGA',
                 'title' => 'Fuga de Agua',
-                'description' => 'Reportar fuga en calle o acera'
+                'description' => 'Fuga en calle, acera o nicho'
             ],
             [
                 'id' => 'RECLAMO_REBALSE',
                 'title' => 'Rebalse Alcantarillado',
-                'description' => 'Reportar aguas servidas en la calle'
+                'description' => 'Aguas servidas en la calzada'
             ],
             [
                 'id' => 'RECLAMO_TRANCADO',
                 'title' => 'Alcantarilla Trancada',
-                'description' => 'Reportar obstrucción en la red'
+                'description' => 'Obstrucción en red de desagüe'
             ],
             [
                 'id' => 'MENU_PRINCIPAL_VOLVER',
@@ -49,13 +57,13 @@ class PlantillaReclamo
                 'type' => 'list',
                 'header' => [
                     'type' => 'text',
-                    'text' => 'Módulo de Reclamos'
+                    'text' => 'Atención de Reclamos'
                 ],
                 'body' => [
                     'text' => $mensaje
                 ],
                 'footer' => [
-                    'text' => 'COSMOL - Tu cooperativa'
+                    'text' => 'Paso 1 de 4 — Tipo de Reclamo'
                 ],
                 'action' => [
                     'button' => 'Opciones de Reclamo',
@@ -71,53 +79,11 @@ class PlantillaReclamo
     }
 
     /**
-     * Solicita la ubicación GPS para enviar al técnico.
-     */
-    public static function solicitarGpsReclamo(): array
-    {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📍 *Ubicación del problema*\n\nPara enviar a la cuadrilla técnica al punto exacto, por favor comparte tu ubicación tocando el ícono de **Adjuntar** (📎 o ➕) y seleccionando **Ubicación**.",
-                'preview_url' => false
-            ]
-        ];
-    }
-
-    /**
-     * Solicita una fotografía del daño o problema.
-     */
-    public static function solicitarFotoReclamo(): array
-    {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "📸 *Fotografía de evidencia*\n\n¡Muy bien! Ahora envíanos una **fotografía clara** del daño o fuga para que el equipo técnico acuda con las herramientas y repuestos adecuados.",
-                'preview_url' => false
-            ]
-        ];
-    }
-
-    /**
-     * Solicita una glosa descriptiva del reclamo.
-     */
-    public static function solicitarGlosaReclamo(): array
-    {
-        return [
-            'type' => 'text',
-            'text' => [
-                'body' => "✍️ *Detalle o referencia del lugar*\n\nPor último, escribe un breve mensaje contándonos qué sucede o danos una referencia (ej: _'Fuga sobre la acera frente al portón blanco'_).",
-                'preview_url' => false
-            ]
-        ];
-    }
-
-    /**
-     * Pregunta si el reclamo es en su domicilio registrado o mediante GPS.
+     * Paso 2 de 4: Pregunta si el reclamo es en su domicilio registrado o mediante GPS.
      */
     public static function preguntaTipoUbicacion(string $direccion = ''): array
     {
-        $detalleDireccion = !empty($direccion) ? "\n🏠 *Domicilio Registrado:* {$direccion}\n" : '';
+        $detalleDireccion = !empty($direccion) ? "\n• Dirección registrada: {$direccion}\n" : '';
 
         return [
             'type' => 'interactive',
@@ -125,13 +91,16 @@ class PlantillaReclamo
                 'type' => 'button',
                 'header' => [
                     'type' => 'text',
-                    'text' => 'Ubicación del Reclamo'
+                    'text' => 'Atención de Reclamos'
                 ],
                 'body' => [
-                    'text' => "¿El problema se encuentra en la dirección registrada de su medidor (en su casa) o en otra ubicación?\n{$detalleDireccion}\n⚠️ *Aviso:* Si la falla no está en su domicilio, elija 'Otra Ubic. (GPS)' para que la cuadrilla técnica acuda al punto exacto."
+                    'text' => "*Atención de Reclamos (Paso 2 de 4)*\n\n" .
+                              "¿El problema se encuentra en la dirección registrada de tu medidor o en otra ubicación?\n" .
+                              "{$detalleDireccion}\n" .
+                              "Selecciona una opción:"
                 ],
                 'footer' => [
-                    'text' => 'COSMOL R.L.'
+                    'text' => 'Paso 2 de 4 — Ubicación'
                 ],
                 'action' => [
                     'buttons' => [
@@ -139,20 +108,95 @@ class PlantillaReclamo
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'RECLAMO_UBICACION_DOMICILIO',
-                                'title' => '🏠 Mi Domicilio'
+                                'title' => 'Mi Domicilio'
                             ]
                         ],
                         [
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'RECLAMO_UBICACION_GPS',
-                                'title' => '📍 Otra Ubic. (GPS)'
+                                'title' => 'Otra Ubic. (GPS)'
                             ]
                         ]
                     ]
                 ]
             ]
         ];
+    }
+
+    /**
+     * Paso 2 de 4 (Alternativo): Solicita la ubicación GPS para enviar al técnico.
+     */
+    public static function solicitarGpsReclamo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Atención de Reclamos (Paso 2 de 4)*\n\n" .
+                          "Ubicación por GPS:\n\n" .
+                          "Por favor, envía tu ubicación actual mediante la función \"Ubicación\" de WhatsApp (icono de adjuntar 📎 o ➕)."
+            ]
+        ];
+    }
+
+    /**
+     * Paso 3 de 4: Solicita la fotografía obligatoria del problema.
+     */
+    public static function solicitarFotoReclamo(string $mensajeExtra = ''): array
+    {
+        $extra = !empty($mensajeExtra) ? "\n{$mensajeExtra}\n" : '';
+
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Atención de Reclamos (Paso 3 de 4)*\n\n" .
+                          "Ubicación registrada correctamente.\n" .
+                          "{$extra}\n" .
+                          "Por favor, envía una fotografía clara del problema (fuga, medidor o alcantarilla).\n\n" .
+                          "La fotografía es obligatoria para que el personal técnico acuda con los repuestos y herramientas adecuadas."
+            ]
+        ];
+    }
+
+    /**
+     * Paso 3 de 4 (Recordatorio): Insistencia cuando el usuario envía texto en vez de imagen.
+     */
+    public static function fotoRequerida(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Fotografía requerida (Paso 3 de 4)*\n\n" .
+                          "Para continuar con el registro del reclamo es obligatorio adjuntar una fotografía clara del problema.\n\n" .
+                          "Por favor, toma una fotografía o selecciónala desde la galería de WhatsApp para continuar."
+            ]
+        ];
+    }
+
+    /**
+     * Paso 4 de 4: Solicita la glosa descriptiva del reclamo.
+     */
+    public static function solicitarGlosaReclamo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Atención de Reclamos (Paso 4 de 4)*\n\n" .
+                          "Fotografía recibida correctamente.\n\n" .
+                          "Como último paso, escribe una breve descripción de lo sucedido y puntos de referencia de la vivienda para facilitar la llegada de la cuadrilla técnica.\n\n" .
+                          "(Ejemplo: \"Fuga de agua potable sobre la acera, casa con portón blanco frente a la plaza\")."
+            ]
+        ];
+    }
+
+    /**
+     * Mensaje de confirmación al registrar el ticket de reclamo.
+     */
+    public static function confirmacionExitosa(string $ticket): string
+    {
+        return "*Reporte de Reclamo Registrado*\n\n" .
+               "Ticket de seguimiento: *#{$ticket}*\n\n" .
+               "Tu reporte ha sido registrado exitosamente. Nuestras cuadrillas técnicas lo tienen en agenda para su atención oportuna. Muchas gracias por tu colaboración.";
     }
 
     /**
@@ -163,8 +207,9 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "⚠️ *Límite diario por asociado alcanzado*\n\nEstimado asociado, esta cuenta ha alcanzado el límite máximo de *{$limite} reclamos por día*.\n\nSus solicitudes previas ya se encuentran en proceso de revisión técnica por las cuadrillas de COSMOL. Si se trata de una emergencia mayor en la red pública, por favor comuníquese directamente con nuestra línea de guardia.",
-                'preview_url' => false
+                'body' => "*Límite diario por asociado alcanzado*\n\n" .
+                          "Estimado asociado, esta cuenta ha alcanzado el límite máximo de *{$limite} reclamos por día*.\n\n" .
+                          "Tus solicitudes previas ya se encuentran en agenda técnica de COSMOL R.L. Si se trata de una emergencia mayor en la red pública, por favor comunícate directamente con nuestras oficinas centrales."
             ]
         ];
     }
@@ -177,8 +222,9 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "⚠️ *Límite diario por número alcanzado*\n\nEstimado usuario, desde este número de WhatsApp se ha alcanzado el tope máximo de *{$limiteGlobal} reclamos diarios* entre todas las cuentas gestionadas hoy.\n\nLas cuadrillas ya cuentan con sus solicitudes en agenda. Por favor, aguarde la atención de los reportes enviados.",
-                'preview_url' => false
+                'body' => "*Límite diario alcanzado*\n\n" .
+                          "Estimado usuario, desde este número de WhatsApp se ha alcanzado el tope máximo de *{$limiteGlobal} reclamos diarios*.\n\n" .
+                          "Nuestras cuadrillas técnicas ya cuentan con las solicitudes previas en agenda para su atención."
             ]
         ];
     }
@@ -191,18 +237,10 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "⏳ *Por favor, aguarde unos instantes*\n\nAcabamos de registrar una solicitud. Para evitar reportes duplicados en nuestro sistema operativo, por favor espere *{$segundosRestantes} segundos* antes de enviar un nuevo reclamo.",
-                'preview_url' => false
+                'body' => "*Por favor, aguarda unos instantes*\n\n" .
+                          "Acabamos de registrar una solicitud técnica. Para evitar reportes duplicados, por favor espera *{$segundosRestantes} segundos* antes de enviar un nuevo reclamo."
             ]
         ];
-    }
-
-    /**
-     * Mensaje de confirmación al registrar el ticket de reclamo.
-     */
-    public static function confirmacionExitosa(string $ticket): string
-    {
-        return "✅ *¡Tu reporte ha sido registrado con éxito!*\n🎫 Ticket de seguimiento: *#{$ticket}*\n\nNuestras cuadrillas técnicas ya lo tienen en agenda para su atención oportuna. ¡Muchas gracias por ayudarnos a cuidar el agua en Montero! 💧";
     }
 }
 

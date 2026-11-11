@@ -191,13 +191,14 @@ class PlantillaReconexion
     }
 
     /**
-     * Mensaje informativo cuando ya existe una solicitud previa pendiente.
+     * Mensaje informativo cuando ya existe una solicitud de reconexión activa en curso.
      */
     public static function reconexionPendiente(): string
     {
-        return "*Solicitud en curso*\n\n" .
-               "Estimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.\n\n" .
-               "Si necesitas consultar el estado de tu trámite, puedes hablar con un asesor desde el menú o visitar la Oficina de Reconexiones en nuestras oficinas centrales (Calle Isaías Parada).";
+        return "*Solicitud de Reconexión Activa*\n\n" .
+               "Estimado asociado, tu cuenta ya cuenta con una solicitud de reconexión en curso asignada a nuestras cuadrillas técnicas.\n\n" .
+               "Por normativa operativa, no es posible generar una nueva orden de reconexión hasta que la cuadrilla complete la atención de la solicitud pendiente.\n\n" .
+               "Puedes consultar el avance de tu caso en la opción \"Estado de Solicitudes\" del menú principal o acudir a la Oficina de Reconexiones en nuestras oficinas centrales (Calle Isaías Parada).";
     }
 
     /**

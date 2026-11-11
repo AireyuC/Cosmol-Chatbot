@@ -15,4 +15,6 @@ interface SessionRepositoryInterface
     public function touchSession(string $telefonoWhatsapp): bool;
 
     public function getExpiredSessions(int $inactiveSeconds): array;
+
+    public function getInactiveSubflowSessions(int $inactiveSeconds): array;
 }

@@ -121,5 +121,19 @@ class PlantillaSistema
             ]
         ];
     }
+
+    /**
+     * Mensaje de tiempo de espera agotado para sub-flujos incompletos (Reconexión y Reclamos).
+     */
+    public static function tiempoAgotadoSubflujo(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Tiempo de espera agotado*\n\n" .
+                          "Cancelamos el trámite anterior debido a que transcurrieron más de 3 minutos sin respuesta. Puedes volver a iniciarlo cuando gustes desde el menú principal."
+            ]
+        ];
+    }
 }
 

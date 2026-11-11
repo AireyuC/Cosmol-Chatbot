@@ -21,10 +21,12 @@ try {
 
     $total = $resultado['total'] ?? 0;
     $notificadas = $resultado['notificadas'] ?? 0;
+    $subflujosCancelados = $resultado['subflujos_cancelados'] ?? 0;
 
-    if ($total > 0) {
-        Logger::info("CronExpireSessions: Se procesaron sesiones expiradas", [
-            'total' => $total,
+    if ($total > 0 || $subflujosCancelados > 0) {
+        Logger::info("CronExpireSessions: Se procesaron expiraciones", [
+            'subflujos_cancelados' => $subflujosCancelados,
+            'total_expiradas' => $total,
             'notificadas' => $notificadas
         ]);
     }
@@ -32,9 +34,10 @@ try {
     http_response_code(200);
     echo json_encode([
         'status' => 'success',
-        'message' => $total > 0 
-            ? "Se procesaron {$total} sesiones expiradas ({$notificadas} notificadas por WhatsApp)" 
-            : 'No hay sesiones expiradas en este ciclo',
+        'message' => ($total > 0 || $subflujosCancelados > 0)
+            ? "Ciclo completado: {$subflujosCancelados} sub-flujos cancelados (3 min) y {$total} sesiones expiradas (10 min)"
+            : 'No hay sesiones ni sub-flujos inactivos en este ciclo',
+        'subflujos_cancelados' => $subflujosCancelados,
         'total' => $total,
         'notificadas' => $notificadas,
         'expiradas' => $resultado['expiradas'] ?? []

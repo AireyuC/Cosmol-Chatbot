@@ -82,11 +82,9 @@ class ReclamoFlowHandler extends BaseFlowHandler
                 if ($opcion === 'RECLAMO_UBICACION_DOMICILIO') {
                     $contextData['tipo_ubicacion'] = 'DOMICILIO';
                     $contextData['coordenadas_gps'] = 'DOMICILIO_REGISTRADO';
-                    $dir = $contextData['direccion_registrada'] ?? '';
-                    $aviso = !empty($dir) ? " en su domicilio ({$dir})" : " en su domicilio";
 
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
-                    return PlantillaReclamo::solicitarFotoReclamo("📸 Excelente. Por favor, envíe una *fotografía* clara del problema o medidor{$aviso}.");
+                    return PlantillaReclamo::solicitarFotoReclamo();
                 }
 
                 if ($opcion === 'RECLAMO_UBICACION_GPS') {
@@ -110,7 +108,7 @@ class ReclamoFlowHandler extends BaseFlowHandler
 
                     return PlantillaReclamo::solicitarFotoReclamo();
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
+                return PlantillaSistema::textoSimple("*Formato no válido (Paso 2 de 4)*\n\nPor favor, utiliza la opción de adjuntar y selecciona \"Ubicación\" en WhatsApp.");
 
             case 'AWAITING_RECLAMO_PHOTO':
                 if ($tipoMensaje === 'image' && !empty($contenido)) {
@@ -120,7 +118,7 @@ class ReclamoFlowHandler extends BaseFlowHandler
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_GLOSA', 0, $contextData);
                     return PlantillaReclamo::solicitarGlosaReclamo();
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, adjunte una imagen 📸.");
+                return PlantillaReclamo::fotoRequerida();
 
             case 'AWAITING_RECLAMO_GLOSA':
                 if ($tipoMensaje === 'text') {
@@ -149,14 +147,14 @@ class ReclamoFlowHandler extends BaseFlowHandler
                             $this->auditService->registrarReclamo((int)$codigoSocio, $nombreSocio, $telefono, $tipoUbicacion);
                         }
                     } else {
-                        $mensaje = "❌ Ocurrió un error al procesar su reclamo. Por favor, intente más tarde.";
+                        $mensaje = "*Inconveniente al procesar el reclamo*\n\nOcurrió un error al procesar tu solicitud. Por favor, intenta más tarde o comunícate con nuestras oficinas centrales.";
                     }
 
                     // Regresar a MAIN_MENU preservando nombre_socio en context_data
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, ['nombre_socio' => $nombreSocio]);
                     return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, escriba una descripción o glosa en texto.");
+                return PlantillaSistema::textoSimple("*Formato no válido (Paso 4 de 4)*\n\nPor favor, escribe la descripción de lo sucedido en texto para finalizar.");
 
             default:
                 return PlantillaSocio::menuPrincipal($codigoSocioStr, '', true);

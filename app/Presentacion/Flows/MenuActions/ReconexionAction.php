@@ -78,23 +78,13 @@ class ReconexionAction
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, PlantillaSistema::moduloEnMantenimiento("Solicitud de Reconexión"));
         }
 
-        // 0. Validar límite diario por código de socio (máximo 1 reconexión por día)
-        if ($this->auditService !== null && !$this->auditService->puedeSolicitarReconexionSocio((int)$codigoSocio)) {
-            $mensaje = PlantillaReconexion::advertenciaLimiteReconexiones();
-            return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
+        // 1. Validar si ya tiene una reconexión activa/pendiente (solo se permite 1 reconexión hasta ser atendida)
+        $tienePendiente = $this->reconexionService->tieneReconexionPendiente($codigoSocioStr);
+        if (!$tienePendiente && $this->auditService !== null) {
+            $tienePendiente = !$this->auditService->puedeSolicitarReconexionSocio((int)$codigoSocio);
         }
 
-        // 0.1 Control de Cooldown en segundos (anti-spam / doble toque accidental)
-        if ($this->auditService !== null) {
-            $segundosRestantes = $this->auditService->obtenerSegundosRestantesCooldownReconexion($telefono);
-            if ($segundosRestantes > 0) {
-                $mensaje = PlantillaReconexion::advertenciaCooldownReconexion($segundosRestantes);
-                return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
-            }
-        }
-
-        // 1. Validar si ya tiene reconexión pendiente en el sistema técnico externo
-        if ($this->reconexionService->tieneReconexionPendiente($codigoSocioStr)) {
+        if ($tienePendiente) {
             $mensaje = PlantillaReconexion::reconexionPendiente();
             return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
         }

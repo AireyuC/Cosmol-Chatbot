@@ -7,6 +7,7 @@ namespace App\Modules\Session;
 use App\Data\Interfaces\SessionRepositoryInterface;
 use App\Integrations\WhatsApp\WhatsAppSenderService;
 use App\Presentacion\PlantillasWhatsApp\PlantillaSistema;
+use App\Presentacion\PlantillasWhatsApp\PlantillaSocio;
 use App\Core\Logger;
 
 class SessionService
@@ -23,6 +24,7 @@ class SessionService
 
     private const MAX_ATTEMPTS = 3; // Máximo de intentos fallidos antes de bloquear al usuario
     private const INACTIVE_TIMEOUT_SECONDS = 600; // 10 minutos (600s) de inactividad antes de cerrar sesión
+    private const SUBFLOW_TIMEOUT_SECONDS = 180; // 3 minutos (180s) de inactividad en sub-flujos (Reconexión y Reclamos)
     private const BLOCKED_TIMEOUT_SECONDS = 300; // 5 minutos de bloqueo por intentos fallidos
 
     public function __construct(
@@ -99,6 +101,31 @@ class SessionService
      */
     public function expirarSesionesInactivas(int $segundosInactividad = self::INACTIVE_TIMEOUT_SECONDS): array
     {
+        // 1. Procesar sub-flujos interactivos incompletos (Reconexión y Reclamos) que superaron los 3 minutos (180s)
+        $subflujos = $this->repository->getInactiveSubflowSessions(self::SUBFLOW_TIMEOUT_SECONDS);
+        $plantillaTiempoAgotado = PlantillaSistema::tiempoAgotadoSubflujo();
+        $subflujosReseteados = 0;
+
+        foreach ($subflujos as $sf) {
+            $tel = (string)$sf['telefono_whatsapp'];
+            $cod = $sf['codigo_socio'] !== null ? (int)$sf['codigo_socio'] : null;
+            $ctx = !empty($sf['context_data']) ? json_decode((string)$sf['context_data'], true) : [];
+            $nom = $ctx['nombre_socio'] ?? 'Socio';
+
+            if ($this->whatsAppSender !== null) {
+                // Burbuja 1: Tiempo agotado
+                $this->whatsAppSender->enviarMensaje($tel, $plantillaTiempoAgotado);
+                // Burbuja 2: Menú Principal con [📋 Mostrar Menú]
+                $menuPayload = PlantillaSocio::menuPrincipal((string)$cod, $nom);
+                $this->whatsAppSender->enviarMensaje($tel, $menuPayload);
+            }
+
+            // Transición a MAIN_MENU preservando al socio autenticado
+            $this->updateSession($tel, $cod, 'MAIN_MENU', 0, ['nombre_socio' => $nom]);
+            $subflujosReseteados++;
+        }
+
+        // 2. Procesar sesiones generales en MAIN_MENU inactivas por 10 minutos (600s)
         $sesiones = $this->repository->getExpiredSessions($segundosInactividad);
         $expiradas = [];
         $notificadasCount = 0;
@@ -108,7 +135,7 @@ class SessionService
         foreach ($sesiones as $sesion) {
             $telefono = (string)$sesion['telefono_whatsapp'];
 
-            // 1. Despacho proactivo a Meta WhatsApp si el sender está configurado
+            // Despacho proactivo a Meta WhatsApp si el sender está configurado
             $enviado = false;
             if ($this->whatsAppSender !== null) {
                 // Burbuja 1: Recordatorio de entorno en desarrollo
@@ -120,7 +147,7 @@ class SessionService
                 }
             }
 
-            // 2. Transición atómica en base de datos a AWAITING_CODE con intentos en 0
+            // Transición atómica en base de datos a AWAITING_CODE con intentos en 0
             $this->repository->resetSession($telefono);
 
             $expiradas[] = [
@@ -132,14 +159,16 @@ class SessionService
             ];
         }
 
-        if (count($expiradas) > 0) {
+        if (count($expiradas) > 0 || $subflujosReseteados > 0) {
             Logger::info("SessionService::expirarSesionesInactivas", [
+                'subflujos_cancelados' => $subflujosReseteados,
                 'total_expiradas' => count($expiradas),
                 'notificadas' => $notificadasCount
             ]);
         }
 
         return [
+            'subflujos_cancelados' => $subflujosReseteados,
             'total' => count($expiradas),
             'notificadas' => $notificadasCount,
             'expiradas' => $expiradas

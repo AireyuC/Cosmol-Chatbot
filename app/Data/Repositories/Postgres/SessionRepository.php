@@ -81,7 +81,19 @@ class SessionRepository implements SessionRepositoryInterface
     {
         $sql = "SELECT telefono_whatsapp, codigo_socio, estado_actual, context_data, ultima_interaccion
                 FROM chat_session
-                WHERE estado_actual NOT IN ('AWAITING_CODE', 'BLOCKED')
+                WHERE estado_actual = 'MAIN_MENU'
+                  AND ultima_interaccion < (CURRENT_TIMESTAMP - (:segundos || ' seconds')::INTERVAL)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['segundos' => $inactiveSeconds]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result ?: [];
+    }
+
+    public function getInactiveSubflowSessions(int $inactiveSeconds): array
+    {
+        $sql = "SELECT telefono_whatsapp, codigo_socio, estado_actual, context_data, ultima_interaccion
+                FROM chat_session
+                WHERE (estado_actual LIKE 'AWAITING_RECONEXION_%' OR estado_actual LIKE 'AWAITING_RECLAMO_%')
                   AND ultima_interaccion < (CURRENT_TIMESTAMP - (:segundos || ' seconds')::INTERVAL)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['segundos' => $inactiveSeconds]);

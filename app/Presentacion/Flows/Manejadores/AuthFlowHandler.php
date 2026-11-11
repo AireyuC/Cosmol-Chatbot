@@ -80,12 +80,6 @@ class AuthFlowHandler extends BaseFlowHandler
                     $this->auditService->registrarAcceso((int)$codigoIngresado, $nombreSocio, $telefono);
                 }
 
-                // Burbuja 1: Aviso de entorno en desarrollo (despacho directo a Meta)
-                if ($this->whatsAppSender !== null) {
-                    $this->whatsAppSender->enviarMensaje($telefono, PlantillaSistema::avisoSistemaEnDesarrollo());
-                }
-
-                // Burbuja 2: Menú Principal
                 return PlantillaSocio::menuPrincipal($codigoIngresado, $nombreSocio);
             }
 

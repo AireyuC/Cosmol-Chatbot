@@ -110,23 +110,34 @@ class ReconexionFlowHandler extends BaseFlowHandler
 
                     return PlantillaReconexion::menuTipo();
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
+                return PlantillaSistema::textoSimple("*Formato no válido (Paso 1 de 4)*\n\nPor favor, utiliza la opción de adjuntar y selecciona \"Ubicación\" en WhatsApp.");
 
             case 'AWAITING_RECONEXION_TYPE':
                 if ($tipoMensaje === 'interactive' && strpos((string)$contenido, 'RECONEXION_TIPO_') === 0) {
                     $idTipo = (int)str_replace('RECONEXION_TIPO_', '', (string)$contenido);
                     $contextData['id_tipo_reconexion'] = $idTipo;
 
-                    // Avanza directamente a la glosa de referencia (se omite la solicitud de foto al socio)
+                    // Avanza hacia la FOTOGRAFÍA obligatoria (Paso 3 de 4)
+                    $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_PHOTO', 0, $contextData);
+                    return PlantillaReconexion::solicitarFoto();
+                }
+                return PlantillaReconexion::menuTipo();
+
+            case 'AWAITING_RECONEXION_PHOTO':
+                if ($tipoMensaje === 'image' && !empty($contenido)) {
+                    $fotoUrl = '';
+                    if ($this->mediaService !== null) {
+                        $fotoUrl = (string)$this->mediaService->descargarYGuardar((string)$contenido, $codigoSocioStr, 'reconexiones');
+                    }
+                    $contextData['foto_url'] = $fotoUrl;
+
+                    // Avanza hacia la descripción de la vivienda (Paso 4 de 4)
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
                     return PlantillaReconexion::solicitarGlosa();
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Opción inválida. Por favor, seleccione una opción de la lista enviada. 👇");
 
-            case 'AWAITING_RECONEXION_PHOTO':
-                // En caso de sesiones previas en este estado, avanzamos directamente a la glosa
-                $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECONEXION_GLOSA', 0, $contextData);
-                return PlantillaReconexion::solicitarGlosa();
+                // La fotografía es obligatoria en reconexiones
+                return PlantillaReconexion::fotoRequerida();
 
             case 'AWAITING_RECONEXION_GLOSA':
                 if ($tipoMensaje === 'text') {
@@ -134,7 +145,7 @@ class ReconexionFlowHandler extends BaseFlowHandler
                     $gps = $contextData['coordenadas_gps'] ?? '';
                     $tipoId = (int)($contextData['id_tipo_reconexion'] ?? 1);
                     $tipoUbicacion = $contextData['tipo_ubicacion'] ?? 'DOMICILIO';
-                    $fotoUrl = ''; // La fotografía es tomada directamente por el técnico operador en su reporte
+                    $fotoUrl = $contextData['foto_url'] ?? '';
 
                     $resultado = $this->reconexionService->solicitarReconexion(
                         $codigoSocioStr,
@@ -160,7 +171,7 @@ class ReconexionFlowHandler extends BaseFlowHandler
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'MAIN_MENU', 0, ['nombre_socio' => $nombreSocio]);
                     return PlantillaSocio::menuPrincipal($codigoSocioStr, '', false, $mensaje);
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Por favor, escriba una descripción o glosa en texto.");
+                return PlantillaSistema::textoSimple("*Formato no válido (Paso 4 de 4)*\n\nPor favor, escribe la descripción de tu vivienda en texto para finalizar.");
 
             default:
                 return PlantillaSocio::menuPrincipal($codigoSocioStr, '', true);

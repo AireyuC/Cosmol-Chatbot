@@ -6,15 +6,26 @@ namespace App\Presentacion\PlantillasWhatsApp;
 
 /**
  * Genera los payloads JSON de WhatsApp relacionados al módulo de Reconexiones.
+ * Formato unificado por pasos consecutivos con redacción institucional limpia.
  */
 class PlantillaReconexion
 {
     /**
-     * Pregunta si la reconexión es en el domicilio registrado del medidor o mediante GPS.
+     * Paso 1 de 4: Pregunta de ubicación inicial y anticipación de los pasos del trámite.
      */
     public static function preguntaTipoUbicacion(string $direccion = ''): array
     {
-        $detalleDireccion = !empty($direccion) ? "\n🏠 *Domicilio Registrado:* {$direccion}\n" : '';
+        $detalleDireccion = !empty($direccion) ? "\n• Dirección registrada: {$direccion}\n" : '';
+
+        $bodyText = "*Solicitud de Reconexión (Paso 1 de 4)*\n\n" .
+                    "Para programar la reconexión de tu servicio completaremos 4 pasos sencillos:\n" .
+                    "1. Confirmación de ubicación\n" .
+                    "2. Tipo de reconexión\n" .
+                    "3. Fotografía del medidor\n" .
+                    "4. Referencias de la vivienda\n\n" .
+                    "¿El servicio se encuentra en la dirección registrada de tu medidor o en otra ubicación?\n" .
+                    "{$detalleDireccion}\n" .
+                    "Selecciona una opción:";
 
         return [
             'type' => 'interactive',
@@ -22,13 +33,13 @@ class PlantillaReconexion
                 'type' => 'button',
                 'header' => [
                     'type' => 'text',
-                    'text' => 'Ubicación de Reconexión'
+                    'text' => 'Reconexión de Servicio'
                 ],
                 'body' => [
-                    'text' => "📍 *Solicitud de Reconexión*\n\n¿La reconexión debe realizarse en la dirección registrada de su medidor o en otra ubicación?\n{$detalleDireccion}\nSi el suministro está en otra dirección o no tiene numeración, seleccione 'Otra Ubic. (GPS)'."
+                    'text' => $bodyText
                 ],
                 'footer' => [
-                    'text' => 'Paso 1 de 3'
+                    'text' => 'Paso 1 de 4 — Ubicación'
                 ],
                 'action' => [
                     'buttons' => [
@@ -36,14 +47,14 @@ class PlantillaReconexion
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'RECONEXION_UBICACION_DOMICILIO',
-                                'title' => '🏠 Mi Domicilio'
+                                'title' => 'Mi Domicilio'
                             ]
                         ],
                         [
                             'type' => 'reply',
                             'reply' => [
                                 'id' => 'RECONEXION_UBICACION_GPS',
-                                'title' => '📍 Otra Ubic. (GPS)'
+                                'title' => 'Otra Ubic. (GPS)'
                             ]
                         ]
                     ]
@@ -53,20 +64,22 @@ class PlantillaReconexion
     }
 
     /**
-     * Solicita al usuario que envíe su ubicación GPS.
+     * Paso 1 de 4 (Alternativo): Solicita al usuario que envíe su ubicación GPS.
      */
     public static function solicitarGps(): array
     {
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📍 *Solicitud de Reconexión*\n\nPor favor, adjunte su ubicación actual mediante la función de *Enviar Ubicación* de WhatsApp para que nuestros técnicos puedan llegar.\n(No escriba texto, use el icono de adjuntar 📎 o ➕)."
+                'body' => "*Solicitud de Reconexión (Paso 1 de 4)*\n\n" .
+                          "Ubicación por GPS:\n\n" .
+                          "Por favor, envía tu ubicación actual mediante la función de \"Ubicación\" de WhatsApp (icono de adjuntar 📎 o ➕)."
             ]
         ];
     }
 
     /**
-     * Muestra la lista interactiva de tipos/motivos de reconexión.
+     * Paso 2 de 4: Muestra la lista interactiva de tipos/motivos de reconexión.
      */
     public static function menuTipo(): array
     {
@@ -76,19 +89,21 @@ class PlantillaReconexion
                 'type' => 'list',
                 'header' => [
                     'type' => 'text',
-                    'text' => 'Tipo de Reconexión'
+                    'text' => 'Reconexión de Servicio'
                 ],
                 'body' => [
-                    'text' => "Ubicación registrada correctamente. ✅\n\nPor favor, seleccione el motivo o tipo de reconexión:"
+                    'text' => "*Solicitud de Reconexión (Paso 2 de 4)*\n\n" .
+                              "Ubicación registrada correctamente.\n\n" .
+                              "Por favor, selecciona el tipo o motivo de corte de tu servicio:"
                 ],
                 'footer' => [
-                    'text' => 'Paso 2 de 3'
+                    'text' => 'Paso 2 de 4 — Tipo de Corte'
                 ],
                 'action' => [
                     'button' => 'Seleccionar Tipo',
                     'sections' => [
                         [
-                            'title' => 'Opciones',
+                            'title' => 'Opciones de Reconexión',
                             'rows' => [
                                 [
                                     'id' => 'RECONEXION_TIPO_1',
@@ -98,17 +113,17 @@ class PlantillaReconexion
                                 [
                                     'id' => 'RECONEXION_TIPO_2',
                                     'title' => 'Con medidor',
-                                    'description' => 'Retiro de medidor'
+                                    'description' => 'Con retiro de medidor'
                                 ],
                                 [
                                     'id' => 'RECONEXION_TIPO_3',
                                     'title' => 'Con material',
-                                    'description' => 'Falta de accesorios'
+                                    'description' => 'Falta de accesorios o llave'
                                 ],
                                 [
                                     'id' => 'RECONEXION_TIPO_4',
                                     'title' => 'Otros',
-                                    'description' => 'Otro motivo'
+                                    'description' => 'Otro motivo de corte'
                                 ]
                             ]
                         ]
@@ -119,27 +134,48 @@ class PlantillaReconexion
     }
 
     /**
-     * Solicita la fotografía de evidencia para el trámite de reconexión (conservado por compatibilidad).
+     * Paso 3 de 4: Solicita la fotografía obligatoria de evidencia.
      */
     public static function solicitarFoto(): array
     {
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📸 *Fotografía requerida*\n\nPor favor, envíe una foto del medidor o del lugar donde se requiere la reconexión usando el icono de la cámara o galería de WhatsApp."
+                'body' => "*Solicitud de Reconexión (Paso 3 de 4)*\n\n" .
+                          "Tipo de reconexión registrado correctamente.\n\n" .
+                          "Por favor, envía una fotografía clara del medidor o de la caja de corte.\n\n" .
+                          "La fotografía es obligatoria para verificar las condiciones técnicas del suministro antes de la visita de la cuadrilla."
             ]
         ];
     }
 
     /**
-     * Solicita la observación o glosa descriptiva.
+     * Paso 3 de 4 (Recordatorio): Insistencia cuando el usuario envía texto en vez de imagen.
+     */
+    public static function fotoRequerida(): array
+    {
+        return [
+            'type' => 'text',
+            'text' => [
+                'body' => "*Fotografía requerida (Paso 3 de 4)*\n\n" .
+                          "Para continuar con la reconexión es obligatorio adjuntar una fotografía del medidor o de la caja de corte.\n\n" .
+                          "Por favor, toma una fotografía o selecciónala desde la galería de WhatsApp para continuar."
+            ]
+        ];
+    }
+
+    /**
+     * Paso 4 de 4: Solicita la descripción y referencias de la vivienda.
      */
     public static function solicitarGlosa(): array
     {
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📝 *Paso final (3 de 3) — Referencia*\n\nPor favor, escribe una breve indicación o punto de referencia para ayudar al equipo técnico a ubicar rápidamente tu medidor (ej: _'Casa con rejas negras frente a la plaza'_ o escribe _'Ninguna'_)."
+                'body' => "*Solicitud de Reconexión (Paso 4 de 4)*\n\n" .
+                          "Fotografía recibida correctamente.\n\n" .
+                          "Como último paso, escribe una breve descripción de tu vivienda y puntos de referencia para facilitar la llegada del personal técnico.\n\n" .
+                          "(Ejemplo: \"Casa de dos pisos color crema, portón negro, frente a la tienda Doña María\")."
             ]
         ];
     }
@@ -149,7 +185,9 @@ class PlantillaReconexion
      */
     public static function confirmacionExitosa(string $ticket): string
     {
-        return "✅ *¡Solicitud de reconexión programada!*\n🎫 Ticket de trámite: *#{$ticket}*\n\nLa cuadrilla técnica ha recibido tu solicitud para realizar la reconexión de tu servicio de agua potable. ¡Estaremos atendiéndote a la brevedad posible! 💧";
+        return "*Solicitud de Reconexión Programada*\n\n" .
+               "Ticket de trámite: *#{$ticket}*\n\n" .
+               "Tu solicitud ha sido registrada exitosamente. La cuadrilla técnica de COSMOL R.L. programará la visita a la brevedad posible para restablecer tu servicio de agua potable.";
     }
 
     /**
@@ -157,7 +195,9 @@ class PlantillaReconexion
      */
     public static function reconexionPendiente(): string
     {
-        return "⏳ *Solicitud en curso*\n\nEstimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.\n\n🏢 Si necesitas consultar el estado urgente de tu caso, puedes hablar con un asesor desde el menú o *visitar la Oficina de Reconexiones en nuestras oficinas centrales* (Calle Isaías Parada).";
+        return "*Solicitud en curso*\n\n" .
+               "Estimado asociado, tu solicitud de reconexión ya se encuentra registrada y asignada a nuestras cuadrillas técnicas. Nuestro personal acudirá a la brevedad posible para restablecer tu servicio.\n\n" .
+               "Si necesitas consultar el estado de tu trámite, puedes hablar con un asesor desde el menú o visitar la Oficina de Reconexiones en nuestras oficinas centrales (Calle Isaías Parada).";
     }
 
     /**
@@ -165,7 +205,10 @@ class PlantillaReconexion
      */
     public static function deudaExcedida(int $cantidadDeudas): string
     {
-        return "⚠️ *Regularización de cuenta requerida*\n\nEstimado asociado, registramos *{$cantidadDeudas} facturas pendientes* en tu cuenta. Para procesar una orden de reconexión, es necesario tener como máximo 1 factura pendiente.\n\n💳 Puedes realizar el pago de tus facturas mediante la opción *Consultar Deuda* del menú principal.\n\n🏢 Si quieres una atencion especial, te invitamos a visitar la Oficina de Reconexiones / Comercial en COSMOL R.L. (Calle Isaías Parada). ¡Con gusto te atenderemos! 🤝";
+        return "*Regularización de cuenta requerida*\n\n" .
+               "Estimado asociado, registramos *{$cantidadDeudas} facturas pendientes* en tu cuenta. Para procesar una orden de reconexión, es necesario tener como máximo 1 factura pendiente.\n\n" .
+               "Puedes realizar el pago de tus facturas mediante la opción *Consultar Deuda* del menú principal.\n\n" .
+               "Si requieres atención personalizada, te invitamos a visitar la Oficina de Reconexiones / Comercial en COSMOL R.L. (Calle Isaías Parada).";
     }
 
     /**
@@ -173,7 +216,11 @@ class PlantillaReconexion
      */
     public static function errorProcesamiento(): string
     {
-        return "❌ *Inconveniente al procesar tu solicitud*\n\nLo sentimos, ocurrió un inconveniente al procesar tu solicitud de reconexión de forma automática por este canal.\n\n🏢 Por favor, te invitamos a *visitar la Oficina de Reconexiones en COSMOL R.L.* (Calle Isaías Parada, entre Santa Cruz y Ballivián) para que nuestro personal de atención al cliente registre tu trámite de forma manual e inmediata.\n\n🕒 *Horarios de Atención:*\nLun a Vie: 08:00 - 12:00 | 14:00 - 18:00";
+        return "*Inconveniente al procesar tu solicitud*\n\n" .
+               "Ocurrió un inconveniente al procesar tu solicitud de reconexión de forma automática por este canal.\n\n" .
+               "Por favor, te invitamos a visitar la Oficina de Reconexiones en COSMOL R.L. (Calle Isaías Parada, entre Santa Cruz y Ballivián) para que nuestro personal registre tu trámite de forma manual e inmediata.\n\n" .
+               "Horarios de Atención:\n" .
+               "Lunes a Viernes: 08:00 - 12:00 | 14:00 - 18:00";
     }
 
     /**
@@ -181,7 +228,9 @@ class PlantillaReconexion
      */
     public static function advertenciaLimiteReconexiones(): string
     {
-        return "⚠️ *Límite diario de reconexiones alcanzado*\n\nEstimado asociado, esta cuenta ya cuenta con *1 solicitud de reconexión registrada hoy* (límite máximo diario permitido).\n\nSu trámite ya ha sido ingresado a nuestro sistema operativo y la cuadrilla técnica lo tiene en agenda. Por favor, espere la atención en el transcurso del día.";
+        return "*Límite diario de reconexiones alcanzado*\n\n" .
+               "Estimado asociado, esta cuenta ya cuenta con *1 solicitud de reconexión registrada hoy* (límite máximo diario permitido).\n\n" .
+               "Tu trámite ya ha sido ingresado al sistema operativo y la cuadrilla técnica lo tiene en agenda. Por favor, espera la atención en el transcurso del día.";
     }
 
     /**
@@ -189,6 +238,7 @@ class PlantillaReconexion
      */
     public static function advertenciaCooldownReconexion(int $segundosRestantes): string
     {
-        return "⏳ *Por favor, aguarde unos momentos*\n\nSe acaba de registrar una interacción técnica reciente. Para evitar duplicidades en el sistema de cuadrillas, por favor espere *{$segundosRestantes} segundos* antes de volver a solicitar una reconexión.";
+        return "*Por favor, aguarda unos momentos*\n\n" .
+               "Se acaba de registrar una interacción técnica reciente. Para evitar duplicidades en el sistema de cuadrillas, por favor espera *{$segundosRestantes} segundos* antes de volver a solicitar una reconexión.";
     }
 }

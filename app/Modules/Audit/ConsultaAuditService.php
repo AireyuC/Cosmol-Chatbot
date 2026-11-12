@@ -23,6 +23,7 @@ class ConsultaAuditService
     const TIPO_INFO_OFICINAS        = 6;
     const TIPO_DERIVACION_AGENTE    = 7;
     const TIPO_ESTADO_SOLICITUDES   = 8;
+    const TIPO_PAGO_QR              = 9;
 
     // --- LÍMITES DE REGISTROS DIARIOS ---
     const MAX_RECLAMOS_POR_SOCIO       = 3;   // Máximo de reclamos diarios por código de socio
@@ -125,6 +126,13 @@ class ConsultaAuditService
     public function registrarConsultaEstado(int $codigoSocio, string $nombres, ?string $telefono = null): void
     {
         $this->registrar($codigoSocio, $nombres, self::TIPO_ESTADO_SOLICITUDES, 'Estado de Solicitudes', $telefono);
+    }
+
+    public function registrarPagoQr(int $codigoSocio, string $nombres, float $monto, int $cantidadFacturas, ?string $telefono = null): void
+    {
+        $montoF = number_format($monto, 2, '.', '');
+        $tipoConsulta = "Pago por QR ({$cantidadFacturas} fac - {$montoF} Bs)";
+        $this->registrar($codigoSocio, $nombres, self::TIPO_PAGO_QR, $tipoConsulta, $telefono);
     }
 
     /**

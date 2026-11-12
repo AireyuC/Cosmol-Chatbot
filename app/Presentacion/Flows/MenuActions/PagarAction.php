@@ -124,9 +124,10 @@ class PagarAction
      * @param string $accion Formato: PAGO_CONFIRMAR_{cantidad}_{codSocio}
      * @param string $codigoSocioStr
      * @param string $nombreSocio
+     * @param string|null $telefono
      * @return array
      */
-    public function handleConfirmacion(string $accion, string $codigoSocioStr, string $nombreSocio): array
+    public function handleConfirmacion(string $accion, string $codigoSocioStr, string $nombreSocio, ?string $telefono = null): array
     {
         $partes = explode('_', $accion);
         $cantSeleccionada = (int)($partes[2] ?? 1);
@@ -147,6 +148,11 @@ class PagarAction
         if ($montoAcumulado <= 0.0) {
             $montoAcumulado = 150.00; // Valor fallback demostrativo para mock
             $periodos = ['Periodo Actual'];
+        }
+
+        // Registrar auditoría del pago concretado por QR hacia COSMOL-Reportes
+        if ($this->auditService !== null) {
+            $this->auditService->registrarPagoQr((int)$cod, $nombreSocio, $montoAcumulado, $limite, $telefono);
         }
 
         return PlantillaPago::pagoExitoso(

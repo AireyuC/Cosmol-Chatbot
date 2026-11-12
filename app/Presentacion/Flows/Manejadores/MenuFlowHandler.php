@@ -155,7 +155,7 @@ class MenuFlowHandler
 
         // 1.2 Confirmación simulada de pago exitoso (Alpha Mock)
         if (strpos($accion, 'PAGO_CONFIRMAR_') === 0) {
-            return $this->pagarAction->handleConfirmacion($accion, $codigoSocioStr, $nombreSocio);
+            return $this->pagarAction->handleConfirmacion($accion, $codigoSocioStr, $nombreSocio, $telefono);
         }
 
         // 2. Historial de facturas pagadas

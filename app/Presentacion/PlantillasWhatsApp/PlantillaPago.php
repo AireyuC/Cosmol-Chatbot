@@ -25,13 +25,24 @@ class PlantillaPago
         $cantidad = count($facturasPendientes);
         $totalFormateado = number_format($totalRedondeado, 2, ',', '.');
 
-        $bodyText = "💳 *Pago de Facturas — COSMOL R.L.*\n" .
+        $detallePeriodos = "📋 *Detalle de periodos:*\n";
+        $contador = 1;
+        foreach ($facturasPendientes as $f) {
+            $montoF = number_format((float)($f['monto'] ?? 0.0), 2, ',', '.');
+            $periodo = (string)($f['periodo'] ?? '');
+            $detallePeriodos .= "{$contador}. Periodo: {$periodo} — *{$montoF} Bs.* (Pendiente)\n";
+            $contador++;
+        }
+        $detallePeriodos = trim($detallePeriodos);
+
+        $bodyText = "🧾 *Estado de Cuenta - Facturas Pendientes*\n" .
                     "📌 Código Fijo: *{$codSocio}*\n" .
-                    "⚠️ Facturas pendientes: *{$cantidad}*\n" .
-                    "💰 Deuda total: *{$totalFormateado} Bs.*\n\n" .
+                    "⚠️ Facturas por regularizar: *{$cantidad}*\n" .
+                    "💰 Total a pagar: *{$totalFormateado} Bs.*\n\n" .
+                    "{$detallePeriodos}\n\n" .
                     "📲 *Canales de pago disponibles:*\n" .
-                    "1. *Directo en WhatsApp (QR Simple):* Toca el botón abajo para elegir cuántos periodos pagar (se aplican cronológicamente desde el más antiguo).\n" .
-                    "2. *Enlace Web (Multipago):* Si prefieres pagar con tarjeta o banca externa en línea, ingresa aquí:\n" .
+                    "1. *Directo en WhatsApp (QR Simple):* Toca el botón abajo para elegir cuántos periodos pagar (se aplican desde la más antigua).\n" .
+                    "2. *Enlace Web (Multipago):*\n" .
                     "👉 https://multipago.com/service/cosmol_payment/first\n\n" .
                     "Toca el botón abajo para elegir tus periodos a cancelar 👇";
 

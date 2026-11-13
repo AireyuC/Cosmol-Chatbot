@@ -73,16 +73,59 @@ class ReclamoFlowHandler
         switch ($estadoActual) {
             case 'AWAITING_RECLAMO_GPS':
                 if ($tipoMensaje === 'location' && !empty($contenido)) {
-                    $ubicacionJson = json_decode((string)$contenido, true);
-                    $latitud = $ubicacionJson['latitude'] ?? '';
-                    $longitud = $ubicacionJson['longitude'] ?? '';
+                    $ubicacionJson = is_array($contenido) ? $contenido : json_decode((string)$contenido, true);
+                    $latitud = '';
+                    $longitud = '';
+                    if (is_array($ubicacionJson)) {
+                        $latitud = $ubicacionJson['latitude'] ?? $ubicacionJson['lat'] ?? '';
+                        $longitud = $ubicacionJson['longitude'] ?? $ubicacionJson['lng'] ?? $ubicacionJson['long'] ?? '';
+                    }
 
-                    $contextData['coordenadas_gps'] = "{$latitud}, {$longitud}";
+                    if (is_numeric($latitud) && is_numeric($longitud)) {
+                        $lat = (float)$latitud;
+                        $lng = (float)$longitud;
+
+                        // Si vinieron invertidas (longitud, latitud)
+                        if (abs($lat) > 40.0 && abs($lng) < 30.0) {
+                            $tmp = $lat;
+                            $lat = $lng;
+                            $lng = $tmp;
+                        }
+
+                        // Si faltan signos negativos para Bolivia
+                        if ($lat > 0 && $lat >= 9.0 && $lat <= 25.0) {
+                            $lat = -$lat;
+                        }
+                        if ($lng > 0 && $lng >= 55.0 && $lng <= 75.0) {
+                            $lng = -$lng;
+                        }
+
+                        $contextData['coordenadas_gps'] = sprintf('%.7f, %.7f', $lat, $lng);
+                    } else {
+                        $contextData['coordenadas_gps'] = 'DOMICILIO_REGISTRADO';
+                    }
+
                     $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
-
                     return PlantillaReclamo::solicitarFotoReclamo();
                 }
-                return PlantillaSocio::mensajeTextoSimple("❌ Formato inválido. Debe usar la opción de adjuntar 📎 y seleccionar 'Ubicación' 📍.");
+
+                if ($tipoMensaje === 'text') {
+                    $texto = strtoupper(trim((string)$contenido));
+                    if (
+                        strpos($texto, 'DOMICILIO') !== false || 
+                        strpos($texto, 'CASA') !== false || 
+                        strpos($texto, 'REGISTRAD') !== false || 
+                        strpos($texto, 'NO') !== false || 
+                        strpos($texto, 'SALTAR') !== false || 
+                        strpos($texto, 'OMITIR') !== false
+                    ) {
+                        $contextData['coordenadas_gps'] = 'DOMICILIO_REGISTRADO';
+                        $this->sessionService->updateSession($telefono, (int)$codigoSocio, 'AWAITING_RECLAMO_PHOTO', 0, $contextData);
+                        return PlantillaReclamo::solicitarFotoReclamo();
+                    }
+                }
+
+                return PlantillaSocio::mensajeTextoSimple("📍 *Enviar Ubicación del Reclamo*\n\nPor favor, adjunte la ubicación del problema mediante la opción 📎 *Ubicación* de WhatsApp.\n\n_Si el problema es en su domicilio registrado, puede responder con la palabra *DOMICILIO*._");
 
             case 'AWAITING_RECLAMO_PHOTO':
                 if ($tipoMensaje === 'image' && !empty($contenido)) {

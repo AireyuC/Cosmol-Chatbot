@@ -74,6 +74,11 @@ class ReclamoService
         $nroi = $socioData['NROI'] ?? '';
         $ubicacion = "{$zona}.{$ruta}.{$nroc}.{$nroi}";
 
+        $gps = trim((string)$coordenadasGps);
+        if (empty($gps) || $gps === ',' || $gps === ', ') {
+            $gps = 'DOMICILIO_REGISTRADO';
+        }
+
         $payload = [
             'usuario_registro' => 2,
             'id_tipo_reclamo' => $idTipoReclamo,
@@ -82,7 +87,7 @@ class ReclamoService
             'zona' => (int)$zona,
             'ruta' => (int)$ruta,
             'glosa' => $glosa,
-            'coordenadas_gps' => $coordenadasGps,
+            'coordenadas_gps' => $gps,
             'foto' => $fotoUrl
         ];
 

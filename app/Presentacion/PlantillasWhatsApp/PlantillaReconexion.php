@@ -17,7 +17,7 @@ class PlantillaReconexion
         return [
             'type' => 'text',
             'text' => [
-                'body' => "📍 *Solicitud de Reconexión*\n\nPor favor, adjunte su ubicación actual mediante la función de *Enviar Ubicación* de WhatsApp para que nuestros técnicos puedan llegar.\n(No escriba texto, use el icono de adjuntar 📎 o ➕)."
+                'body' => "📍 *Solicitud de Reconexión*\n\nPor favor, adjunte su ubicación actual mediante la función de *Enviar Ubicación* de WhatsApp (icono 📎 o ➕) para orientar a nuestros técnicos.\n\n_Si no se encuentra en su domicilio, puede responder con la palabra *DOMICILIO* para utilizar la dirección registrada en su cuenta._"
             ]
         ];
     }

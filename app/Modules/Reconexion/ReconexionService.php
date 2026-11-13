@@ -99,9 +99,14 @@ class ReconexionService
         $nroi = $socioData['NROI'] ?? '';
         $ubicacion = "{$zona}.{$ruta}.{$nroc}.{$nroi}";
 
+        $gps = trim((string)$coordenadasGps);
+        if (empty($gps) || $gps === ',' || $gps === ', ') {
+            $gps = 'DOMICILIO_REGISTRADO';
+        }
+
         $payload = [
             'usuario_registro' => 2,
-            'coordenadas_gps' => $coordenadasGps,
+            'coordenadas_gps' => $gps,
             'id_tipo_reconexion' => $idTipoReconexion,
             'ubicacion' => $ubicacion,
             'zona' => (int)$zona,

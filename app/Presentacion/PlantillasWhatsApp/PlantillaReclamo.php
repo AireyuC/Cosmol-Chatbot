@@ -83,7 +83,7 @@ class PlantillaReclamo
         return [
             'type' => 'text',
             'text' => [
-                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) y selecciona *Ubicación*.",
+                'body' => "Para enviar a un técnico, necesitamos saber la ubicación exacta del problema.\n\n📍 Por favor, envía tu *Ubicación Actual* tocando el ícono de clip (📎) y seleccionando *Ubicación*.\n\n_Si el problema es en tu domicilio registrado, puedes responder con la palabra *DOMICILIO*._",
                 'preview_url' => false
             ]
         ];
